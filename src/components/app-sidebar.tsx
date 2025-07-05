@@ -54,7 +54,7 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
     return (
         <>
             {/* Overlay */}
-            {open && <div className='bg-opacity-50 fixed inset-0 z-40 bg-black' onClick={() => setOpen(false)} />}
+            {open && <div className='fixed inset-0 z-40 bg-black/50' onClick={() => setOpen(false)} />}
 
             {/* Sidebar */}
             <div

@@ -25,7 +25,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     };
 
     return (
-        <div className='flex min-h-screen flex-col bg-[#353430]'>
+        <div className='flex min-h-screen w-full flex-col bg-[#353430]'>
             {/* Logo */}
             <div className='flex items-center justify-center pt-16 pb-12'>
                 <div className='flex items-center gap-2 text-white'>
@@ -49,7 +49,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                             placeholder='Username'
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className='h-16 rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-4 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
+                            className='h-16 w-full rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-4 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
                             required
                         />
                     </div>
@@ -64,7 +64,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                             placeholder='Password'
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className='h-16 rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-12 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
+                            className='h-16 w-full rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-12 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
                             required
                         />
                         <button

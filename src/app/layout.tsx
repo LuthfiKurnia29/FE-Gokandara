@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
@@ -6,6 +6,11 @@ import localFont from 'next/font/local';
 import { ThemeProvider } from 'next-themes';
 
 import '@/app/globals.css';
+import { AppSidebar } from '@/components/app-sidebar';
+import { DashboardLayout } from '@/components/layouts/dashboard-layout';
+import { LoginScreen } from '@/components/login-screen';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const geistSans = localFont({
     src: './fonts/GeistVF.woff',
@@ -28,8 +33,14 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
         // ? https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
         // ? https://react.dev/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors
         <html suppressHydrationWarning lang='en'>
-            <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}>
-                <ThemeProvider attribute='class'>{children}</ThemeProvider>
+            <body className={`${geistSans.variable} ${geistMono.variable} text-foreground bg-white antialiased`}>
+                <ThemeProvider attribute='class'>
+                    <div className='relative mx-auto w-full max-w-lg overflow-hidden shadow-2xl'>
+                        <AuthProvider>
+                            <DashboardLayout>{children}</DashboardLayout>
+                        </AuthProvider>
+                    </div>
+                </ThemeProvider>
             </body>
         </html>
     );
