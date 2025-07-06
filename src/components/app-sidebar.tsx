@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useSidebar } from '@/components/ui/sidebar';
 
 import { BarChart3, FileText, Home, LogOut, Rocket, Settings, TrendingUp, Users } from 'lucide-react';
@@ -19,7 +21,7 @@ const items = [
   },
   {
     title: 'Konsumen',
-    url: '#',
+    url: '/konsumen',
     icon: Users
   },
   {
@@ -74,7 +76,7 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
         <div className='flex-1 overflow-y-auto p-4'>
           <div className='space-y-2'>
             {items.map((item) => (
-              <a
+              <Link
                 key={item.title}
                 href={item.url}
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
@@ -83,7 +85,7 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
                 onClick={() => setOpen(false)}>
                 <item.icon size={20} />
                 <span className='text-base'>{item.title}</span>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

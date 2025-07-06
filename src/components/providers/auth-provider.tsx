@@ -7,7 +7,7 @@ import { LoginScreen } from '../login-screen';
 import { SidebarProvider } from '../ui/sidebar';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
