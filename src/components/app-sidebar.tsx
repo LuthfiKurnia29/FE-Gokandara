@@ -1,108 +1,156 @@
 'use client';
 
+import * as React from 'react';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-import { useSidebar } from '@/components/ui/sidebar';
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavUser } from '@/components/nav-user';
+import { TeamSwitcher } from '@/components/team-switcher';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar
+} from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+import { MenuItem, menuItems } from '@/stores/menu-item';
 
-import { BarChart3, FileText, Home, LogOut, Rocket, Settings, TrendingUp, Users } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
+import {
+  AudioWaveform,
+  BookOpen,
+  Bot,
+  ChevronDown,
+  ChevronUp,
+  Command,
+  Frame,
+  GalleryVerticalEnd,
+  House,
+  LayoutDashboard,
+  Map,
+  PieChart,
+  Settings2,
+  SquareTerminal,
+  Users
+} from 'lucide-react';
 
-// Menu items
-const items = [
-  {
-    title: 'Dashboard',
-    url: '#',
-    icon: BarChart3,
-    isActive: true
-  },
-  {
-    title: 'Project',
-    url: '#',
-    icon: Rocket
-  },
-  {
-    title: 'Konsumen',
-    url: '/konsumen',
-    icon: Users
-  },
-  {
-    title: 'Analisa',
-    url: '#',
-    icon: TrendingUp
-  },
-  {
-    title: 'Laporan',
-    url: '#',
-    icon: FileText
-  },
-  {
-    title: 'Pengajuan',
-    url: '#',
-    icon: Home
-  },
-  {
-    title: 'Setting',
-    url: '#',
-    icon: Settings
+// Sidebar Menu Item Component
+const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
+  const pathname = usePathname();
+  // If item has children, render as dropdown
+  if (item.children && item.children.length > 0) {
+    return <SidebarMenuDropdown icon={item.icon} title={item.title} items={item.children} />;
   }
-];
 
-interface AppSidebarProps {
-  onLogout: () => void;
-}
-
-export function AppSidebar({ onLogout }: AppSidebarProps) {
-  const { open, setOpen } = useSidebar();
-
+  // Otherwise render as regular menu item
   return (
-    <>
-      {/* Overlay */}
-      {open && <div className='fixed inset-0 z-40 bg-black/50' onClick={() => setOpen(false)} />}
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        size='lg'
+        tooltip={item.title}
+        isActive={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}>
+        <Link href={item.url}>
+          <item.icon className='h-4 w-4' />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+});
 
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 z-50 h-full bg-[#4a4a4a] text-white transition-transform duration-300 ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        style={{ width: '280px' }}>
-        {/* Header with User Profile */}
-        <div className='border-b border-gray-600 p-6'>
-          <div className='flex items-center gap-3'>
-            <div className='h-12 w-12 flex-shrink-0 rounded-full bg-gray-300'></div>
-            <span className='text-lg font-medium text-white'>Username</span>
+SidebarMenuItemComponent.displayName = 'SidebarMenuItemComponent';
+
+// Sidebar Menu Dropdown Component
+const SidebarMenuDropdown = React.memo(
+  ({ icon: Icon, title, items }: { icon: React.ElementType; title: string; items: MenuItem[] }) => {
+    const pathname = usePathname();
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [visibleItems, setVisibleItems] = React.useState<MenuItem[]>(items);
+
+    const toggleDropdown = () => {
+      setIsOpen(!isOpen);
+    };
+
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          size='lg'
+          tooltip={title}
+          onClick={toggleDropdown}
+          className={cn('w-full justify-between', isOpen && 'bg-sidebar-accent text-sidebar-accent-foreground')}>
+          <div className='flex items-center'>
+            <Icon className='mr-2 h-4 w-4' />
+            <span>{title}</span>
           </div>
-        </div>
+          {isOpen ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
+        </SidebarMenuButton>
 
-        {/* Navigation Menu */}
-        <div className='flex-1 overflow-y-auto p-4'>
-          <div className='space-y-2'>
-            {items.map((item) => (
-              <Link
-                key={item.title}
-                href={item.url}
-                className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
-                  item.isActive ? 'bg-[#353430] text-white' : 'text-gray-300 hover:bg-[#353430] hover:text-white'
-                }`}
-                onClick={() => setOpen(false)}>
-                <item.icon size={20} />
-                <span className='text-base'>{item.title}</span>
-              </Link>
+        {isOpen && visibleItems.length > 0 && (
+          <div className='mt-1 space-y-1 pl-8'>
+            {visibleItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild size='lg' tooltip={item.title} isActive={pathname.startsWith(item.url)}>
+                  <Link href={item.url} className='text-sm'>
+                    <item.icon className='h-4 w-4' />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             ))}
           </div>
-        </div>
+        )}
+      </SidebarMenuItem>
+    );
+  }
+);
 
-        {/* Footer with Logout */}
-        <div className='border-t border-gray-600 p-4'>
-          <button
-            onClick={() => {
-              onLogout();
-              setOpen(false);
-            }}
-            className='flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-gray-300 transition-colors hover:bg-[#353430] hover:text-white'>
-            <LogOut size={20} />
-            <span className='text-base'>Log out</span>
-          </button>
-        </div>
-      </div>
-    </>
+SidebarMenuDropdown.displayName = 'SidebarMenuDropdown';
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar();
+
+  return (
+    <Sidebar collapsible='icon' className='text-white' {...props}>
+      <SidebarHeader className='bg-[#2B2B2B] py-8'>
+        {state === 'collapsed' ? (
+          <img src='/images/logo-mini.svg' alt='logo' className='h-6' />
+        ) : (
+          <img src='/images/logo.svg' alt='logo' className='h-8' />
+        )}
+      </SidebarHeader>
+      <SidebarContent className='bg-[#2B2B2B]'>
+        <ScrollArea className='h-full'>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuItems.map((item) =>
+                  item.url === 'divider' ? (
+                    <SidebarGroupLabel className='mt-4'>{item.title}</SidebarGroupLabel>
+                  ) : (
+                    <SidebarMenuItemComponent key={item.title} item={item} />
+                  )
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </ScrollArea>
+      </SidebarContent>
+      <SidebarFooter className='bg-[#2B2B2B]'>
+        <NavUser user={{ name: 'John Doe', email: 'john.doe@example.com', avatar: 'https://github.com/shadcn.png' }} />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

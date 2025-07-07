@@ -1,5 +1,6 @@
 'use client';
 
+import { PageTitle } from '@/components/page-title';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 
@@ -81,11 +82,9 @@ export default function HomePage() {
 
   return (
     <main>
+      <PageTitle title='Dashboard' />
       {/* Dashboard Content */}
       <div className='space-y-6 p-4'>
-        {/* Dashboard Title */}
-        <h1 className='text-3xl font-bold text-gray-800'>Dashboard</h1>
-
         {/* Stats Grid */}
         <div className='grid grid-cols-2 gap-4'>
           {stats.map((stat, index) => (

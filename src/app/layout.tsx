@@ -10,6 +10,7 @@ import { DashboardLayout } from '@/components/layouts/dashboard-layout';
 import { LoginScreen } from '@/components/login-screen';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import QueryProvider from '@/components/providers/query-provider';
+import { TitleProvider } from '@/components/providers/title-provider';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -31,14 +32,14 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     // ? https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
     // ? https://react.dev/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors
-    <html suppressHydrationWarning lang='en'>
+    <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable} text-foreground bg-white antialiased`}>
         <QueryProvider>
-          <div className='relative mx-auto w-full max-w-lg overflow-hidden shadow-2xl'>
+          <TitleProvider>
             <AuthProvider>
               <DashboardLayout>{children}</DashboardLayout>
             </AuthProvider>
-          </div>
+          </TitleProvider>
         </QueryProvider>
       </body>
     </html>

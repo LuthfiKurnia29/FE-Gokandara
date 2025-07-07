@@ -1,44 +1,30 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { useSidebar } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
-import { Bell, Menu } from 'lucide-react';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from '../ui/breadcrumb';
+import { Separator } from '../ui/separator';
+import { DashboardHeader } from './dashboard-header';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { toggleSidebar } = useSidebar();
-
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Top Header with Logo */}
-      <div className='bg-[#353430] py-6 text-white'>
-        <div className='flex items-center justify-center gap-2'>
-          <span className='text-2xl font-bold'>kandara</span>
-          <div className='h-5 w-5 rotate-45 transform bg-[#DAA961]'></div>
-        </div>
-      </div>
-
-      {/* Secondary Header */}
-      <div className='bg-[#4a4a4a] p-4 text-white'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={toggleSidebar}
-              className='rounded-full bg-[#353430] p-2 text-white hover:bg-[#111111]'>
-              <Menu size={20} />
-            </Button>
-            <div className='h-8 w-8 rounded-full bg-gray-400'></div>
-          </div>
-
-          <Button variant='ghost' size='sm' className='p-2 text-white hover:bg-[#111111]'>
-            <Bell size={20} />
-          </Button>
-        </div>
-      </div>
-
-      <div className='flex flex-col'>{children}</div>
+    <div className='min-h-screen flex-1 bg-gray-100'>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className='grid h-screen grid-rows-[75px_calc(100vh-75px)]'>
+          <DashboardHeader />
+          <ScrollArea className='flex flex-1 flex-col gap-4 p-4 pt-0'>{children}</ScrollArea>
+        </SidebarInset>
+      </SidebarProvider>
     </div>
   );
 }

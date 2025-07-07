@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 
-import { AppSidebar } from '../app-sidebar';
 import { LoginScreen } from '../login-screen';
-import { SidebarProvider } from '../ui/sidebar';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -21,10 +19,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  return (
-    <SidebarProvider>
-      <AppSidebar onLogout={handleLogout} />
-      {children}
-    </SidebarProvider>
-  );
+  return <>{children}</>;
 }
