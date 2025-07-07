@@ -127,9 +127,12 @@ export function ResourceCalendar({
     // Flatten resources to get all resource IDs
     const allResourceIds = resources.reduce<string[]>((acc, resource) => {
       if (resource.children) {
-        return [...acc, ...resource.children.map((child) => child.id)];
+        return [
+          ...acc,
+          ...resource.children.map((child) => child.id).filter((id): id is string => typeof id === 'string')
+        ];
       }
-      return [...acc, resource.id];
+      return resource.id ? [...acc, resource.id] : acc;
     }, []);
 
     // Create background events for each available date range and resource
@@ -144,7 +147,6 @@ export function ResourceCalendar({
           resourceId: resourceId,
           display: 'background',
           backgroundColor: 'rgba(74, 222, 128, 0.4)', // light green with transparency
-          classNames: ['availability-background'],
           rendering: 'background',
           allDay: true,
           extendedProps: {
@@ -241,10 +243,14 @@ export function ResourceCalendar({
     // Check if both resources have the same parent ID or group
     const targetParentId = targetResource._resource.parentId
       ? targetResource._resource.parentId
-      : targetResource._resource.extendedProps[resourceGroupField];
+      : resourceGroupField
+        ? targetResource._resource.extendedProps[resourceGroupField]
+        : undefined;
     const sourceParentId = sourceResource._resource.parentId
       ? sourceResource._resource.parentId
-      : sourceResource._resource.extendedProps[resourceGroupField];
+      : resourceGroupField
+        ? sourceResource._resource.extendedProps[resourceGroupField]
+        : undefined;
 
     // Prevent dragging to parent resource
     if (!targetParentId) {
@@ -328,20 +334,6 @@ export function ResourceCalendar({
   return (
     <div className={cn('resource-calendar-container', className)}>
       <FullCalendar
-        ref={(el: FullCalendar) => {
-          setTimeout(() => {
-            if (el) {
-              el.elRef.current?.querySelector('.fc-license-message')?.remove?.();
-
-              if (!scrolled) {
-                const width = el.elRef.current?.querySelectorAll('.fc-scroller')[1].offsetWidth;
-                el.elRef.current?.querySelectorAll('.fc-scroller')[1].scrollBy(width - 250, 0);
-
-                setScrolled(true);
-              }
-            }
-          }, 200);
-        }}
         plugins={[resourceTimelinePlugin, interactionPlugin]}
         initialView={initialView}
         headerToolbar={headerToolbar}
@@ -353,7 +345,6 @@ export function ResourceCalendar({
         slotMinWidth={slotMinWidth}
         resources={resources}
         resourceGroupField={resourceGroupField}
-        resourceLabelText={resourceLabelText}
         resourceLabelContent={resourceLabelContent}
         resourceLabelDidMount={resourceLabelDidMount}
         height={height}
@@ -383,7 +374,7 @@ export function ResourceCalendar({
             id: arg.event.id,
             title: arg.event.title,
             start: arg.event.start || new Date(),
-            end: arg.event.end,
+            end: arg.event.end ?? undefined,
             resourceId: arg.event.getResources()[0]?.id || '',
             extendedProps: arg.event.extendedProps
           };
@@ -407,7 +398,7 @@ export function ResourceCalendar({
             id: arg.event.id,
             title: arg.event.title,
             start: arg.event.start || new Date(),
-            end: arg.event.end,
+            end: arg.event.end ?? undefined,
             resourceId: arg.event.getResources()[0]?.id || '',
             extendedProps: arg.event.extendedProps
           };
@@ -418,6 +409,9 @@ export function ResourceCalendar({
           const targetResource = dropInfo.resource;
 
           // Get the source resource
+          if (!draggedEvent || !targetResource) {
+            return false;
+          }
           const sourceResource = draggedEvent.getResources()[0];
 
           if (!restrictDragAndDropType) {
@@ -450,7 +444,8 @@ export function ResourceCalendar({
             // Get the proposed new start and end dates
             const newStart = format(dropInfo.start, 'yyyy-MM-dd') + ` ${format(events[0].start, 'HH:mm:ss')}`;
             const newEnd = dropInfo.end
-              ? format(dropInfo.end, 'yyyy-MM-dd') + ` ${format(events[0].end, 'HH:mm:ss')}`
+              ? format(dropInfo.end, 'yyyy-MM-dd') +
+                ` ${format(events[0].end ?? new Date('1970-01-01T00:00:00'), 'HH:mm:ss')}`
               : newStart;
 
             const hasOverlap = allEvents.some((event) => {
@@ -514,9 +509,9 @@ export function ResourceCalendar({
             );
           }
 
-          // If we passed all checks, allow the based on the editable
-          return editable;
+          return true;
         }}
+        eventClassNames={(arg) => (arg.event.extendedProps?.isAvailabilityIndicator ? ['availability-background'] : [])}
         slotLabelFormat={{
           month: 'long',
           day: 'numeric',
@@ -537,16 +532,6 @@ export function ResourceCalendar({
         }}
         dateIncrement={{
           months: 1
-        }}
-        classNames={{
-          view: 'rounded-lg overflow-hidden',
-          viewContainer: 'bg-background',
-          toolbar: 'mb-4',
-          today: 'bg-primary text-primary-foreground hover:bg-primary/90',
-          button:
-            'rounded-md border border-input bg-background px-3 py-1 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          buttonGroup: 'space-x-1',
-          buttonActive: 'bg-accent text-accent-foreground'
         }}
         slotLabelDidMount={handleSlotLabelDidMount}
       />
