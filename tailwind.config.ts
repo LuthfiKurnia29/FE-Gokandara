@@ -25,6 +25,9 @@ const config: Config = {
         lg: '1024px',
         xl: '1280px'
       },
+      fontFamily: {
+        roboto: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif']
+      },
       colors: {
         brand: '#FF9F34',
         border: 'hsl(var(--border))',
