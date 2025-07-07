@@ -17,7 +17,7 @@ import { DashboardHeader } from './dashboard-header';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className='min-h-screen flex-1 bg-gray-100'>
+    <div className='min-h-screen flex-1 bg-gray-100' suppressHydrationWarning>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className='grid h-screen grid-rows-[75px_calc(100vh-75px)]'>

@@ -32,8 +32,10 @@ const Layout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     // ? https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
     // ? https://react.dev/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors
-    <html lang='en'>
-      <body className={`${geistSans.variable} ${geistMono.variable} text-foreground bg-white antialiased`}>
+    <html lang='en' suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} text-foreground bg-white antialiased`}
+        suppressHydrationWarning>
         <QueryProvider>
           <TitleProvider>
             <AuthProvider>

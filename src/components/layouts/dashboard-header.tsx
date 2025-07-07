@@ -10,7 +10,7 @@ export function DashboardHeader() {
       {/* Left Section: Hamburger + Title */}
       <div className='flex items-center gap-4'>
         <SidebarTrigger className='h-6 w-6 text-gray-600' />
-        <h1 className='font-roboto text-3xl font-bold text-[#232323]'>Dashboard</h1>
+        <h1 className='font-sf-pro text-[1.5rem] leading-tight font-bold tracking-tight text-[#232323]'>Dashboard</h1>
       </div>
 
       {/* Center Section: Search Bar */}
@@ -19,7 +19,7 @@ export function DashboardHeader() {
           <input
             type='text'
             placeholder='Cari di sini...'
-            className='font-roboto h-12 w-full rounded-full border border-gray-300 bg-[#F8F9FA] px-6 pr-12 text-sm text-gray-700 placeholder-gray-500 focus:border-gray-400 focus:ring-0 focus:outline-none'
+            className='font-sf-pro h-12 w-full rounded-full border border-gray-300 bg-[#F8F9FA] px-6 pr-12 text-sm leading-tight tracking-tight text-gray-700 placeholder-gray-500 focus:border-gray-400 focus:ring-0 focus:outline-none'
           />
           <Search className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-gray-400' />
         </div>
@@ -66,11 +66,13 @@ export function DashboardHeader() {
         <div className='flex items-center gap-3'>
           <Avatar className='h-10 w-10'>
             <AvatarImage src='/placeholder-avatar.jpg' alt='User' />
-            <AvatarFallback className='font-roboto bg-gray-300 font-semibold text-gray-700'>NS</AvatarFallback>
+            <AvatarFallback className='font-sf-pro bg-gray-300 leading-tight font-semibold tracking-tight text-gray-700'>
+              NS
+            </AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
-            <span className='font-roboto text-sm font-bold text-gray-900'>Nama Sales</span>
-            <span className='font-roboto text-xs text-gray-500'>Sales</span>
+            <span className='font-sf-pro text-sm leading-tight font-bold tracking-tight text-gray-900'>Nama Sales</span>
+            <span className='font-sf-pro text-xs leading-tight tracking-tight text-gray-500'>Sales</span>
           </div>
         </div>
       </div>
