@@ -1,4 +1,3 @@
-@import url('https://stagnansi.github.io/sfp/ff.css');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -185,17 +184,32 @@
     @apply bg-background text-foreground;
   }
 
-  /* Fix untuk membuat font lebih bold seperti di Figma */
+  /* Enhanced SF Pro Display font rendering */
   .font-sf-pro {
     font-family: 'SF Pro Display', var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'kern' 1;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1,
+      'calt' 1;
+    text-rendering: optimizeLegibility;
+    font-synthesis: none;
   }
 
-  /* Perbaikan untuk font weight yang lebih tegas */
-  .font-bold {
-    font-weight: 700;
+  /* Precise font weight definitions */
+  .font-light {
+    font-weight: 300;
+    font-synthesis: none;
+  }
+
+  .font-normal {
+    font-weight: 400;
+    font-synthesis: none;
+  }
+
+  .font-medium {
+    font-weight: 500;
     font-synthesis: none;
   }
 
@@ -204,8 +218,59 @@
     font-synthesis: none;
   }
 
-  .font-medium {
-    font-weight: 500;
+  .font-bold {
+    font-weight: 700;
     font-synthesis: none;
+  }
+
+  /* Precise text size utilities */
+  .text-\[11px\] {
+    font-size: 11px;
+  }
+
+  .text-\[12px\] {
+    font-size: 12px;
+  }
+
+  .text-\[13px\] {
+    font-size: 13px;
+  }
+
+  .text-\[14px\] {
+    font-size: 14px;
+  }
+
+  .text-\[20px\] {
+    font-size: 20px;
+  }
+
+  /* Precise line height utilities */
+  .leading-3 {
+    line-height: 12px;
+  }
+
+  .leading-4 {
+    line-height: 16px;
+  }
+
+  .leading-5 {
+    line-height: 20px;
+  }
+
+  .leading-6 {
+    line-height: 24px;
+  }
+
+  /* Letter spacing utilities */
+  .tracking-\[-0\.01em\] {
+    letter-spacing: -0.01em;
+  }
+
+  .tracking-\[-0\.02em\] {
+    letter-spacing: -0.02em;
+  }
+
+  .tracking-\[0\.08em\] {
+    letter-spacing: 0.08em;
   }
 }
