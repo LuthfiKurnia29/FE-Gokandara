@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 import { MoreHorizontal, Star, TrendingUp } from 'lucide-react';
@@ -192,6 +192,62 @@ const CustomerCard = React.memo(
 
 CustomerCard.displayName = 'CustomerCard';
 
+const MetricChartCard = React.memo(
+  ({
+    title,
+    value,
+    color,
+    progress,
+    chartData,
+    chartConfig
+  }: {
+    title: string;
+    value: string;
+    color: string;
+    progress: number;
+    chartData: Array<{ name: string; value: number; fill: string }>;
+    chartConfig: ChartConfig;
+  }) => {
+    return (
+      <Card className='flex flex-col'>
+        <CardHeader className='items-center pb-0'>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{value} Total</CardDescription>
+        </CardHeader>
+        <CardContent className='flex-1 pb-0'>
+          <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[250px]'>
+            <PieChart>
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+              <Pie
+                data={chartData}
+                dataKey='value'
+                nameKey='name'
+                innerRadius={60}
+                strokeWidth={5}
+                activeIndex={0}
+                activeShape={({ outerRadius = 0, ...props }: PieSectorDataItem) => (
+                  <Sector {...props} outerRadius={outerRadius + 10} />
+                )}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+        <CardFooter className='flex-col gap-2 text-sm'>
+          <div className='flex items-center gap-2 leading-none font-medium'>
+            Trending up by {progress}%
+            <TrendingUp className='h-4 w-4' />
+          </div>
+          <div className='text-muted-foreground leading-none'>Status Overview</div>
+        </CardFooter>
+      </Card>
+    );
+  }
+);
+MetricChartCard.displayName = 'MetricChartCard';
+
 const HomePage = React.memo(() => {
   const metricCards = React.useMemo(
     () => [
@@ -235,31 +291,74 @@ const HomePage = React.memo(() => {
   ];
 
   const pieChartData = [
-    { name: 'Lorem Ipsum', value: 20, fill: '#3b82f6' },
-    { name: 'Lorem Ipsum', value: 40, fill: '#10b981' },
-    { name: 'Lorem Ipsum', value: 15, fill: '#f59e0b' },
-    { name: 'Lorem Ipsum', value: 15, fill: '#6b7280' }
+    { name: 'Aktif', value: 224, fill: 'var(--chart-1)' },
+    { name: 'Non Aktif', value: 308, fill: 'var(--chart-2)' },
+    { name: 'Pending', value: 100, fill: 'var(--chart-3)' }
   ];
 
   const chartConfig = {
-    value: {
-      label: 'Value'
+    konsumen: {
+      label: 'Konsumen'
     },
-    item1: {
-      label: 'Lorem Ipsum',
-      color: '#3b82f6'
+    aktif: {
+      label: 'Aktif',
+      color: 'var(--chart-1)'
     },
-    item2: {
-      label: 'Lorem Ipsum',
-      color: '#10b981'
+    nonAktif: {
+      label: 'Non Aktif',
+      color: 'var(--chart-2)'
     },
-    item3: {
-      label: 'Lorem Ipsum',
-      color: '#f59e0b'
+    pending: {
+      label: 'Pending',
+      color: 'var(--chart-3)'
+    }
+  } satisfies ChartConfig;
+
+  const followUpHariIniChartData = [
+    { name: 'Selesai', value: 7, fill: 'var(--chart-1)' },
+    { name: 'Belum Selesai', value: 3, fill: 'var(--chart-2)' }
+  ];
+
+  const followUpBesokChartData = [
+    { name: 'Terjadwal', value: 8, fill: 'var(--chart-1)' },
+    { name: 'Belum Terjadwal', value: 2, fill: 'var(--chart-2)' }
+  ];
+
+  const konsumenProspekChartData = [
+    { name: 'Potensial', value: 6, fill: 'var(--chart-1)' },
+    { name: 'Kurang Potensial', value: 4, fill: 'var(--chart-2)' }
+  ];
+
+  const konsumenBaruChartData = [
+    { name: 'Konfirmasi', value: 5, fill: 'var(--chart-1)' },
+    { name: 'Belum Konfirmasi', value: 5, fill: 'var(--chart-2)' }
+  ];
+
+  const followUpChartConfig = {
+    followUp: {
+      label: 'Follow Up'
     },
-    item4: {
-      label: 'Lorem Ipsum',
-      color: '#6b7280'
+    selesai: {
+      label: 'Selesai',
+      color: 'var(--chart-1)'
+    },
+    belumSelesai: {
+      label: 'Belum Selesai',
+      color: 'var(--chart-2)'
+    }
+  } satisfies ChartConfig;
+
+  const konsumenProspekChartConfig = {
+    konsumenProspek: {
+      label: 'Konsumen Prospek'
+    },
+    potensial: {
+      label: 'Potensial',
+      color: 'var(--chart-1)'
+    },
+    kurangPotensial: {
+      label: 'Kurang Potensial',
+      color: 'var(--chart-2)'
     }
   } satisfies ChartConfig;
 
@@ -269,15 +368,56 @@ const HomePage = React.memo(() => {
     setBarHeights(Array.from({ length: 15 }, () => Math.random() * 80 + 20));
   }, []);
 
+  const totalKonsumen = {
+    aktif: 224,
+    total: 532
+  };
+
+  type ChartDataItem = {
+    name: string;
+    value: number;
+    fill: string;
+  };
+
   return (
     <div className='min-h-screen space-y-8 bg-gray-50 p-6'>
       {/* Top Metric Cards - Pixel Perfect Layout */}
-      <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4'>
-        {metricCards.map((card, index) => (
-          <div key={index} className='min-h-[140px]'>
-            <MetricCard title={card.title} value={card.value} color={card.color} progress={card.progress} />
-          </div>
-        ))}
+      <div className='grid grid-cols-4 gap-4'>
+        {metricCards.map((card, index) => {
+          let chartData: ChartDataItem[] = [];
+          let chartConfig: ChartConfig = {};
+
+          switch (index) {
+            case 0:
+              chartData = followUpHariIniChartData;
+              chartConfig = followUpChartConfig;
+              break;
+            case 1:
+              chartData = followUpBesokChartData;
+              chartConfig = followUpChartConfig;
+              break;
+            case 2:
+              chartData = konsumenProspekChartData;
+              chartConfig = konsumenProspekChartConfig;
+              break;
+            case 3:
+              chartData = konsumenBaruChartData;
+              chartConfig = followUpChartConfig;
+              break;
+          }
+
+          return (
+            <MetricChartCard
+              key={index}
+              title={card.title}
+              value={card.value}
+              color={card.color}
+              progress={card.progress}
+              chartData={chartData}
+              chartConfig={chartConfig}
+            />
+          );
+        })}
       </div>
 
       <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
@@ -336,52 +476,39 @@ const HomePage = React.memo(() => {
         </div>
 
         {/* Konsumen Pie Chart */}
-        <Card className='border-gray-200 shadow-sm'>
-          <CardHeader className='pb-4'>
-            <CardTitle className='font-sf-pro text-[20px] leading-[28px] font-semibold tracking-[-0.01em] text-gray-900'>
-              Konsumen
-            </CardTitle>
-            <p className='font-sf-pro mt-1 text-[14px] leading-[20px] font-normal tracking-[-0.01em] text-gray-500'>
-              Lorem ipsum dolor sit amet consectetur adipiscing elit psu dor
-            </p>
+        <Card className='flex flex-col'>
+          <CardHeader className='items-center pb-0'>
+            <CardTitle>Konsumen Chart</CardTitle>
+            <CardDescription>Distribusi Konsumen</CardDescription>
           </CardHeader>
-          <CardContent className='pt-0'>
-            <div className='space-y-6'>
-              {/* Recharts Donut Chart */}
-              <div className='flex justify-center'>
-                <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[128px] max-w-[128px]'>
-                  <PieChart>
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                    <Pie
-                      data={pieChartData}
-                      dataKey='value'
-                      nameKey='name'
-                      innerRadius={40}
-                      outerRadius={64}
-                      strokeWidth={0}
-                    />
-                  </PieChart>
-                </ChartContainer>
-              </div>
-
-              {/* Enhanced Legend */}
-              <div className='space-y-3'>
-                {pieChartData.map((item, index) => (
-                  <div
-                    key={index}
-                    className='font-sf-pro flex items-center justify-between text-[14px] leading-[20px] font-normal tracking-[-0.01em]'>
-                    <div className='flex items-center space-x-3'>
-                      <div className='h-3 w-3 rounded-full' style={{ backgroundColor: item.fill }} />
-                      <span className='text-gray-700'>{item.name}</span>
-                    </div>
-                    <span className='font-sf-pro text-[14px] leading-[20px] font-semibold tracking-[-0.01em] text-gray-900'>
-                      {item.value}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <CardContent className='flex-1 pb-0'>
+            <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[250px]'>
+              <PieChart>
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                <Pie
+                  data={pieChartData}
+                  dataKey='value'
+                  nameKey='name'
+                  innerRadius={60}
+                  strokeWidth={5}
+                  activeIndex={0}
+                  activeShape={({ outerRadius = 0, ...props }: PieSectorDataItem) => (
+                    <Sector {...props} outerRadius={outerRadius + 10} />
+                  )}>
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ChartContainer>
           </CardContent>
+          <CardFooter className='flex-col gap-2 text-sm'>
+            <div className='flex items-center gap-2 leading-none font-medium'>
+              Trending up by {((totalKonsumen.aktif / totalKonsumen.total) * 100).toFixed(1)}%
+              <TrendingUp className='h-4 w-4' />
+            </div>
+            <div className='text-muted-foreground leading-none'>Total Konsumen Aktif</div>
+          </CardFooter>
         </Card>
       </div>
 
