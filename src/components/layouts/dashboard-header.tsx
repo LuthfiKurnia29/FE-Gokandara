@@ -15,11 +15,11 @@ export function DashboardHeader() {
 
       {/* Center Section: Search Bar */}
       <div className='flex flex-1 justify-center px-8'>
-        <div className='relative w-full max-w-md'>
+        <div className='relative flex w-full max-w-md justify-end'>
           <input
             type='text'
             placeholder='Cari di sini...'
-            className='font-sf-pro h-12 w-full rounded-full border border-gray-300 bg-[#F8F9FA] px-6 pr-12 text-sm leading-tight tracking-tight text-gray-700 placeholder-gray-500 focus:border-gray-400 focus:ring-0 focus:outline-none'
+            className='font-sf-pro h-12 w-full max-w-xs rounded-lg border border-gray-300 bg-[#F8F9FA] px-6 pr-12 text-sm leading-tight tracking-tight text-gray-700 placeholder-gray-500 focus:border-gray-400 focus:ring-0 focus:outline-none'
           />
           <Search className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-gray-400' />
         </div>
