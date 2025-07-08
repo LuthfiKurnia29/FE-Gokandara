@@ -13,13 +13,13 @@ import 'react-circular-progressbar/dist/styles.css';
 import { Cell, Pie, PieChart, Sector } from 'recharts';
 import { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
-// Circular Progress Component matching Figma design exactly
+// Donut Progress Component using Recharts Pie Chart
 const MetricDonutProgress = React.memo(
   ({
     progress,
     color,
     size = 80,
-    strokeWidth = 12 // Kurangi ketebalan stroke sesuai desain Figma
+    strokeWidth = 20
   }: {
     progress: number;
     color: string;
@@ -40,41 +40,46 @@ const MetricDonutProgress = React.memo(
     // Memoize warna utama
     const mainColor = React.useMemo(() => colorMap[color as keyof typeof colorMap] || '#216FED', [color, colorMap]);
 
-    // Hitung parameter untuk chart
-    const radius = size / 2;
-    const circumference = 2 * Math.PI * (radius - strokeWidth / 2);
-    const progressLength = (progress / 100) * circumference;
+    // Data untuk pie chart - progress dan background
+    const chartData = React.useMemo(
+      () => [
+        { name: 'progress', value: progress, fill: 'rgba(255,255,255,1)' },
+        { name: 'remaining', value: 100 - progress, fill: 'rgba(255,255,255,0.15)' }
+      ],
+      [progress]
+    );
+
+    // Chart config untuk Recharts
+    const chartConfig = React.useMemo(
+      () => ({
+        progress: { label: 'Progress' },
+        remaining: { label: 'Remaining' }
+      }),
+      []
+    );
+
+    // Calculate radii for donut
+    const innerRadius = size / 2 - strokeWidth;
+    const outerRadius = size / 2 - 4;
 
     return (
-      <div className='relative flex items-center justify-center' style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Background Circle - Tipis dan Transparan */}
-          <circle
-            cx={radius}
-            cy={radius}
-            r={radius - strokeWidth / 2}
-            fill='transparent'
-            strokeWidth={strokeWidth}
-            stroke='rgba(255,255,255,0.2)'
-          />
-
-          {/* Progress Circle - Tebal dan Solid */}
-          <circle
-            cx={radius}
-            cy={radius}
-            r={radius - strokeWidth / 2}
-            fill='transparent'
-            strokeWidth={strokeWidth}
-            stroke={mainColor}
-            strokeDasharray={`${progressLength} ${circumference}`}
-            strokeDashoffset={circumference / 4}
-            style={{
-              transition: 'stroke-dasharray 0.5s ease',
-              transformOrigin: 'center',
-              transform: 'rotate(-90deg)'
-            }}
-          />
-        </svg>
+      <div className='relative' style={{ width: size, height: size }}>
+        {/* Progress donut menggunakan Recharts */}
+        <ChartContainer config={chartConfig} className='absolute inset-0 h-full rotate-x-180'>
+          <PieChart width={size} height={size}>
+            <Pie
+              data={chartData}
+              dataKey='value'
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
+              strokeWidth={0}
+              startAngle={-90}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
       </div>
     );
   }
@@ -114,14 +119,19 @@ const MetricCard = React.memo(
     return (
       <ErrorBoundary>
         <div
-          className={`relative flex min-h-[150px] items-center justify-between rounded-2xl bg-gradient-to-r p-6 shadow-lg ${color}`}
-          style={{ minWidth: 260 }}>
+          className={`relative flex min-h-[150px] items-center justify-between rounded-2xl bg-gradient-to-r p-6 shadow-lg ${color}`}>
           <div className='flex flex-col justify-center'>
             <span className='mb-1 text-4xl font-bold text-white'>{value}</span>
-            <span className='text-base font-semibold text-white opacity-90'>{title}</span>
+            <span className='text-base text-white opacity-90'>{title}</span>
           </div>
-          <div className='flex h-16 w-16 items-center justify-center'>
-            <MetricDonutProgress progress={progress} color={color} size={64} strokeWidth={10} />
+          <div className='-ml-10 hidden h-24 w-24 -translate-x-10 items-center justify-center 2xl:flex'>
+            <MetricDonutProgress progress={progress} color={color} size={100} strokeWidth={24} />
+          </div>
+          <div className='hidden h-24 w-24 -translate-x-4 items-center justify-center lg:flex 2xl:hidden'>
+            <MetricDonutProgress progress={progress} color={color} size={64} strokeWidth={16} />
+          </div>
+          <div className='flex h-24 w-24 -translate-x-10 items-center justify-center lg:hidden'>
+            <MetricDonutProgress progress={progress} color={color} size={100} strokeWidth={24} />
           </div>
         </div>
       </ErrorBoundary>

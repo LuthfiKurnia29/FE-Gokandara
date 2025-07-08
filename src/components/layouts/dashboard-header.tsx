@@ -30,7 +30,7 @@ export function DashboardHeader() {
       {/* Right Section: Notifications + User Profile */}
       <div className='flex items-center gap-6'>
         {/* Notification Icons */}
-        <div className='flex items-center gap-4'>
+        <div className='hidden items-center gap-4 lg:flex'>
           {/* Star Icon with Gray Badge */}
           <div className='relative'>
             <Star className='h-6 w-6 text-gray-600' />
