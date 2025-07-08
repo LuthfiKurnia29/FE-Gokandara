@@ -57,7 +57,7 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
         tooltip={item.title}
         isActive={isActive}
         className={cn(
-          'flex items-center gap-3 rounded-full px-4 py-2 text-[16px] font-normal transition',
+          'flex items-center gap-3 rounded-lg px-4 py-2 text-[16px] font-normal transition',
           isActive
             ? 'bg-[#FF9900] font-bold text-white shadow-md'
             : 'text-[#bdbdbd] hover:bg-[#23272f] hover:text-white',
@@ -71,7 +71,7 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
           {showBadge && (
             <span
               className={cn(
-                'ml-auto flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold',
+                'ml-auto flex items-center justify-center rounded-lg px-2 py-0.5 text-xs font-bold',
                 badgeColor,
                 'h-6 min-h-[24px] w-6 min-w-[24px] text-white'
               )}>
@@ -96,6 +96,8 @@ const SidebarMenuDropdown = React.memo(
       setIsOpen(!isOpen);
     };
 
+    const isActive = items.some((item) => pathname.startsWith(item.url));
+
     const IconComponent = icon;
 
     return (
@@ -105,18 +107,18 @@ const SidebarMenuDropdown = React.memo(
           tooltip={title}
           onClick={handleToggleDropdown}
           className={cn(
-            'flex w-full items-center justify-between rounded-lg px-4 py-2 text-base font-normal transition',
-            isOpen
+            'flex min-h-[44px] w-full items-center justify-between rounded-lg px-4 py-2 text-base font-normal transition',
+            isOpen || isActive
               ? 'bg-[#FF9900] font-bold text-white shadow-md'
-              : 'text-[#E5E7EB] hover:bg-[#23272f] hover:text-white'
+              : 'text-[#BDBDBD] hover:bg-[#23272f] hover:text-white'
           )}>
           <div className='flex items-center gap-3'>
             {IconComponent && <IconComponent className='h-5 w-5' />}
-            <span className={isOpen ? 'font-bold' : 'font-normal'}>{title}</span>
+            <span className={isOpen || isActive ? 'font-bold' : 'font-normal'}>{title}</span>
           </div>
-          {isOpen ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
+          {isOpen || isActive ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
         </SidebarMenuButton>
-        {isOpen && items.length > 0 && (
+        {(isOpen || isActive) && items.length > 0 && (
           <div className='mt-1 space-y-1 pl-8'>
             {items.map((item) => {
               if (!item.url) return null;
@@ -129,8 +131,8 @@ const SidebarMenuDropdown = React.memo(
                     tooltip={item.title}
                     isActive={pathname.startsWith(item.url)}
                     className={cn(
-                      'flex items-center gap-2 rounded px-2 py-1 text-sm',
-                      pathname.startsWith(item.url) ? 'font-bold text-[#FF9900]' : 'font-normal text-[#E5E7EB]'
+                      'flex items-center gap-2 rounded-lg px-2 py-1 text-sm',
+                      pathname.startsWith(item.url) ? 'font-bold text-[#FF9900]' : 'font-normal text-[#BDBDBD]'
                     )}>
                     <Link href={item.url} className='flex items-center gap-2'>
                       {SubIconComponent && <SubIconComponent className='h-4 w-4' />}
@@ -152,6 +154,7 @@ SidebarMenuDropdown.displayName = 'SidebarMenuDropdown';
 export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const { state } = useSidebar();
 
+  console.log(menuItems);
   return (
     <Sidebar collapsible='icon' className='border-r-0 bg-[#18181b] text-white' {...props}>
       <SidebarHeader className='flex items-center justify-center bg-[#18181b] py-8'>

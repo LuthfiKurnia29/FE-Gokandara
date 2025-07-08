@@ -51,6 +51,7 @@ const menuItems: MenuItem[] = [
   {
     title: 'Properti',
     icon: Home,
+    url: '/properti',
     children: [
       {
         title: 'Properti A1',

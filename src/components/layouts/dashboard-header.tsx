@@ -70,7 +70,7 @@ export function DashboardHeader() {
               NS
             </AvatarFallback>
           </Avatar>
-          <div className='flex flex-col'>
+          <div className='hidden flex-col lg:flex'>
             <span className='font-sf-pro text-sm leading-tight font-bold tracking-tight text-gray-900'>Nama Sales</span>
             <span className='font-sf-pro text-xs leading-tight tracking-tight text-gray-500'>Sales</span>
           </div>

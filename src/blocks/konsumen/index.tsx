@@ -2,13 +2,11 @@
 
 import { useState } from 'react';
 
-import { KonsumenData } from '@/app/types/konsumen';
 import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
-import { PaginateTable } from '@/components/paginate-table';
 import { Button } from '@/components/ui/button';
-import Title from '@/components/ui/title';
 import { useDelete } from '@/hooks/use-delete';
+import { KonsumenData } from '@/types/konsumen';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
