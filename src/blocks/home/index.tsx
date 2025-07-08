@@ -6,53 +6,73 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 import { MoreHorizontal, Star, TrendingUp } from 'lucide-react';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { Cell, Pie, PieChart, Sector } from 'recharts';
+import { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
 // Circular Progress Component matching Figma design exactly
-const CircularProgress = React.memo(
+const MetricDonutProgress = React.memo(
   ({
-    progress = 0,
-    size = 64,
-    strokeWidth = 4,
-    className = ''
+    progress,
+    color,
+    size = 80,
+    strokeWidth = 12 // Kurangi ketebalan stroke sesuai desain Figma
   }: {
-    progress?: number;
+    progress: number;
+    color: string;
     size?: number;
     strokeWidth?: number;
-    className?: string;
   }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const strokeDasharray = circumference;
-    const strokeDashoffset = circumference - (progress / 100) * circumference;
+    // Warna spesifik dari Figma
+    const colorMap = React.useMemo(
+      () => ({
+        'from-blue-500 to-blue-600': '#216FED',
+        'from-green-500 to-green-600': '#30DB56',
+        'from-orange-500 to-orange-600': '#FF9136',
+        'from-gray-600 to-gray-700': '#485462'
+      }),
+      []
+    );
+
+    // Memoize warna utama
+    const mainColor = React.useMemo(() => colorMap[color as keyof typeof colorMap] || '#216FED', [color, colorMap]);
+
+    // Hitung parameter untuk chart
+    const radius = size / 2;
+    const circumference = 2 * Math.PI * (radius - strokeWidth / 2);
+    const progressLength = (progress / 100) * circumference;
 
     return (
-      <div className={`relative ${className}`} style={{ width: size, height: size }}>
-        <svg width={size} height={size} className='-rotate-90 transform' viewBox={`0 0 ${size} ${size}`}>
-          {/* Background circle */}
+      <div className='relative flex items-center justify-center' style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Background Circle - Tipis dan Transparan */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill='none'
-            stroke='rgba(255, 255, 255, 0.2)'
+            cx={radius}
+            cy={radius}
+            r={radius - strokeWidth / 2}
+            fill='transparent'
             strokeWidth={strokeWidth}
+            stroke='rgba(255,255,255,0.2)'
           />
-          {/* Progress circle */}
+
+          {/* Progress Circle - Tebal dan Solid */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill='none'
-            stroke='rgba(255, 255, 255, 0.9)'
+            cx={radius}
+            cy={radius}
+            r={radius - strokeWidth / 2}
+            fill='transparent'
             strokeWidth={strokeWidth}
-            strokeLinecap='round'
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            className='transition-all duration-300 ease-in-out'
+            stroke={mainColor}
+            strokeDasharray={`${progressLength} ${circumference}`}
+            strokeDashoffset={circumference / 4}
+            style={{
+              transition: 'stroke-dasharray 0.5s ease',
+              transformOrigin: 'center',
+              transform: 'rotate(-90deg)'
+            }}
           />
         </svg>
       </div>
@@ -60,32 +80,53 @@ const CircularProgress = React.memo(
   }
 );
 
-CircularProgress.displayName = 'CircularProgress';
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-// Refined Metric Card Component with pixel-perfect design
+  static getDerivedStateFromError(error: Error) {
+    console.error('Error caught by ErrorBoundary:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error details:', errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div>Something went wrong.</div>;
+    }
+
+    return this.props.children;
+  }
+}
+
+// Refined Metric Card Component dengan donut progress custom
 const MetricCard = React.memo(
-  ({ title, value, color, progress }: { title: string; value: string; color: string; progress: number }) => (
-    <div
-      className={`relative flex min-h-[150px] items-center justify-between rounded-2xl bg-gradient-to-r p-6 shadow-lg ${color}`}
-      style={{ minWidth: 260 }}>
-      <div className='flex flex-col justify-center'>
-        <span className='mb-1 text-4xl font-bold text-white'>{value}</span>
-        <span className='text-base font-semibold text-white opacity-90'>{title}</span>
-      </div>
-      <div className='flex h-16 w-16 items-center justify-center'>
-        <CircularProgressbar
-          value={progress}
-          strokeWidth={10}
-          styles={buildStyles({
-            pathColor: '#fff',
-            trailColor: 'rgba(255,255,255,0.2)',
-            strokeLinecap: 'round',
-            backgroundColor: 'transparent'
-          })}
-        />
-      </div>
-    </div>
-  )
+  ({ title, value, color, progress }: { title: string; value: string; color: string; progress: number }) => {
+    return (
+      <ErrorBoundary>
+        <div
+          className={`relative flex min-h-[150px] items-center justify-between rounded-2xl bg-gradient-to-r p-6 shadow-lg ${color}`}
+          style={{ minWidth: 260 }}>
+          <div className='flex flex-col justify-center'>
+            <span className='mb-1 text-4xl font-bold text-white'>{value}</span>
+            <span className='text-base font-semibold text-white opacity-90'>{title}</span>
+          </div>
+          <div className='flex h-16 w-16 items-center justify-center'>
+            <MetricDonutProgress progress={progress} color={color} size={64} strokeWidth={10} />
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
 );
 MetricCard.displayName = 'MetricCard';
 
@@ -152,13 +193,15 @@ const CustomerCard = React.memo(
 CustomerCard.displayName = 'CustomerCard';
 
 const HomePage = React.memo(() => {
-  // Update color prop in metricCards array to use Tailwind gradient classes
-  const metricCards = [
-    { title: 'Follow Up Hari Ini', value: '00', color: 'from-blue-500 to-blue-600', progress: 70 },
-    { title: 'Follow Up Besok', value: '00', color: 'from-green-500 to-green-600', progress: 50 },
-    { title: 'Konsumen Prospek', value: '00', color: 'from-orange-500 to-orange-600', progress: 30 },
-    { title: 'Konsumen Baru', value: '00', color: 'from-gray-600 to-gray-700', progress: 10 }
-  ];
+  const metricCards = React.useMemo(
+    () => [
+      { title: 'Follow Up Hari Ini', value: '10', color: 'from-blue-500 to-blue-600', progress: 70 },
+      { title: 'Follow Up Besok', value: '10', color: 'from-green-500 to-green-600', progress: 50 },
+      { title: 'Konsumen Prospek', value: '10', color: 'from-orange-500 to-orange-600', progress: 30 },
+      { title: 'Konsumen Baru', value: '10', color: 'from-gray-600 to-gray-700', progress: 10 }
+    ],
+    []
+  );
 
   const realisasiData = [
     { label: 'Hari Ini', current: 0, total: 100, color: 'bg-orange-400' },
@@ -192,11 +235,33 @@ const HomePage = React.memo(() => {
   ];
 
   const pieChartData = [
-    { label: 'Lorem Ipsum', value: 20, color: 'bg-blue-500' },
-    { label: 'Lorem Ipsum', value: 40, color: 'bg-green-500' },
-    { label: 'Lorem Ipsum', value: 15, color: 'bg-orange-500' },
-    { label: 'Lorem Ipsum', value: 15, color: 'bg-gray-500' }
+    { name: 'Lorem Ipsum', value: 20, fill: '#3b82f6' },
+    { name: 'Lorem Ipsum', value: 40, fill: '#10b981' },
+    { name: 'Lorem Ipsum', value: 15, fill: '#f59e0b' },
+    { name: 'Lorem Ipsum', value: 15, fill: '#6b7280' }
   ];
+
+  const chartConfig = {
+    value: {
+      label: 'Value'
+    },
+    item1: {
+      label: 'Lorem Ipsum',
+      color: '#3b82f6'
+    },
+    item2: {
+      label: 'Lorem Ipsum',
+      color: '#10b981'
+    },
+    item3: {
+      label: 'Lorem Ipsum',
+      color: '#f59e0b'
+    },
+    item4: {
+      label: 'Lorem Ipsum',
+      color: '#6b7280'
+    }
+  } satisfies ChartConfig;
 
   // Bar chart heights for Total Omzet (to avoid hydration error)
   const [barHeights, setBarHeights] = React.useState<number[] | null>(null);
@@ -282,42 +347,21 @@ const HomePage = React.memo(() => {
           </CardHeader>
           <CardContent className='pt-0'>
             <div className='space-y-6'>
-              {/* Enhanced Pie Chart */}
-              <div className='relative mx-auto h-32 w-32'>
-                <svg className='h-32 w-32 -rotate-90 transform' viewBox='0 0 36 36'>
-                  <path
-                    d='M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831'
-                    fill='none'
-                    stroke='#f3f4f6'
-                    strokeWidth='3'
-                  />
-                  <path
-                    d='M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831'
-                    fill='none'
-                    stroke='#3b82f6'
-                    strokeWidth='3'
-                    strokeDasharray='20, 100'
-                    strokeLinecap='round'
-                  />
-                  <path
-                    d='M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831'
-                    fill='none'
-                    stroke='#10b981'
-                    strokeWidth='3'
-                    strokeDasharray='40, 100'
-                    strokeDashoffset='-20'
-                    strokeLinecap='round'
-                  />
-                  <path
-                    d='M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831'
-                    fill='none'
-                    stroke='#f59e0b'
-                    strokeWidth='3'
-                    strokeDasharray='15, 100'
-                    strokeDashoffset='-60'
-                    strokeLinecap='round'
-                  />
-                </svg>
+              {/* Recharts Donut Chart */}
+              <div className='flex justify-center'>
+                <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[128px] max-w-[128px]'>
+                  <PieChart>
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                    <Pie
+                      data={pieChartData}
+                      dataKey='value'
+                      nameKey='name'
+                      innerRadius={40}
+                      outerRadius={64}
+                      strokeWidth={0}
+                    />
+                  </PieChart>
+                </ChartContainer>
               </div>
 
               {/* Enhanced Legend */}
@@ -327,8 +371,8 @@ const HomePage = React.memo(() => {
                     key={index}
                     className='font-sf-pro flex items-center justify-between text-[14px] leading-[20px] font-normal tracking-[-0.01em]'>
                     <div className='flex items-center space-x-3'>
-                      <div className={`h-3 w-3 rounded-full ${item.color}`} />
-                      <span className='text-gray-700'>{item.label}</span>
+                      <div className='h-3 w-3 rounded-full' style={{ backgroundColor: item.fill }} />
+                      <span className='text-gray-700'>{item.name}</span>
                     </div>
                     <span className='font-sf-pro text-[14px] leading-[20px] font-semibold tracking-[-0.01em] text-gray-900'>
                       {item.value}%
@@ -443,7 +487,7 @@ const HomePage = React.memo(() => {
             <div className='grid grid-cols-2 gap-6'>
               <div className='space-y-3 text-center'>
                 <div className='relative mx-auto h-16 w-16'>
-                  <CircularProgress progress={0} size={64} strokeWidth={4} />
+                  <MetricDonutProgress progress={0} color='from-blue-500 to-blue-600' size={64} strokeWidth={4} />
                   <div className='absolute inset-0 flex items-center justify-center'>
                     <span className='font-sf-pro text-[18px] leading-[24px] font-bold tracking-[-0.02em] text-gray-900'>
                       00
@@ -465,7 +509,7 @@ const HomePage = React.memo(() => {
 
               <div className='space-y-3 text-center'>
                 <div className='relative mx-auto h-16 w-16'>
-                  <CircularProgress progress={0} size={64} strokeWidth={4} />
+                  <MetricDonutProgress progress={0} color='from-green-500 to-green-600' size={64} strokeWidth={4} />
                   <div className='absolute inset-0 flex items-center justify-center'>
                     <span className='font-sf-pro text-[18px] leading-[24px] font-bold tracking-[-0.02em] text-gray-900'>
                       00
