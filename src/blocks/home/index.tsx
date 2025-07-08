@@ -192,62 +192,6 @@ const CustomerCard = React.memo(
 
 CustomerCard.displayName = 'CustomerCard';
 
-const MetricChartCard = React.memo(
-  ({
-    title,
-    value,
-    color,
-    progress,
-    chartData,
-    chartConfig
-  }: {
-    title: string;
-    value: string;
-    color: string;
-    progress: number;
-    chartData: Array<{ name: string; value: number; fill: string }>;
-    chartConfig: ChartConfig;
-  }) => {
-    return (
-      <Card className='flex flex-col'>
-        <CardHeader className='items-center pb-0'>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{value} Total</CardDescription>
-        </CardHeader>
-        <CardContent className='flex-1 pb-0'>
-          <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[250px]'>
-            <PieChart>
-              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-              <Pie
-                data={chartData}
-                dataKey='value'
-                nameKey='name'
-                innerRadius={60}
-                strokeWidth={5}
-                activeIndex={0}
-                activeShape={({ outerRadius = 0, ...props }: PieSectorDataItem) => (
-                  <Sector {...props} outerRadius={outerRadius + 10} />
-                )}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-        </CardContent>
-        <CardFooter className='flex-col gap-2 text-sm'>
-          <div className='flex items-center gap-2 leading-none font-medium'>
-            Trending up by {progress}%
-            <TrendingUp className='h-4 w-4' />
-          </div>
-          <div className='text-muted-foreground leading-none'>Status Overview</div>
-        </CardFooter>
-      </Card>
-    );
-  }
-);
-MetricChartCard.displayName = 'MetricChartCard';
-
 const HomePage = React.memo(() => {
   const metricCards = React.useMemo(
     () => [
@@ -314,54 +258,6 @@ const HomePage = React.memo(() => {
     }
   } satisfies ChartConfig;
 
-  const followUpHariIniChartData = [
-    { name: 'Selesai', value: 7, fill: 'var(--chart-1)' },
-    { name: 'Belum Selesai', value: 3, fill: 'var(--chart-2)' }
-  ];
-
-  const followUpBesokChartData = [
-    { name: 'Terjadwal', value: 8, fill: 'var(--chart-1)' },
-    { name: 'Belum Terjadwal', value: 2, fill: 'var(--chart-2)' }
-  ];
-
-  const konsumenProspekChartData = [
-    { name: 'Potensial', value: 6, fill: 'var(--chart-1)' },
-    { name: 'Kurang Potensial', value: 4, fill: 'var(--chart-2)' }
-  ];
-
-  const konsumenBaruChartData = [
-    { name: 'Konfirmasi', value: 5, fill: 'var(--chart-1)' },
-    { name: 'Belum Konfirmasi', value: 5, fill: 'var(--chart-2)' }
-  ];
-
-  const followUpChartConfig = {
-    followUp: {
-      label: 'Follow Up'
-    },
-    selesai: {
-      label: 'Selesai',
-      color: 'var(--chart-1)'
-    },
-    belumSelesai: {
-      label: 'Belum Selesai',
-      color: 'var(--chart-2)'
-    }
-  } satisfies ChartConfig;
-
-  const konsumenProspekChartConfig = {
-    konsumenProspek: {
-      label: 'Konsumen Prospek'
-    },
-    potensial: {
-      label: 'Potensial',
-      color: 'var(--chart-1)'
-    },
-    kurangPotensial: {
-      label: 'Kurang Potensial',
-      color: 'var(--chart-2)'
-    }
-  } satisfies ChartConfig;
-
   // Bar chart heights for Total Omzet (to avoid hydration error)
   const [barHeights, setBarHeights] = React.useState<number[] | null>(null);
   React.useEffect(() => {
@@ -373,51 +269,15 @@ const HomePage = React.memo(() => {
     total: 532
   };
 
-  type ChartDataItem = {
-    name: string;
-    value: number;
-    fill: string;
-  };
-
   return (
     <div className='min-h-screen space-y-8 bg-gray-50 p-6'>
       {/* Top Metric Cards - Pixel Perfect Layout */}
-      <div className='grid grid-cols-4 gap-4'>
-        {metricCards.map((card, index) => {
-          let chartData: ChartDataItem[] = [];
-          let chartConfig: ChartConfig = {};
-
-          switch (index) {
-            case 0:
-              chartData = followUpHariIniChartData;
-              chartConfig = followUpChartConfig;
-              break;
-            case 1:
-              chartData = followUpBesokChartData;
-              chartConfig = followUpChartConfig;
-              break;
-            case 2:
-              chartData = konsumenProspekChartData;
-              chartConfig = konsumenProspekChartConfig;
-              break;
-            case 3:
-              chartData = konsumenBaruChartData;
-              chartConfig = followUpChartConfig;
-              break;
-          }
-
-          return (
-            <MetricChartCard
-              key={index}
-              title={card.title}
-              value={card.value}
-              color={card.color}
-              progress={card.progress}
-              chartData={chartData}
-              chartConfig={chartConfig}
-            />
-          );
-        })}
+      <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+        {metricCards.map((card, index) => (
+          <div key={index} className='min-h-[140px]'>
+            <MetricCard title={card.title} value={card.value} color={card.color} progress={card.progress} />
+          </div>
+        ))}
       </div>
 
       <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
