@@ -111,10 +111,16 @@ const KonsumenPage = memo(function KonsumenPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className='my-4 flex items-center gap-4'>
-                <PhoneCall className='h-5 w-5' />
-                <Video className='h-5 w-5' />
-                <Mail className='h-5 w-5' />
+              <div className='my-2 -ml-2 flex items-center gap-2'>
+                <Button variant='ghost' size='icon'>
+                  <PhoneCall className='h-4 w-4 text-gray-600' fill='currentColor' />
+                </Button>
+                <Button variant='ghost' size='icon'>
+                  <Video className='h-4 w-4 text-gray-600' fill='currentColor' />
+                </Button>
+                <Button variant='ghost' size='icon'>
+                  <Mail className='h-4 w-4 text-gray-600' fill='currentColor' />
+                </Button>
               </div>
             </div>
           </div>
