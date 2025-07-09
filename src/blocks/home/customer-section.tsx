@@ -38,17 +38,17 @@ export default function CustomerSection() {
 
   return (
     <Card className='border border-gray-200 bg-white'>
-      <CardHeader className='flex flex-row items-center justify-between pb-4'>
+      <CardHeader className='flex flex-row items-center justify-between pb-2'>
         <h2 className='text-xl font-semibold text-gray-900'>Konsumen Prospek</h2>
         <MoreVertical className='h-5 w-5 text-gray-600' />
       </CardHeader>
 
-      <CardContent className='space-y-4 px-6 pb-6'>
+      <CardContent className='space-y-3 px-4 pb-4'>
         {customerData.map((customer, index) => (
           <React.Fragment key={index}>
-            <div className='space-y-2'>
-              <div className='flex items-start gap-3'>
-                <Avatar className='h-12 w-12'>
+            <div className='space-y-1.5'>
+              <div className='flex items-start gap-2'>
+                <Avatar className='h-10 w-10'>
                   <AvatarFallback className='bg-gray-400'>{customer.name[0]}</AvatarFallback>
                 </Avatar>
                 <div className='flex-1'>
@@ -65,7 +65,7 @@ export default function CustomerSection() {
               <p className='text-sm leading-relaxed text-gray-700'>{customer.description}</p>
             </div>
 
-            {index < customerData.length - 1 && <div className='my-4 border-t border-dotted border-gray-300' />}
+            {index < customerData.length - 1 && <div className='my-3 border-t border-dotted border-gray-300' />}
           </React.Fragment>
         ))}
 

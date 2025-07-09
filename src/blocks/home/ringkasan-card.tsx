@@ -30,8 +30,8 @@ const chartConfig = {
 
 export default function RingkasanCard() {
   return (
-    <Card className='border-gray-200 shadow-sm'>
-      <CardContent className='space-y-6 p-6'>
+    <Card className='w-full border-gray-200 shadow-sm'>
+      <CardContent className='space-y-4 p-4'>
         {/* Header */}
         <div className='flex items-center justify-between'>
           <h2 className='text-xl font-semibold text-gray-900'>Ringkasan</h2>
@@ -41,9 +41,9 @@ export default function RingkasanCard() {
         </div>
 
         {/* Metrics Cards */}
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+        <div className='grid grid-cols-1 gap-3 md:grid-cols-3'>
           {/* Total Terjual Card */}
-          <div className='rounded-2xl border bg-white p-6 shadow-sm'>
+          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
             <div className='flex items-start gap-4'>
               <div className='flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50'>
                 <Building2 className='h-8 w-8 text-red-500' />
@@ -56,7 +56,7 @@ export default function RingkasanCard() {
           </div>
 
           {/* Total Dipesan Card */}
-          <div className='rounded-2xl border bg-white p-6 shadow-sm'>
+          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
             <div className='flex items-start gap-4'>
               <div className='flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-green-200 bg-green-50'>
                 <Building2 className='h-8 w-8 text-green-500' />
@@ -69,7 +69,7 @@ export default function RingkasanCard() {
           </div>
 
           {/* Percentage Change */}
-          <div className='rounded-2xl border bg-white p-6 shadow-sm'>
+          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
             <div className='flex items-center gap-3'>
               <div className='text-3xl font-bold text-green-500'>0,0%</div>
               <div className='flex h-8 w-8 items-center justify-center rounded-full bg-green-500'>
@@ -81,8 +81,8 @@ export default function RingkasanCard() {
         </div>
 
         {/* Chart Card */}
-        <Card className='rounded-2xl border-0 shadow-sm'>
-          <CardContent className='p-6'>
+        <Card className='w-full rounded-2xl border-0 shadow-sm'>
+          <CardContent className='p-4'>
             <ChartContainer config={chartConfig} className='h-[400px] w-full'>
               <AreaChart
                 accessibilityLayer

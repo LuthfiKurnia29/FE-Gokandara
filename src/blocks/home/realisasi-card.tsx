@@ -4,18 +4,18 @@ import * as React from 'react';
 
 const RealisasiCard = React.memo(() => {
   return (
-    <div className='mx-auto max-w-md bg-white p-6'>
-      <div className='mb-8'>
-        <h1 className='mb-3 text-3xl font-bold text-gray-900'>Realisasi</h1>
+    <div className='w-full bg-white p-4'>
+      <div className='mb-4'>
+        <h1 className='mb-2 text-3xl font-bold text-gray-900'>Realisasi</h1>
         <p className='text-sm leading-relaxed text-gray-500'>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit psu olor
         </p>
       </div>
 
-      <div className='space-y-8'>
+      <div className='space-y-4'>
         {/* Hari Ini */}
         <div>
-          <div className='mb-3 flex items-center justify-between'>
+          <div className='mb-2 flex items-center justify-between'>
             <h3 className='text-lg font-semibold text-gray-900'>Hari Ini</h3>
             <span className='text-sm text-gray-400'>00/00</span>
           </div>
@@ -26,7 +26,7 @@ const RealisasiCard = React.memo(() => {
 
         {/* Minggu Ini */}
         <div>
-          <div className='mb-3 flex items-center justify-between'>
+          <div className='mb-2 flex items-center justify-between'>
             <h3 className='text-lg font-semibold text-gray-900'>Minggu Ini</h3>
             <span className='text-sm text-gray-400'>00/00</span>
           </div>
@@ -37,7 +37,7 @@ const RealisasiCard = React.memo(() => {
 
         {/* Bulan Ini */}
         <div>
-          <div className='mb-3 flex items-center justify-between'>
+          <div className='mb-2 flex items-center justify-between'>
             <h3 className='text-lg font-semibold text-gray-900'>Bulan Ini</h3>
             <span className='text-sm text-gray-400'>00/00</span>
           </div>

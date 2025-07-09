@@ -15,12 +15,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const HomePage = React.memo(() => {
   return (
-    <div className='min-h-screen space-y-8 bg-gray-50 p-6'>
+    <div className='min-h-screen space-y-4 bg-gray-50 p-4'>
       <PageTitle title='Dashboard' />
 
       <MetricCards />
 
-      <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
         <Card className='border-gray-200 shadow-sm'>
           <CardContent className='pt-6'>
             <TotalOmzetCard />
@@ -34,26 +34,30 @@ const HomePage = React.memo(() => {
         </Card>
       </div>
 
-      <div className='grid grid-cols-12 gap-8'>
-        <div className='col-span-12 lg:col-span-4'>
-          <Card className='border-gray-200 shadow-sm'>
-            <CardContent className='p-0'>
-              <RealisasiCard />
-            </CardContent>
-          </Card>
-          <div className='mt-8'>
-            <CustomerSection />
+      <div className='grid grid-cols-12 gap-4'>
+        <div className='col-span-12 lg:col-span-3'>
+          <div className='max-w-[340px]'>
+            <Card className='border-gray-200 shadow-sm'>
+              <CardContent className='p-0'>
+                <RealisasiCard />
+              </CardContent>
+            </Card>
+            <div className='mt-4'>
+              <CustomerSection />
+            </div>
           </div>
         </div>
 
-        <div className='col-span-12 lg:col-span-8'>
-          <PropertiSection />
-          <div className='mt-8 grid grid-cols-12 gap-8'>
-            <div className='col-span-9'>
-              <RingkasanCard />
-            </div>
-            <div className='col-span-3'>
-              <UnitMetrics />
+        <div className='col-span-12 lg:col-span-9'>
+          <div className='w-full'>
+            <PropertiSection />
+            <div className='mt-4 grid grid-cols-12 gap-3'>
+              <div className='col-span-9'>
+                <RingkasanCard />
+              </div>
+              <div className='col-span-3'>
+                <UnitMetrics />
+              </div>
             </div>
           </div>
         </div>

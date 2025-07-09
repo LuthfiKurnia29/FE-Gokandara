@@ -55,11 +55,11 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, target, percentage, color }: MetricCardProps) {
   return (
-    <Card className='border-0 bg-white p-6 shadow-sm'>
+    <Card className='border-0 bg-white p-4 shadow-sm'>
       <CardContent className='p-0'>
         <div className='flex items-center justify-between'>
           <div className='flex-1'>
-            <div className='mb-1 text-3xl font-bold text-gray-900'>{value}</div>
+            <div className='mb-1 text-2xl font-bold text-gray-900'>{value}</div>
             <div className='mb-2 text-base font-medium text-gray-700'>{title}</div>
             <div className='text-sm text-gray-500'>{target}</div>
           </div>
@@ -74,7 +74,7 @@ function MetricCard({ title, value, target, percentage, color }: MetricCardProps
 
 export default function UnitMetrics() {
   return (
-    <div className='space-y-4'>
+    <div className='h-full w-full space-y-3'>
       <MetricCard title='Unit Terjual' value='65' target='Target 100/bulan' percentage={65} color='#F2335A' />
       <MetricCard title='Unit Dipesan' value='40' target='Target 100/bulan' percentage={40} color='#37D159' />
     </div>
