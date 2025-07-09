@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
-import { useCreateKonsumen, useDeleteKonsumen, useKonsumenById, useUpdateKonsumen } from '@/services/konsumen';
+import { useCreateKonsumen, useDeleteKonsumen, useUpdateKonsumen } from '@/services/konsumen';
 import { KonsumenData } from '@/types/konsumen';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -39,7 +39,6 @@ const KonsumenPage = memo(function KonsumenPage() {
   const createKonsumen = useCreateKonsumen();
   const updateKonsumen = useUpdateKonsumen();
   const deleteKonsumen = useDeleteKonsumen();
-  const { data: selectedKonsumen } = useKonsumenById(selectedId);
 
   const handleCreate = () => {
     setMode('create');
@@ -168,7 +167,7 @@ const KonsumenPage = memo(function KonsumenPage() {
           </DialogHeader>
 
           <KonsumenForm
-            konsumen={mode === 'edit' ? selectedKonsumen : null}
+            selectedId={mode === 'edit' ? selectedId : null}
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
             isLoading={isFormLoading}
