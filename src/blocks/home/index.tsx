@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 
-import CandlestickChart from '@/blocks/home/candlestick-chart';
 import { RingkasanSection } from '@/blocks/home/chart-sections';
 import CustomerSection from '@/blocks/home/customer-section';
-import KonsumenDonutChart from '@/blocks/home/konsumen-donut-chart';
+import KonsumenDonutChart from '@/blocks/home/konsumen_card';
 import MetricCards from '@/blocks/home/metric-cards';
 import { PropertiSection } from '@/blocks/home/progress-sections';
-import RealisasiChart from '@/blocks/home/realisasi-chart';
+import RealisasiChart from '@/blocks/home/realisasi_card';
+import CandlestickChart from '@/blocks/home/total_omzet_card';
 import { PageTitle } from '@/components/page-title';
 import { Card, CardContent } from '@/components/ui/card';
 
