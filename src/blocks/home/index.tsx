@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import CandlestickChart from '@/components/candlestick-chart';
 import { PageTitle } from '@/components/page-title';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -269,12 +270,6 @@ const HomePage = React.memo(() => {
     }
   } satisfies ChartConfig;
 
-  // Bar chart heights for Total Omzet (to avoid hydration error)
-  const [barHeights, setBarHeights] = React.useState<number[] | null>(null);
-  React.useEffect(() => {
-    setBarHeights(Array.from({ length: 15 }, () => Math.random() * 80 + 20));
-  }, []);
-
   const totalKonsumen = {
     aktif: 224,
     total: 532
@@ -297,53 +292,8 @@ const HomePage = React.memo(() => {
         {/* Total Omzet Section */}
         <div className='lg:col-span-2'>
           <Card className='border-gray-200 shadow-sm'>
-            <CardHeader className='flex flex-row items-center justify-between pb-4'>
-              <div>
-                <CardTitle className='font-sf-pro text-[20px] leading-[28px] font-semibold tracking-[-0.01em] text-gray-900'>
-                  Total Omzet
-                </CardTitle>
-              </div>
-              <MoreHorizontal className='h-5 w-5 cursor-pointer text-gray-400 hover:text-gray-600' />
-            </CardHeader>
-            <CardContent className='pt-0'>
-              <div className='space-y-6'>
-                <div className='flex items-center space-x-3'>
-                  <span className='font-sf-pro text-[32px] leading-[40px] font-bold tracking-[-0.02em] text-gray-900'>
-                    Rp 00.000.000.000
-                  </span>
-                  <Badge variant='secondary' className='border-green-200 bg-green-50 px-2 py-1 text-green-700'>
-                    <TrendingUp className='mr-1 h-3 w-3' />
-                    <span className='text-[12px] font-semibold'>7%</span>
-                  </Badge>
-                </div>
-                <p className='font-sf-pro text-[14px] leading-[20px] font-normal tracking-[-0.01em] text-gray-500'>
-                  bulan lalu Rp 0.00 M
-                </p>
-
-                {/* Enhanced Bar Chart */}
-                <div className='mt-8'>
-                  <div className='mb-4 flex h-40 items-end space-x-2'>
-                    {barHeights === null
-                      ? Array.from({ length: 15 }).map((_, i) => (
-                          <div key={i} className='h-8 flex-1 animate-pulse rounded-t bg-gray-200' />
-                        ))
-                      : barHeights.map((height, i) => (
-                          <div
-                            key={i}
-                            className='flex-1 rounded-t bg-gradient-to-t from-orange-500 to-orange-400 transition-all duration-300 hover:from-orange-600 hover:to-orange-500'
-                            style={{ height: `${height}%` }}
-                          />
-                        ))}
-                  </div>
-                  <div className='font-sf-pro flex justify-between text-[12px] leading-[16px] font-medium tracking-[-0.01em] text-gray-500'>
-                    {['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'].map(
-                      (time) => (
-                        <span key={time}>{time}</span>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
+            <CardContent className='pt-6'>
+              <CandlestickChart />
             </CardContent>
           </Card>
         </div>
