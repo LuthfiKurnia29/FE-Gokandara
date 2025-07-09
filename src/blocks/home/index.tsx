@@ -7,7 +7,8 @@ import { RingkasanSection } from '@/blocks/home/chart-sections';
 import CustomerSection from '@/blocks/home/customer-section';
 import KonsumenDonutChart from '@/blocks/home/konsumen-donut-chart';
 import MetricCards from '@/blocks/home/metric-cards';
-import { PropertiSection, RealisasiSection } from '@/blocks/home/progress-sections';
+import { PropertiSection } from '@/blocks/home/progress-sections';
+import RealisasiChart from '@/blocks/home/realisasi-chart';
 import { PageTitle } from '@/components/page-title';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -32,11 +33,21 @@ const HomePage = React.memo(() => {
         </Card>
       </div>
 
-      <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
-        <RealisasiSection />
+      <div className='grid grid-cols-12 gap-8'>
+        <div className='col-span-12 lg:col-span-4'>
+          <Card className='border-gray-200 shadow-sm'>
+            <CardContent className='p-0'>
+              <RealisasiChart />
+            </CardContent>
+          </Card>
+        </div>
 
-        <PropertiSection />
+        <div className='col-span-12 lg:col-span-8'>
+          <PropertiSection />
+        </div>
+      </div>
 
+      <div className='grid grid-cols-1'>
         <RingkasanSection />
       </div>
 
