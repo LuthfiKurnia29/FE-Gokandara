@@ -40,18 +40,18 @@ const HomePage = React.memo(() => {
               <RealisasiCard />
             </CardContent>
           </Card>
+          <div className='mt-8'>
+            <CustomerSection />
+          </div>
         </div>
 
         <div className='col-span-12 lg:col-span-8'>
           <PropertiSection />
+          <div className='mt-8'>
+            <RingkasanSection />
+          </div>
         </div>
       </div>
-
-      <div className='grid grid-cols-1'>
-        <RingkasanSection />
-      </div>
-
-      <CustomerSection />
     </div>
   );
 });
