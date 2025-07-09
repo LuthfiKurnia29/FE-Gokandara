@@ -62,7 +62,7 @@ const CandlestickShape = (props: any) => {
   );
 };
 
-export default function CandlestickChart() {
+export default function TotalOmzetCard() {
   const candlestickData = [
     { period: '06', open: 100, high: 300, low: 100, close: 260 },
     { period: '07', open: 160, high: 220, low: 0, close: 240 },

@@ -55,7 +55,7 @@ const renderActiveShape = (props: PieSectorDataItem) => {
   );
 };
 
-export default function KonsumenDonutChart() {
+export default function KonsumenCard() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [hoveredLegend, setHoveredLegend] = useState<number | null>(null);
 

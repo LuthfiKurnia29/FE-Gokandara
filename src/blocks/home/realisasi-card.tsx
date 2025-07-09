@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-const RealisasiChart = React.memo(() => {
+const RealisasiCard = React.memo(() => {
   return (
     <div className='mx-auto max-w-md bg-white p-6'>
       <div className='mb-8'>
@@ -50,6 +50,6 @@ const RealisasiChart = React.memo(() => {
   );
 });
 
-RealisasiChart.displayName = 'RealisasiChart';
+RealisasiCard.displayName = 'RealisasiCard';
 
-export default RealisasiChart;
+export default RealisasiCard;
