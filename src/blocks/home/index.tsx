@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 
-import { RingkasanSection } from '@/blocks/home/chart-sections';
 import CustomerSection from '@/blocks/home/customer-section';
 import KonsumenCard from '@/blocks/home/konsumen-card';
 import MetricCards from '@/blocks/home/metric-cards';
 import { PropertiSection } from '@/blocks/home/progress-sections';
 import RealisasiCard from '@/blocks/home/realisasi-card';
+import RingkasanCard from '@/blocks/home/ringkasan-card';
 import TotalOmzetCard from '@/blocks/home/total-omzet-card';
+import UnitMetrics from '@/blocks/home/unit-metrics';
 import { PageTitle } from '@/components/page-title';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -47,8 +48,13 @@ const HomePage = React.memo(() => {
 
         <div className='col-span-12 lg:col-span-8'>
           <PropertiSection />
-          <div className='mt-8'>
-            <RingkasanSection />
+          <div className='mt-8 grid grid-cols-12 gap-8'>
+            <div className='col-span-9'>
+              <RingkasanCard />
+            </div>
+            <div className='col-span-3'>
+              <UnitMetrics />
+            </div>
           </div>
         </div>
       </div>
