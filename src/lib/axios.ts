@@ -23,24 +23,7 @@ axios.interceptors.request.use(
 
 // Response interceptor for error handling
 axios.interceptors.response.use(
-  (response) => {
-    if (response.data == null) {
-      return Promise.reject({
-        error: 'Error',
-        message: 'No data received from server'
-      });
-    }
-
-    if (response.data.code === '0') {
-      return Promise.reject({
-        error: 'Error',
-        message: response.data.msg,
-        data: response.data
-      });
-    }
-
-    return response;
-  },
+  (response) => response,
   (error) => {
     // Handle specific error cases
     if (error.response?.status === 401) {

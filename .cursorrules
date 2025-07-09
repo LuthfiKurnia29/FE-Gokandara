@@ -43,3 +43,4 @@ Follow these rules when you write code:
 - No need to fix linter error.
 - Always use `axios` from `@src/lib/axios`.
 - Always use `useQuery` for data fetching and `useMutation` for data post/mutating from `@tanstack/react-query` library.
+- Always use `useForm` from `react-hook-form` library for form management and use `zod` for validation.

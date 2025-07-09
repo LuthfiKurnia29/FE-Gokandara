@@ -21,7 +21,7 @@ import axios from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, Search } from 'lucide-react';
 
 // Custom hook to debounce values
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -117,12 +117,7 @@ const PaginateCustom = memo(
         queryKey: queryKey ? queryKey : [url, payload],
         queryFn: () =>
           axios
-            .post(url, {
-              search: debouncedSearch,
-              page,
-              per: Number(per),
-              ...payload
-            })
+            .get(url, { params: { search: debouncedSearch, page, per_page: Number(per), ...payload } })
             .then((res) => res.data),
         placeholderData: { data: [] }
       });
@@ -170,24 +165,25 @@ const PaginateCustom = memo(
             <div id={id} className='relative w-full'>
               <LoadingOverlay isLoading={showLoading} />
               <div className='mb-4 flex flex-wrap justify-between gap-2 pt-4'>
-                <div className='flex items-center gap-4'>
-                  <Plugin />
-                </div>
                 <div className='flex items-center gap-2'>
-                  <form onSubmit={handleSearch} className='flex'>
+                  <form onSubmit={handleSearch} className='relative flex w-full max-w-md'>
                     <Input
-                      type='search'
-                      className='w-full'
-                      placeholder='Cari ...'
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
+                      type='text'
+                      placeholder='Cari di sini...'
+                      className='font-sf-pro h-10 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 pr-10 text-[14px] leading-5 font-normal tracking-[-0.01em] text-gray-700 placeholder-gray-500 focus:border-gray-400 focus:bg-white focus:ring-0 focus:outline-none'
                     />
+                    <Search className='absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400' />
                   </form>
+                </div>
+                <div className='flex items-center gap-4'>
+                  <Plugin />
                 </div>
               </div>
 
               {/* Custom items container */}
-              <div className={cn('space-y-4', containerClassName)}>
+              <div className={cn('', containerClassName)}>
                 {data?.data?.length ? (
                   data.data.map((item, index) => (
                     <div key={item.uuid || item.id || index}>{renderItem(item, index)}</div>
