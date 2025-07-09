@@ -3,21 +3,23 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
+import { useTitleContext } from '../title';
 import { SidebarTrigger } from '../ui/sidebar';
 import { Bell, Calendar, MessageSquare, Search, Star } from 'lucide-react';
 
 export function DashboardHeader() {
+  const { title } = useTitleContext();
   return (
     <header className='flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6'>
       {/* Left Section: Hamburger + Title */}
       <div className='flex items-center gap-4'>
         <SidebarTrigger className='h-6 w-6 text-gray-600 hover:text-gray-900' />
-        <h1 className='font-sf-pro text-[20px] leading-6 font-semibold tracking-[-0.02em] text-gray-900'>Dashboard</h1>
+        <h1 className='font-sf-pro text-[20px] leading-6 font-semibold tracking-[-0.02em] text-gray-900'>{title}</h1>
       </div>
 
       {/* Center Section: Search Bar */}
       <div className='flex flex-1 justify-center px-8'>
-        <div className='relative w-full max-w-md'>
+        <div className='relative w-full max-w-sm'>
           <Input
             type='text'
             placeholder='Cari di sini...'

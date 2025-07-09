@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { PageTitle } from '@/components/page-title';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -281,6 +282,8 @@ const HomePage = React.memo(() => {
 
   return (
     <div className='min-h-screen space-y-8 bg-gray-50 p-6'>
+      <PageTitle title='Dashboard' />
+
       {/* Top Metric Cards - Pixel Perfect Layout */}
       <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4'>
         {metricCards.map((card, index) => (
