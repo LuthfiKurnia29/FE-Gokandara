@@ -1,69 +1,68 @@
 'use client';
 
+import { PropertySlider } from '@/blocks/properti/property-slider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-import {
-  Bath,
-  Bed,
-  Check,
-  ChevronRight,
-  Facebook,
-  Instagram,
-  Maximize2,
-  Share2,
-  Star,
-  Twitter,
-  Wifi
-} from 'lucide-react';
+import { Expand, Facebook, Instagram, Share2, Twitter } from 'lucide-react';
+import { Bath, Bed, Check, ChevronRight, Star, Wifi } from 'lucide-react';
+
+const dummyImages = ['https://placehold.co/800x600'];
 
 export function PropertyContent() {
   return (
     <div className='flex-1 overflow-auto p-6'>
-      {/* Hero Section */}
-      <Card className='mb-6 overflow-hidden border-0 shadow-sm'>
-        <div className='relative h-72 rounded-lg bg-gradient-to-br from-[#8e9aaf] via-[#6c7b8a] to-[#4a5568]'>
-          <Button className='absolute top-4 right-4 h-8 bg-[#09bd3c] px-4 text-sm font-medium hover:bg-[#09bd3c]/90'>
-            Tersedia
-          </Button>
+      {/* Hero Section with Overlapping Thumbnail */}
+      <div className='relative'>
+        <Card className='mb-6 h-[550px] w-[100%] overflow-hidden border-0 p-0 shadow-sm'>
+          <PropertySlider
+            images={[
+              'https://placehold.co/1920x400/09bd3c/ffffff?text=Slide+1',
+              'https://placehold.co/1920x400/2563eb/ffffff?text=Slide+2',
+              'https://placehold.co/1920x400/dc2626/ffffff?text=Slide+3',
+              'https://placehold.co/1920x400/7c3aed/ffffff?text=Slide+4'
+            ]}
+            currentIndex={1}
+            totalImages={4}
+          />
 
-          <Button variant='ghost' size='icon' className='absolute top-4 right-16 h-8 w-8 text-white'>
-            <Share2 size={16} />
-          </Button>
+          {/* Control buttons */}
+          <div className='absolute right-6 bottom-[80px] flex flex-col gap-2'>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-[40px] w-[40px] rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20'>
+              <Share2 className='h-5 w-5 text-white' />
+            </Button>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-[40px] w-[40px] rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20'>
+              <Expand className='h-5 w-5 text-white' />
+            </Button>
+          </div>
+        </Card>
 
-          <Button variant='ghost' size='icon' className='absolute right-4 bottom-4 h-8 w-8 text-white'>
-            <Maximize2 size={16} />
-          </Button>
-
-          <div className='absolute bottom-6 left-6 text-white'>
-            <h2 className='mb-3 text-3xl font-bold'>HOONIAN Sigura-Gura</h2>
-            <div className='flex items-center gap-8 text-sm'>
-              <div className='flex items-center gap-2'>
-                <Bed size={16} />
-                <span>0 Kamar Tidur</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <Bath size={16} />
-                <span>0 Kamar Mandi</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <Wifi size={16} />
-                <span>Wifi Available</span>
-              </div>
+        {/* Overlapping Section */}
+        <div className='relative'>
+          {/* Overlapping Thumbnail */}
+          <div className='absolute bottom-15 left-[90px] translate-y-1/2'>
+            <div className='h-[220px] w-[200] overflow-hidden rounded-2xl border-4 border-white bg-white shadow-lg'>
+              <div
+                className='h-[100%] w-[100%] bg-gray-200'
+                style={{
+                  backgroundImage: `url('https://placehold.co/300x300')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              />
             </div>
           </div>
-
-          <div className='absolute right-6 bottom-6 text-sm text-white'>1 dari 4</div>
-
-          {/* Property thumbnail */}
-          <div className='absolute bottom-6 left-6 -translate-y-16'>
-            <div className='h-20 w-20 rounded-lg border-4 border-white bg-[#c4c4c4]'></div>
-          </div>
         </div>
-      </Card>
+      </div>
 
-      <div className='grid grid-cols-12 gap-6'>
+      <div className='grid grid-cols-12 gap-6 pt-24'>
         {/* Left Column */}
         <div className='col-span-3 space-y-6'>
           {/* Property Profile */}
