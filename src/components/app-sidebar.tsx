@@ -152,7 +152,6 @@ SidebarMenuDropdown.displayName = 'SidebarMenuDropdown';
 export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const { state } = useSidebar();
 
-  console.log(menuItems);
   return (
     <Sidebar collapsible='icon' className='border-r-0 bg-[#2a2a2a] text-white' {...props}>
       <SidebarHeader className='flex items-center justify-center bg-[#2a2a2a] py-8'>

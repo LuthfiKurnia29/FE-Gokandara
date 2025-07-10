@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { ColumnDef, VisibilityState, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { format } from 'date-fns';
 import { ChevronDown, Loader2, Settings2 } from 'lucide-react';
 
@@ -235,177 +236,175 @@ const PaginateTable = memo(
       const showLoading = isFetching;
 
       return (
-        <Card>
+        <Card id={id} className='relative w-full'>
           <CardContent>
-            <div id={id} className='relative w-full'>
-              <LoadingOverlay isLoading={showLoading} />
-              <div className='mb-4 flex flex-wrap justify-between gap-2 pt-4'>
-                <div className='flex items-center gap-4'>
-                  <Plugin />
-                </div>
-                <div className='flex items-center gap-2'>
-                  <DataTableViewOptions table={table} />
-                  <form onSubmit={handleSearch} className='flex'>
-                    <Input
-                      type='search'
-                      className='w-full'
-                      placeholder='Cari ...'
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </form>
-                </div>
+            <LoadingOverlay isLoading={showLoading} />
+            <div className='mb-4 flex flex-wrap justify-between gap-2 pt-4'>
+              <div className='flex items-center gap-2'>
+                <DataTableViewOptions table={table} />
+                <form onSubmit={handleSearch} className='flex'>
+                  <Input
+                    type='search'
+                    className='w-full'
+                    placeholder='Cari ...'
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </form>
               </div>
-              <div className='relative rounded-md border'>
-                <Table>
-                  <TableHeader className='bg-muted'>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead
-                            key={header.id}
-                            className='py-4 font-medium'
-                            style={(header.column.columnDef.meta as any)?.style}>
-                            {header.column.columnDef.header === 'check' && Boolean(data?.data?.length) ? (
-                              <div className='flex h-4 w-4 items-center'>
-                                <Checkbox
-                                  className='cursor-pointer'
-                                  checked={massSelect?.length === data?.data?.length}
-                                  onCheckedChange={(checked) => handleMassSelect(checked as boolean)}
-                                />
-                              </div>
-                            ) : header.isPlaceholder ? null : (
-                              flexRender(header.column.columnDef.header, header.getContext())
-                            )}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={
-                            grouped
-                              ? `row.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`
-                              : `row.${row.original.uuid}`
-                          }>
-                          {row.original.type === 'group' ? (
-                            <TableCell
-                              key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`}
-                              className={`py-4 ${
-                                row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
-                              }`}
-                              colSpan={row.original.type === 'group' ? columns.length : 1}>
-                              <div className='flex flex-col gap-2'>
-                                <p className='text-sm font-medium'>
-                                  {format(new Date(row.original.date), 'EEEE, dd MMMM yyyy')}
-                                </p>
-                              </div>
-                            </TableCell>
-                          ) : (
-                            row.getVisibleCells().map((cell, indexCell) => {
-                              if (grouped) {
-                                return (
-                                  <TableCell
-                                    key={`cell.${cell.id}.${cell.row.original.uuid}`}
-                                    className={`py-4 ${cell.row.original.type === 'group' ? 'bg-muted' : ''}`}
-                                    colSpan={cell.row.original.type === 'group' ? columns.length : 1}
-                                    style={(cell.column.columnDef.meta as any)?.style}>
-                                    {cell.row.original.type === 'group' ? (
-                                      <div className='flex flex-col gap-2'>
-                                        <p className='text-sm font-medium'>
-                                          {format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')}
-                                        </p>
-                                      </div>
-                                    ) : (
-                                      flexRender(cell.column.columnDef.cell, cell.getContext())
-                                    )}
-                                  </TableCell>
-                                );
-                              } else {
-                                return (
-                                  <TableCell
-                                    key={`cell.${cell.id}.${cell.row.original.uuid}`}
-                                    className='py-4'
-                                    style={(cell.column.columnDef.meta as any)?.style}>
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                  </TableCell>
-                                );
-                              }
-                            })
+              <div className='flex items-center gap-4'>
+                <Plugin />
+              </div>
+            </div>
+            <div className='rounded-md border'>
+              {/* <ScrollArea className='w-full max-w-full overflow-x-auto'> */}
+              <Table>
+                <TableHeader className='bg-muted'>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          className='py-4 font-medium'
+                          style={(header.column.columnDef.meta as any)?.style}>
+                          {header.column.columnDef.header === 'check' && Boolean(data?.data?.length) ? (
+                            <div className='flex h-4 w-4 items-center'>
+                              <Checkbox
+                                className='cursor-pointer'
+                                checked={massSelect?.length === data?.data?.length}
+                                onCheckedChange={(checked) => handleMassSelect(checked as boolean)}
+                              />
+                            </div>
+                          ) : header.isPlaceholder ? null : (
+                            flexRender(header.column.columnDef.header, header.getContext())
                           )}
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={columns.length} className='h-24 text-center'>
-                          <p className='text-muted-foreground text-sm'>Data not found</p>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className='mt-4 flex items-center justify-end gap-2'>
-                <div className='flex flex-1 flex-shrink-0 items-center gap-2'>
-                  <div className='flex items-center gap-2'>
-                    <span className='text-muted-foreground text-sm'>Rows per page</span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant='outline' size='sm' className='flex h-8 items-center gap-1'>
-                          {per} <ChevronDown className='h-4 w-4' />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='start'>
-                        {perOptions.map((option) => (
-                          <DropdownMenuCheckboxItem
-                            key={option.value}
-                            checked={per === option.value}
-                            onCheckedChange={() => setPer(option.value)}>
-                            {option.label}
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <div className='text-muted-foreground text-sm'>
-                    Page {data?.current_page || 1} of {data?.last_page || 1}
-                  </div>
-                </div>
-                <Pagination className='mx-0 w-auto'>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        className={cn('cursor-pointer', data?.current_page === 1 && 'pointer-events-none opacity-50')}
-                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                      />
-                    </PaginationItem>
-
-                    {pagination.map((item: number) => (
-                      <PaginationItem key={item}>
-                        <PaginationLink
-                          isActive={item === page}
-                          className='cursor-pointer'
-                          onClick={() => setPage(item)}>
-                          {item}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-
-                    <PaginationItem>
-                      <PaginationNext
-                        className={cn(
-                          'cursor-pointer',
-                          data?.current_page === data?.last_page && 'pointer-events-none opacity-50'
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={
+                          grouped
+                            ? `row.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`
+                            : `row.${row.original.uuid}`
+                        }>
+                        {row.original.type === 'group' ? (
+                          <TableCell
+                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`}
+                            className={`py-4 ${
+                              row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
+                            }`}
+                            colSpan={row.original.type === 'group' ? columns.length : 1}>
+                            <div className='flex flex-col gap-2'>
+                              <p className='text-sm font-medium'>
+                                {format(new Date(row.original.date), 'EEEE, dd MMMM yyyy')}
+                              </p>
+                            </div>
+                          </TableCell>
+                        ) : (
+                          row.getVisibleCells().map((cell, indexCell) => {
+                            if (grouped) {
+                              return (
+                                <TableCell
+                                  key={`cell.${cell.id}.${cell.row.original.uuid}`}
+                                  className={`py-4 ${cell.row.original.type === 'group' ? 'bg-muted' : ''}`}
+                                  colSpan={cell.row.original.type === 'group' ? columns.length : 1}
+                                  style={(cell.column.columnDef.meta as any)?.style}>
+                                  {cell.row.original.type === 'group' ? (
+                                    <div className='flex flex-col gap-2'>
+                                      <p className='text-sm font-medium'>
+                                        {format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    flexRender(cell.column.columnDef.cell, cell.getContext())
+                                  )}
+                                </TableCell>
+                              );
+                            } else {
+                              return (
+                                <TableCell
+                                  key={`cell.${cell.id}.${cell.row.original.uuid}`}
+                                  className='py-4'
+                                  style={(cell.column.columnDef.meta as any)?.style}>
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                              );
+                            }
+                          })
                         )}
-                        onClick={() => setPage((prev) => prev + 1)}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className='h-24 text-center'>
+                        <p className='text-muted-foreground text-sm'>Data not found</p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              {/* <ScrollBar orientation='horizontal' />
+                </ScrollArea> */}
+            </div>
+            <div className='mt-4 flex items-center justify-end gap-2'>
+              <div className='flex flex-1 flex-shrink-0 items-center gap-2'>
+                <div className='flex items-center gap-2'>
+                  <span className='text-muted-foreground text-sm'>Rows per page</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant='outline' size='sm' className='flex h-8 items-center gap-1'>
+                        {per} <ChevronDown className='h-4 w-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='start'>
+                      {perOptions.map((option) => (
+                        <DropdownMenuCheckboxItem
+                          key={option.value}
+                          checked={per === option.value}
+                          onCheckedChange={() => setPer(option.value)}>
+                          {option.label}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className='text-muted-foreground text-sm'>
+                  Page {data?.current_page || 1} of {data?.last_page || 1}
+                </div>
               </div>
+              <Pagination className='mx-0 w-auto'>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      className={cn('cursor-pointer', data?.current_page === 1 && 'pointer-events-none opacity-50')}
+                      onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    />
+                  </PaginationItem>
+
+                  {pagination.map((item: number) => (
+                    <PaginationItem key={item}>
+                      <PaginationLink isActive={item === page} className='cursor-pointer' onClick={() => setPage(item)}>
+                        {item}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      className={cn(
+                        'cursor-pointer',
+                        data?.current_page === data?.last_page && 'pointer-events-none opacity-50'
+                      )}
+                      onClick={() => setPage((prev) => prev + 1)}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           </CardContent>
         </Card>
