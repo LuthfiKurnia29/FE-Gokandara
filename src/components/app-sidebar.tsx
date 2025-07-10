@@ -118,13 +118,14 @@ const SidebarMenuDropdown = React.memo(
           {isOpen || isActive ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
         </SidebarMenuButton>
         {(isOpen || isActive) && state === 'expanded' && items.length > 0 && (
-          <div className='mt-1 space-y-1 pl-8'>
+          <ul className='mt-1 space-y-1 pl-8'>
             {items.map((item) => {
               if (!item.url) return null;
               const SubIconComponent = item.icon;
               return (
                 <SidebarMenuItem key={`${item.title}-${item.url}`}>
                   <SidebarMenuButton
+                    size='lg'
                     asChild
                     tooltip={item.title}
                     isActive={pathname.startsWith(item.url)}
@@ -140,7 +141,7 @@ const SidebarMenuDropdown = React.memo(
                 </SidebarMenuItem>
               );
             })}
-          </div>
+          </ul>
         )}
       </SidebarMenuItem>
     );
