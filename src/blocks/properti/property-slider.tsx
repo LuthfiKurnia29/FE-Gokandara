@@ -5,7 +5,7 @@ import '@splidejs/react-splide/css';
 import type { Options } from '@splidejs/splide';
 
 import { Button } from '../../components/ui/button';
-import { Bath, Bed, Wifi } from 'lucide-react';
+import { Bath, Bed, Expand, Share2, Wifi } from 'lucide-react';
 
 interface PropertySliderProps {
   images: string[];
@@ -50,13 +50,13 @@ export function PropertySlider({ images }: PropertySliderProps) {
         onMounted={handleMounted}
         onMove={handleMove}
         className='h-full w-full'>
-        <div className='relative h-full w-full'>
+        <div className='relative h-full w-full overflow-hidden rounded-[30px]'>
           <SplideTrack className='h-full w-full'>
             {images.map((image, index) => (
               <SplideSlide key={index} className='relative h-full w-full'>
                 {/* Image */}
                 <div
-                  className='absolute inset-0 h-full w-full'
+                  className='absolute inset-0 h-full w-full rounded-[30px]'
                   style={{
                     backgroundImage: `url(${image})`,
                     backgroundSize: 'cover',
@@ -76,7 +76,7 @@ export function PropertySlider({ images }: PropertySliderProps) {
 
           {/* Bottom Gradient */}
           <div
-            className='absolute right-0 bottom-0 left-0 h-[200px]'
+            className='absolute right-0 bottom-0 left-0 h-[200px] rounded-b-[32px]'
             style={{
               background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 0%, rgba(0, 0, 0, 1) 100%)'
             }}
@@ -105,6 +105,22 @@ export function PropertySlider({ images }: PropertySliderProps) {
 
           {/* Custom Controls */}
           <div className='absolute right-6 bottom-6 flex flex-col items-end gap-4'>
+            {/* Control buttons */}
+            <div className='flex flex-col gap-2'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-[40px] w-[40px] rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20'>
+                <Share2 className='h-5 w-5 text-white' />
+              </Button>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-[40px] w-[40px] rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20'>
+                <Expand className='h-5 w-5 text-white' />
+              </Button>
+            </div>
+
             {/* Page Indicator - Dynamic */}
             <div className='text-sm font-medium text-white'>
               {activeIndex + 1} dari {images.length}
