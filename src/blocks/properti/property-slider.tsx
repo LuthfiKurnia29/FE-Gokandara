@@ -1,30 +1,54 @@
+import { useRef, useState } from 'react';
+
 import { Splide, SplideSlide, SplideTrack } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
+import type { Options } from '@splidejs/splide';
 
 import { Button } from '../../components/ui/button';
-import { Bath, Bed, Maximize2, Share2, Wifi } from 'lucide-react';
+import { Bath, Bed, Wifi } from 'lucide-react';
 
 interface PropertySliderProps {
   images: string[];
-  currentIndex?: number;
-  totalImages?: number;
 }
 
-export function PropertySlider({ images, currentIndex = 1, totalImages = 4 }: PropertySliderProps) {
+export function PropertySlider({ images }: PropertySliderProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const splideRef = useRef<any>(null);
+
+  const options = {
+    type: 'fade' as const,
+    rewind: true,
+    pagination: false,
+    arrows: false,
+    drag: true,
+    autoplay: false,
+    height: '100%',
+    width: '100%',
+    speed: 800
+  };
+
+  const handleMounted = (splide: any) => {
+    splideRef.current = splide;
+    setActiveIndex(splide.index);
+  };
+
+  const handleMove = (splide: any) => {
+    setActiveIndex(splide.index);
+  };
+
+  const handlePaginationClick = (index: number) => {
+    if (splideRef.current) {
+      splideRef.current.go(index);
+    }
+  };
+
   return (
     <div className='relative h-full w-full'>
       <Splide
         hasTrack={false}
-        options={{
-          type: 'fade',
-          rewind: true,
-          pagination: true,
-          arrows: false,
-          drag: true,
-          autoplay: false,
-          height: '100%',
-          width: '100%'
-        }}
+        options={options}
+        onMounted={handleMounted}
+        onMove={handleMove}
         className='h-full w-full'>
         <div className='relative h-full w-full'>
           <SplideTrack className='h-full w-full'>
@@ -45,7 +69,9 @@ export function PropertySlider({ images, currentIndex = 1, totalImages = 4 }: Pr
 
           {/* Status Button */}
           <div className='absolute top-6 right-6'>
-            <Button className='bg-[#09bd3c] px-6 text-sm font-medium text-white hover:bg-[#09bd3c]/90'>Tersedia</Button>
+            <Button className='rounded-full bg-[#09bd3c] px-6 text-sm font-medium text-white hover:bg-[#09bd3c]/90'>
+              Tersedia
+            </Button>
           </div>
 
           {/* Bottom Gradient */}
@@ -79,19 +105,24 @@ export function PropertySlider({ images, currentIndex = 1, totalImages = 4 }: Pr
 
           {/* Custom Controls */}
           <div className='absolute right-6 bottom-6 flex flex-col items-end gap-4'>
-            {/* Page Indicator */}
+            {/* Page Indicator - Dynamic */}
             <div className='text-sm font-medium text-white'>
-              {currentIndex} dari {totalImages}
+              {activeIndex + 1} dari {images.length}
             </div>
 
-            {/* Custom Pagination */}
+            {/* Custom Pagination - Interactive */}
             <div className='flex items-center gap-2'>
-              {Array.from({ length: totalImages }).map((_, index) => (
-                <div
+              {images.map((_, index) => (
+                <button
                   key={index}
-                  className={`h-1 w-8 rounded-full transition-all ${
-                    index === currentIndex - 1 ? 'bg-white' : 'bg-white/50'
+                  onClick={() => handlePaginationClick(index)}
+                  className={`h-1 w-8 cursor-pointer rounded-full transition-all ${
+                    index === activeIndex ? 'bg-white' : 'bg-white/50'
                   }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                  role='tab'
+                  aria-selected={index === activeIndex}
+                  tabIndex={0}
                 />
               ))}
             </div>

@@ -24,9 +24,11 @@ import {
 import { cn } from '@/lib/utils';
 import { type MenuItem, menuItems } from '@/stores/menu-item';
 
+import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { MessageSquareText, ShoppingCart } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 // Sidebar Menu Item Component
 const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
@@ -88,56 +90,70 @@ const SidebarMenuDropdown = React.memo(
     const [isOpen, setIsOpen] = React.useState(false);
     const { state, toggleSidebar } = useSidebar();
 
-    const handleToggleDropdown = () => {
+    // Check if any child is active
+    const isChildActive = items.some((item) => item.url && pathname.startsWith(item.url));
+
+    // Parent is active when child is active, but dropdown visibility is controlled by isOpen
+    const isActive = isChildActive;
+
+    const IconComponent = icon;
+
+    // Effect to open dropdown when child becomes active
+    React.useEffect(() => {
+      if (isChildActive) {
+        setIsOpen(true);
+      }
+    }, []); // Run only once on mount
+
+    const handleToggleDropdown = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
       setIsOpen(!isOpen);
+
+      // Only expand sidebar if it's collapsed
       if (state === 'collapsed') {
         toggleSidebar();
       }
     };
 
-    const isActive = items.some((item) => pathname.startsWith(item.url));
-
-    const IconComponent = icon;
-
     return (
       <SidebarMenuItem>
+        {/* Parent Menu Button */}
         <SidebarMenuButton
           tooltip={title}
           onClick={handleToggleDropdown}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-4 py-2 font-medium transition',
-            isOpen || isActive
-              ? 'bg-[#FF9900] text-white shadow-md'
-              : 'text-[#a3a3a3] hover:bg-[#23272f] hover:text-white',
+            'flex items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-200',
+            isActive ? 'bg-[#FF9900] text-white shadow-md' : 'text-[#a3a3a3] hover:bg-[#23272f] hover:text-white',
             'min-h-[44px] w-full justify-between'
           )}>
           <div className='flex items-center gap-3'>
-            {IconComponent && <IconComponent className='h-4 w-4' />}
-            <span className={isOpen || isActive ? 'font-medium' : 'font-medium'}>{title}</span>
+            {IconComponent && <IconComponent className={cn('h-4 w-4', isActive ? 'text-white' : 'text-[#a3a3a3]')} />}
+            <span className='font-medium'>{title}</span>
           </div>
-          {isOpen || isActive ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
+          {isOpen ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
         </SidebarMenuButton>
-        {(isOpen || isActive) && state === 'expanded' && items.length > 0 && (
+
+        {/* Child Menu Items */}
+        {isOpen && state === 'expanded' && items.length > 0 && (
           <ul className='mt-1 space-y-1 pl-8'>
             {items.map((item) => {
               if (!item.url) return null;
               const SubIconComponent = item.icon;
+              const isItemActive = pathname.startsWith(item.url);
               return (
                 <SidebarMenuItem key={`${item.title}-${item.url}`}>
-                  <SidebarMenuButton
-                    size='lg'
-                    asChild
-                    tooltip={item.title}
-                    isActive={pathname.startsWith(item.url)}
+                  <Link
+                    href={item.url}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg px-2 py-1',
-                      pathname.startsWith(item.url) ? 'text-[#FF9900]' : 'font-medium text-[#a3a3a3]'
+                      'flex w-full items-center gap-2 rounded-lg px-2 py-1 transition-colors',
+                      isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3] hover:text-[#FF9900]'
                     )}>
-                    <Link href={item.url} className='flex items-center gap-2'>
-                      {SubIconComponent && <SubIconComponent className='h-4 w-4' />}
-                      <span className={cn('leading-tight tracking-tight')}>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    {SubIconComponent && (
+                      <SubIconComponent className={cn('h-4 w-4', isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3]')} />
+                    )}
+                    <span className='leading-tight tracking-tight'>{item.title}</span>
+                  </Link>
                 </SidebarMenuItem>
               );
             })}
@@ -154,7 +170,7 @@ export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof 
   const { state } = useSidebar();
 
   return (
-    <Sidebar collapsible='icon' className='border-r-0 bg-[#2a2a2a] text-white' {...props}>
+    <Sidebar collapsible='icon' className='border-r-0 bg-[#2a2a2a] text-white transition-all duration-300' {...props}>
       <SidebarHeader className='flex items-center justify-center bg-[#2a2a2a] py-8'>
         {state === 'collapsed' ? (
           <img src='/images/logo-mini.svg' alt='logo' className='h-7' />
@@ -184,11 +200,24 @@ export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof 
           </SidebarGroup>
         </ScrollArea>
       </SidebarContent>
-      <SidebarFooter className='border-t border-[#23272f] bg-[#2a2a2a] px-4 py-6'>
-        <div className='w-full text-center text-xs font-medium text-[#a3a3a3]'>
-          Kandara Sales Dashboard
-          <br />© 2024 All Rights Reserved
-        </div>
+      <SidebarFooter
+        className={cn(
+          'border-t border-[#23272f] bg-[#2a2a2a] transition-all duration-300',
+          state === 'collapsed' ? 'px-1 py-2' : 'px-4 py-6'
+        )}>
+        {state === 'collapsed' ? (
+          <div className='flex flex-col items-center justify-center'>
+            <span className='text-[8px] leading-tight font-medium text-[#a3a3a3]'>Kandara</span>
+            <span className='text-[8px] leading-tight font-medium text-[#a3a3a3]'>Sales</span>
+            <span className='text-[8px] leading-tight font-medium text-[#a3a3a3]'>Dashboard</span>
+            <span className='mt-0.5 text-[8px] leading-tight font-medium text-[#a3a3a3]'>© 2024</span>
+          </div>
+        ) : (
+          <div className='w-full text-center text-xs font-medium text-[#a3a3a3]'>
+            Kandara Sales Dashboard
+            <br />© 2024 All Rights Reserved
+          </div>
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
