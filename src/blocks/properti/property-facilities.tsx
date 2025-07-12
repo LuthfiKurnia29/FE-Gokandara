@@ -1,0 +1,39 @@
+'use client';
+
+import { Check } from 'lucide-react';
+
+export const PropertyFacilities = () => {
+  const facilities = [
+    'Kamar Tidur',
+    'Kamar Mandi',
+    'Dapur',
+    'Ruang Tamu',
+    'Garasi',
+    'Halaman',
+    'AC',
+    'WiFi',
+    'TV',
+    'Lemari',
+    'Meja',
+    'Kursi',
+    'Parkir',
+    'Keamanan',
+    'Kolam Renang'
+  ];
+
+  return (
+    <section className='mb-8'>
+      <h2 className='mb-4 text-2xl font-bold text-gray-800'>Fasilitas</h2>
+      <div className='grid grid-cols-5 gap-4'>
+        {facilities.map((facility, index) => (
+          <div key={index} className='flex items-center gap-2'>
+            <div className='flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-500'>
+              <Check className='h-3 w-3 text-white' />
+            </div>
+            <span className='text-sm text-gray-600'>{facility}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
