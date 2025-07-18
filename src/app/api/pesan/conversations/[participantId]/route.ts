@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PesanDB } from '@/lib/database/pesan';
 
 // GET /api/pesan/conversations/[participantId] - Get messages between current user and specific participant
-export async function GET(request: NextRequest, { params }: { params: { participantId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ participantId: string }> }) {
   try {
-    const participantId = parseInt(params.participantId);
+    const { participantId: participantIdParam } = await params;
+    const participantId = parseInt(participantIdParam);
     const searchParams = request.nextUrl.searchParams;
     const currentUserId = searchParams.get('current_user_id');
     const page = parseInt(searchParams.get('page') || '1');

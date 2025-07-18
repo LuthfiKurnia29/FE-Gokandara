@@ -4,9 +4,10 @@ import { KonsumenDB } from '@/lib/database/konsumen';
 import { KonsumenData } from '@/types/konsumen';
 
 // GET /api/konsumen/[id] - Show specific konsumen (Laravel style)
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'Invalid ID format. ID must be a number.' }, { status: 400 });
@@ -34,9 +35,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/konsumen/[id] - Update konsumen (Laravel style)
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await request.json();
 
     if (isNaN(id)) {
@@ -106,9 +108,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PATCH /api/konsumen/[id] - Partial update konsumen (Laravel style)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await request.json();
 
     if (isNaN(id)) {
@@ -160,9 +163,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE /api/konsumen/[id] - Delete konsumen (Laravel style)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'Invalid ID format. ID must be a number.' }, { status: 400 });

@@ -4,9 +4,10 @@ import { PenjualanDB } from '@/lib/database/penjualan';
 import { PenjualanStatus } from '@/types/penjualan';
 
 // PATCH /api/penjualan/[id]/status - Update penjualan status only (Laravel style)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await request.json();
 
     if (isNaN(id)) {
@@ -67,9 +68,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // PUT /api/penjualan/[id]/status - Update penjualan status only (Laravel style) - alternative method
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await request.json();
 
     if (isNaN(id)) {

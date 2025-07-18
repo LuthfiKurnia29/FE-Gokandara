@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ interface ChatPanelProps {
 const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPanelProps) => {
   const [newMessage, setNewMessage] = useState('');
   const createPesan = useCreatePesan();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get messages for this conversation
   const otherParticipantId =
@@ -33,6 +34,13 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPa
     otherParticipantId || null,
     currentUserId
   );
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesData?.data && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messagesData?.data]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !conversation) return;
@@ -48,6 +56,10 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPa
         message_type: 'text'
       });
       setNewMessage('');
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     } catch (error) {
       console.error('Failed to send message:', error);
     }
@@ -66,8 +78,9 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPa
     conversation.participant_1_id === currentUserId ? conversation.participant_2 : conversation.participant_1;
 
   return (
-    <Card className='sticky top-4 flex h-full max-h-screen flex-col lg:max-h-[calc(100vh-120px)]'>
-      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
+    <Card className='sticky top-4 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col overflow-hidden lg:h-[calc(100vh-120px)] lg:max-h-[calc(100vh-120px)]'>
+      {/* Header - Fixed */}
+      <CardHeader className='flex flex-shrink-0 flex-row items-center justify-between space-y-0 border-b pb-4'>
         <div className='flex items-center gap-3'>
           <Avatar className='h-10 w-10'>
             <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
@@ -86,56 +99,61 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPa
         </Button>
       </CardHeader>
 
-      <Separator />
-
-      <CardContent className='flex flex-1 flex-col p-0'>
-        <div className='flex h-full flex-col'>
-          {/* Messages Area */}
-          <ScrollArea className='flex-1 p-4'>
-            {messagesLoading ? (
-              <div className='flex h-full items-center justify-center'>
-                <div className='text-muted-foreground'>Loading messages...</div>
-              </div>
-            ) : (
-              <div className='space-y-4'>
-                {messagesData?.data?.map((message: PesanData) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
+      {/* Messages Area - Scrollable */}
+      <CardContent className='flex flex-1 flex-col overflow-hidden p-0'>
+        <div className='flex h-full min-h-0 flex-col'>
+          <ScrollArea className='min-h-0 flex-1'>
+            <div className='p-4'>
+              {messagesLoading ? (
+                <div className='flex h-full items-center justify-center py-8'>
+                  <div className='text-muted-foreground'>Loading messages...</div>
+                </div>
+              ) : messagesData?.data && messagesData.data.length > 0 ? (
+                <div className='space-y-4'>
+                  {messagesData.data.map((message: PesanData) => (
                     <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                        message.sender_id === currentUserId ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                      <div className='text-sm'>{message.message}</div>
+                      key={message.id}
+                      className={`flex ${message.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`mt-1 flex items-center gap-1 text-xs ${
-                          message.sender_id === currentUserId ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          message.sender_id === currentUserId ? 'bg-primary text-primary-foreground' : 'bg-muted'
                         }`}>
-                        <Clock className='h-3 w-3' />
-                        {new Date(message.created_at).toLocaleTimeString()}
+                        <div className='text-sm leading-relaxed'>{message.message}</div>
+                        <div
+                          className={`mt-1 flex items-center gap-1 text-xs ${
+                            message.sender_id === currentUserId ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                          }`}>
+                          <Clock className='h-3 w-3' />
+                          {new Date(message.created_at).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              ) : (
+                <div className='flex h-full items-center justify-center py-8'>
+                  <div className='text-muted-foreground'>No messages yet. Start the conversation!</div>
+                </div>
+              )}
+            </div>
           </ScrollArea>
 
-          <Separator />
-
-          {/* Message Input */}
-          <div className='p-4'>
-            <div className='flex gap-2'>
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder='Type a message...'
-                className='flex-1'
-              />
-              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || createPesan.isPending} size='icon'>
-                <Send className='h-4 w-4' />
-              </Button>
+          {/* Message Input - Fixed at Bottom */}
+          <div className='bg-background flex-shrink-0 border-t'>
+            <div className='p-4'>
+              <div className='flex gap-2'>
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder='Type a message...'
+                  className='flex-1'
+                />
+                <Button onClick={handleSendMessage} disabled={!newMessage.trim() || createPesan.isPending} size='icon'>
+                  <Send className='h-4 w-4' />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

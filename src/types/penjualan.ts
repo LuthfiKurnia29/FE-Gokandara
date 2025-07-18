@@ -7,7 +7,7 @@ export interface PenjualanData {
   diskon: number;
   grandTotal: number;
   status: PenjualanStatus;
-  sales: string;
+  sales?: string | null;
   createdAt: string;
   updatedAt: string;
 }
