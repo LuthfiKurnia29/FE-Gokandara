@@ -19,7 +19,8 @@ const konsumenSchema = z.object({
   description: z.string().optional(),
   phone: z.string().min(1, 'Nomor telepon wajib diisi'),
   email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
-  address: z.string().min(1, 'Alamat wajib diisi')
+  address: z.string().min(1, 'Alamat wajib diisi'),
+  ktp_number: z.string().min(1, 'Nomor KTP wajib diisi')
 });
 
 type KonsumenFormData = z.infer<typeof konsumenSchema>;
@@ -51,7 +52,8 @@ export const KonsumenForm = memo(function KonsumenForm({
       description: '',
       phone: '',
       email: '',
-      address: ''
+      address: '',
+      ktp_number: ''
     }
   });
 
@@ -63,7 +65,8 @@ export const KonsumenForm = memo(function KonsumenForm({
         description: konsumen.description || '',
         phone: konsumen.phone,
         email: konsumen.email,
-        address: konsumen.address
+        address: konsumen.address,
+        ktp_number: konsumen.ktp_number
       });
     } else {
       reset({
@@ -71,7 +74,8 @@ export const KonsumenForm = memo(function KonsumenForm({
         description: '',
         phone: '',
         email: '',
-        address: ''
+        address: '',
+        ktp_number: ''
       });
     }
   }, [konsumen, reset]);
@@ -91,7 +95,8 @@ export const KonsumenForm = memo(function KonsumenForm({
       description: '',
       phone: '',
       email: '',
-      address: ''
+      address: '',
+      ktp_number: ''
     });
     onCancel();
   };
@@ -151,6 +156,12 @@ export const KonsumenForm = memo(function KonsumenForm({
       <div className='space-y-2'>
         <Label htmlFor='phone'>Nomor Telepon *</Label>
         <Input id='phone' type='tel' {...register('phone')} placeholder='Masukkan nomor telepon' disabled={isLoading} />
+        {errors.phone && <p className='text-sm text-red-600'>{errors.phone.message}</p>}
+      </div>
+
+      <div className='space-y-2'>
+        <Label htmlFor='ktp_number'>Nomor KTP *</Label>
+        <Input id='ktp_number' type='number' {...register('ktp_number')} placeholder='Masukkan nomor telepon' disabled={isLoading} />
         {errors.phone && <p className='text-sm text-red-600'>{errors.phone.message}</p>}
       </div>
 

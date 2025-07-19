@@ -6,6 +6,7 @@ export interface KonsumenData {
   phone: string;
   email: string;
   address: string;
+  ktp_number: string;
 }
 
 export interface KonsumenResponse {
@@ -39,6 +40,7 @@ export interface CreateKonsumenData {
   phone: string;
   email: string;
   address: string;
+  ktp_number: string;
 }
 
 export interface UseKonsumenListParams {
