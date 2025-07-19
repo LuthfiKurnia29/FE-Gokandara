@@ -143,6 +143,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.phone) updateData.phone = body.phone;
     if (body.email) updateData.email = body.email;
     if (body.address) updateData.address = body.address;
+    if (body.ktp_number) updateData.ktp_number = body.ktp_number;
 
     // Partial update konsumen
     const updatedKonsumen = KonsumenDB.update(id, updateData);

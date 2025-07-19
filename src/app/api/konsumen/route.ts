@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
       description: body.description || '',
       phone: body.phone,
       email: body.email,
-      address: body.address
+      address: body.address,
+      ktp_number: body.ktp_number
     });
 
     // Laravel-style success response
