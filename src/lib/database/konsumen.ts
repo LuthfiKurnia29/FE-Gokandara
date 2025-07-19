@@ -9,7 +9,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Regular customer from Jakarta',
     phone: '+62812-3456-7890',
     email: 'john.doe@email.com',
-    address: 'Jl. Sudirman No. 123, Jakarta Selatan'
+    address: 'Jl. Sudirman No. 123, Jakarta Selatan',
+    ktp_number: "383163181281928911"
   },
   {
     id: 2,
@@ -18,7 +19,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'VIP customer from Bandung',
     phone: '+62813-9876-5432',
     email: 'jane.smith@email.com',
-    address: 'Jl. Braga No. 45, Bandung'
+    address: 'Jl. Braga No. 45, Bandung',
+    ktp_number: "383163181281928912"
   },
   {
     id: 3,
@@ -27,7 +29,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Corporate client from Surabaya',
     phone: '+62814-1111-2222',
     email: 'ahmad.rahman@email.com',
-    address: 'Jl. Pemuda No. 67, Surabaya'
+    address: 'Jl. Pemuda No. 67, Surabaya',
+    ktp_number: "383163181281928913"
   },
   {
     id: 4,
@@ -36,7 +39,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Small business owner from Yogyakarta',
     phone: '+62815-3333-4444',
     email: 'siti.nurhaliza@email.com',
-    address: 'Jl. Malioboro No. 89, Yogyakarta'
+    address: 'Jl. Malioboro No. 89, Yogyakarta',
+    ktp_number: "383163181281928914"
   },
   {
     id: 5,
@@ -45,7 +49,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Retail partner from Medan',
     phone: '+62816-5555-6666',
     email: 'budi.santoso@email.com',
-    address: 'Jl. Asia No. 101, Medan'
+    address: 'Jl. Asia No. 101, Medan',
+    ktp_number: "383163181281928916"
   },
   {
     id: 6,
@@ -54,7 +59,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Fashion boutique owner from Bali',
     phone: '+62817-1234-5678',
     email: 'dewi.sartika@email.com',
-    address: 'Jl. Monkey Forest Road No. 25, Ubud, Bali'
+    address: 'Jl. Monkey Forest Road No. 25, Ubud, Bali',
+    ktp_number: "383163181281928917"
   },
   {
     id: 7,
@@ -63,7 +69,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Restaurant chain owner from Semarang',
     phone: '+62818-2345-6789',
     email: 'rudi.hartono@email.com',
-    address: 'Jl. Pandanaran No. 135, Semarang'
+    address: 'Jl. Pandanaran No. 135, Semarang',
+    ktp_number: "383163181281928918"
   },
   {
     id: 8,
@@ -72,7 +79,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Tech startup founder from Jakarta',
     phone: '+62819-3456-7890',
     email: 'maya.sari@email.com',
-    address: 'Jl. HR Rasuna Said No. 78, Jakarta Selatan'
+    address: 'Jl. HR Rasuna Said No. 78, Jakarta Selatan',
+    ktp_number: "383163181281928919"
   },
   {
     id: 9,
@@ -81,7 +89,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Export-import business from Makassar',
     phone: '+62820-4567-8901',
     email: 'andi.wijaya@email.com',
-    address: 'Jl. AP Pettarani No. 92, Makassar'
+    address: 'Jl. AP Pettarani No. 92, Makassar',
+    ktp_number: "383163181281928920"
   },
   {
     id: 10,
@@ -90,7 +99,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Beauty salon chain owner from Denpasar',
     phone: '+62821-5678-9012',
     email: 'rina.kusuma@email.com',
-    address: 'Jl. Gajah Mada No. 56, Denpasar, Bali'
+    address: 'Jl. Gajah Mada No. 56, Denpasar, Bali',
+    ktp_number: "383163181281928921"
   },
   {
     id: 11,
@@ -99,7 +109,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Construction company director from Batam',
     phone: '+62822-6789-0123',
     email: 'hendra.gunawan@email.com',
-    address: 'Jl. Jendral Sudirman No. 234, Batam'
+    address: 'Jl. Jendral Sudirman No. 234, Batam',
+    ktp_number: "383163181281928922"
   },
   {
     id: 12,
@@ -108,7 +119,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Organic farm owner from Bogor',
     phone: '+62823-7890-1234',
     email: 'lestari.indah@email.com',
-    address: 'Jl. Raya Puncak No. 167, Bogor'
+    address: 'Jl. Raya Puncak No. 167, Bogor',
+    ktp_number: "383163181281928923"
   },
   {
     id: 13,
@@ -117,7 +129,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'IT consultant from Malang',
     phone: '+62824-8901-2345',
     email: 'bayu.setiawan@email.com',
-    address: 'Jl. Ijen Boulevard No. 45, Malang'
+    address: 'Jl. Ijen Boulevard No. 45, Malang',
+    ktp_number: "383163181281928924"
   },
   {
     id: 14,
@@ -126,7 +139,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Wedding organizer from Solo',
     phone: '+62825-9012-3456',
     email: 'citra.dewi@email.com',
-    address: 'Jl. Slamet Riyadi No. 189, Solo'
+    address: 'Jl. Slamet Riyadi No. 189, Solo',
+    ktp_number: "383163181281928925"
   },
   {
     id: 15,
@@ -135,7 +149,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Automotive parts supplier from Tangerang',
     phone: '+62826-0123-4567',
     email: 'fahmi.abdullah@email.com',
-    address: 'Jl. MH Thamrin No. 123, Tangerang'
+    address: 'Jl. MH Thamrin No. 123, Tangerang',
+    ktp_number: "383163181281928926"
   },
   {
     id: 16,
@@ -144,7 +159,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Textile manufacturer from Bandung',
     phone: '+62827-1234-5678',
     email: 'sari.melati@email.com',
-    address: 'Jl. Dago No. 278, Bandung'
+    address: 'Jl. Dago No. 278, Bandung',
+    ktp_number: "383163181281928927"
   },
   {
     id: 17,
@@ -153,7 +169,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Furniture workshop owner from Jepara',
     phone: '+62828-2345-6789',
     email: 'joko.susilo@email.com',
-    address: 'Jl. Raya Jepara-Kudus No. 45, Jepara'
+    address: 'Jl. Raya Jepara-Kudus No. 45, Jepara',
+    ktp_number: "383163181281928928"
   },
   {
     id: 18,
@@ -162,7 +179,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Coffee shop chain from Lampung',
     phone: '+62829-3456-7890',
     email: 'ratna.sari@email.com',
-    address: 'Jl. Zainal Abidin Pagar Alam No. 67, Bandar Lampung'
+    address: 'Jl. Zainal Abidin Pagar Alam No. 67, Bandar Lampung',
+    ktp_number: "383163181281928929"
   },
   {
     id: 19,
@@ -171,7 +189,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Logistics company from Palembang',
     phone: '+62830-4567-8901',
     email: 'agus.salim@email.com',
-    address: 'Jl. Jendral Sudirman No. 145, Palembang'
+    address: 'Jl. Jendral Sudirman No. 145, Palembang',
+    ktp_number: "383163181281928930"
   },
   {
     id: 20,
@@ -180,7 +199,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'E-commerce business from Bekasi',
     phone: '+62831-5678-9012',
     email: 'indira.putri@email.com',
-    address: 'Jl. Ahmad Yani No. 234, Bekasi'
+    address: 'Jl. Ahmad Yani No. 234, Bekasi',
+    ktp_number: "383163181281928931"
   },
   {
     id: 21,
@@ -189,7 +209,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Digital marketing agency from Jogja',
     phone: '+62832-6789-0123',
     email: 'wahyu.pratama@email.com',
-    address: 'Jl. Kaliurang No. 156, Yogyakarta'
+    address: 'Jl. Kaliurang No. 156, Yogyakarta',
+    ktp_number: "383163181281928932"
   },
   {
     id: 22,
@@ -198,7 +219,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Catering service from Depok',
     phone: '+62833-7890-1234',
     email: 'mega.putri@email.com',
-    address: 'Jl. Margonda Raya No. 89, Depok'
+    address: 'Jl. Margonda Raya No. 89, Depok',
+    ktp_number: "383163181281928933"
   },
   {
     id: 23,
@@ -207,7 +229,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Property developer from Manado',
     phone: '+62834-8901-2345',
     email: 'rizki.hakim@email.com',
-    address: 'Jl. Sam Ratulangi No. 123, Manado'
+    address: 'Jl. Sam Ratulangi No. 123, Manado',
+    ktp_number: "383163181281928934"
   },
   {
     id: 24,
@@ -216,7 +239,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Event management from Pontianak',
     phone: '+62835-9012-3456',
     email: 'tari.wulandari@email.com',
-    address: 'Jl. Ahmad Yani No. 78, Pontianak'
+    address: 'Jl. Ahmad Yani No. 78, Pontianak',
+    ktp_number: "383163181281928935"
   },
   {
     id: 25,
@@ -225,7 +249,8 @@ let konsumenDatabase: KonsumenData[] = [
     description: 'Pharmaceutical distributor from Samarinda',
     phone: '+62836-0123-4567',
     email: 'dimas.prasetyo@email.com',
-    address: 'Jl. Mulawarman No. 234, Samarinda'
+    address: 'Jl. Mulawarman No. 234, Samarinda',
+    ktp_number: "383163181281928936"
   }
 ];
 
