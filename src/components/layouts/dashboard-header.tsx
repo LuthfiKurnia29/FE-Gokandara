@@ -1,14 +1,35 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { authService, useCurrentUser } from '@/services/auth';
 
 import { useTitleContext } from '../title';
 import { SidebarTrigger } from '../ui/sidebar';
-import { Bell, Calendar, MessageSquare, Search, Star } from 'lucide-react';
+import { Bell, Calendar, ChevronDown, LogOut, MessageSquare, Search, Star, User } from 'lucide-react';
 
 export function DashboardHeader() {
   const { title } = useTitleContext();
+  const { data: currentUser } = useCurrentUser();
+
+  const handleLogout = () => {
+    authService.logout();
+    window.location.reload(); // Refresh to trigger auth check
+  };
+
+  // Get user data from API or fallback to stored data
+  const userData = currentUser || authService.getStoredUserData();
+  const user = userData?.user || authService.getStoredUser();
+  const userRole = userData?.roles?.[0]?.role?.name || 'User';
+
   return (
     <header className='flex h-16 w-full items-center justify-between border-b border-gray-200 bg-white px-6'>
       {/* Left Section: Hamburger + Title */}
@@ -66,23 +87,45 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        {/* User Profile */}
-        <div className='flex items-center gap-3'>
-          <Avatar className='h-10 w-10'>
-            <AvatarImage src='/placeholder-avatar.jpg' alt='User' />
-            <AvatarFallback className='font-sf-pro bg-gray-300 text-[14px] leading-5 font-semibold tracking-[-0.01em] text-gray-700'>
-              NS
-            </AvatarFallback>
-          </Avatar>
-          <div className='hidden flex-col lg:flex'>
-            <span className='font-sf-pro text-[14px] leading-5 font-semibold tracking-[-0.01em] text-gray-900'>
-              Nama Sales
-            </span>
-            <span className='font-sf-pro text-[12px] leading-4 font-normal tracking-[-0.01em] text-gray-500'>
-              Sales
-            </span>
-          </div>
-        </div>
+        {/* User Profile Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className='flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50'>
+            <Avatar className='h-10 w-10'>
+              <AvatarImage src='/placeholder-avatar.jpg' alt='User' />
+              <AvatarFallback className='font-sf-pro bg-gray-300 text-[14px] leading-5 font-semibold tracking-[-0.01em] text-gray-700'>
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className='hidden flex-col lg:flex'>
+              <span className='font-sf-pro text-[14px] leading-5 font-semibold tracking-[-0.01em] text-gray-900'>
+                {user?.name || 'User'}
+              </span>
+              <span className='font-sf-pro text-left text-[12px] leading-4 font-normal tracking-[-0.01em] text-gray-500'>
+                {userRole}
+              </span>
+            </div>
+            <ChevronDown className='hidden h-4 w-4 text-gray-400 lg:block' />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' className='w-56'>
+            <DropdownMenuLabel className='font-normal'>
+              <div className='flex flex-col space-y-1'>
+                <p className='text-sm leading-none font-medium'>{user?.name || 'User'}</p>
+                <p className='text-muted-foreground text-xs leading-none'>{user?.email || 'user@example.com'}</p>
+                <p className='text-muted-foreground text-xs leading-none'>{userRole}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className='cursor-pointer'>
+              <User className='mr-2 h-4 w-4' />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className='cursor-pointer text-red-600 focus:text-red-600' onClick={handleLogout}>
+              <LogOut className='mr-2 h-4 w-4' />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

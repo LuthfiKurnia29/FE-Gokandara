@@ -5,8 +5,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { NavUser } from '@/components/nav-user';
-import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -27,8 +25,6 @@ import { type MenuItem, menuItems } from '@/stores/menu-item';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { MessageSquareText, ShoppingCart } from 'lucide-react';
-import { Menu } from 'lucide-react';
 
 // Sidebar Menu Item Component
 const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
@@ -146,7 +142,7 @@ const SidebarMenuDropdown = React.memo(
                   <Link
                     href={item.url}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-lg px-2 py-1 transition-colors',
+                      'flex w-full items-center gap-2 rounded-lg px-2 py-2 transition-colors',
                       isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3] hover:text-[#FF9900]'
                     )}>
                     {SubIconComponent && (

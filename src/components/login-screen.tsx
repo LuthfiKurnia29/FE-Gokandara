@@ -1,27 +1,55 @@
 'use client';
 
 import type React from 'react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { authService } from '@/services/auth';
+import { type LoginFormData, loginSchema } from '@/types/auth';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 
-import { Eye, EyeOff, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
 interface LoginScreenProps {
   onLogin: () => void;
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+export const LoginScreen = memo(({ onLogin }: LoginScreenProps) => {
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username && password) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema)
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: authService.login,
+    onSuccess: (data) => {
+      authService.storeAuth(data.access_token, data.user);
       onLogin();
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      setError('root', {
+        type: 'manual',
+        message: errorMessage
+      });
     }
+  });
+
+  const handleFormSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -35,23 +63,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       </div>
 
       {/* Login Form - Takes up most of the remaining space */}
-      <div className='flex-1 rounded-t-[2rem] bg-white px-6 pt-12 pb-8'>
+      <div className='mx-auto w-full max-w-[640px] flex-1 rounded-t-[2rem] bg-white px-6 pt-12 pb-8'>
         <h1 className='mb-16 text-center text-3xl font-semibold text-[#353430]'>Welcome</h1>
 
-        <form onSubmit={handleSubmit} className='space-y-8'>
-          {/* Username Field */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-8'>
+          {/* Root Error Display */}
+          {errors.root && (
+            <div className='rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600'>
+              {errors.root.message}
+            </div>
+          )}
+
+          {/* Email Field */}
           <div className='relative'>
             <div className='absolute inset-y-0 left-4 flex items-center text-gray-400'>
               <User size={20} className='translate-y-[1px]' />
             </div>
             <Input
               type='text'
-              placeholder='Username'
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder='Email'
+              {...register('email')}
               className='h-16 w-full rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-4 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
-              required
             />
+            {errors.email && <p className='mt-1 text-sm text-red-600'>{errors.email.message}</p>}
           </div>
 
           {/* Password Field */}
@@ -62,33 +96,48 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder='Password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password')}
               className='h-16 w-full rounded-2xl border border-gray-200 bg-gray-50 py-4 pr-12 pl-12 text-lg text-gray-700 placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#DAA961]'
-              required
             />
             <button
               type='button'
-              onClick={() => setShowPassword(!showPassword)}
-              className='absolute inset-y-0 right-3 flex items-center text-gray-400'>
+              onClick={togglePasswordVisibility}
+              className='absolute inset-y-0 right-3 flex items-center text-gray-400'
+              tabIndex={0}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  togglePasswordVisibility();
+                }
+              }}>
               {showPassword ? (
                 <EyeOff size={20} className='translate-y-[1px]' />
               ) : (
                 <Eye size={20} className='translate-y-[1px]' />
               )}
             </button>
+            {errors.password && <p className='mt-1 text-sm text-red-600'>{errors.password.message}</p>}
           </div>
 
           {/* Login Button */}
           <div className='pt-8'>
             <Button
               type='submit'
-              className='h-16 w-full rounded-2xl bg-[#DAA961] text-xl font-semibold text-white shadow-lg transition-colors hover:bg-[#c49654]'>
-              Masuk
+              disabled={loginMutation.isPending}
+              className='h-16 w-full rounded-2xl bg-[#DAA961] text-xl font-semibold text-white shadow-lg transition-colors hover:bg-[#c49654] disabled:cursor-not-allowed disabled:opacity-50'>
+              {loginMutation.isPending ? (
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='h-5 w-5 animate-spin' />
+                  Signing in...
+                </div>
+              ) : (
+                'Masuk'
+              )}
             </Button>
           </div>
         </form>
       </div>
     </div>
   );
-}
+});

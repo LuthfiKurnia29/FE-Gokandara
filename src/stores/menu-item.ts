@@ -20,9 +20,12 @@ import {
   NotebookText,
   ServerCog,
   Settings,
+  Shapes,
   ShoppingCart,
   Soup,
+  SquaresUnite,
   Tag,
+  UserCheck,
   Users,
   Utensils,
   UtensilsCrossed
@@ -71,11 +74,6 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    title: 'Type',
-    url: '/type',
-    icon: Tag
-  },
-  {
     title: 'Transaksi',
     url: '/transaksi',
     icon: ShoppingCart
@@ -88,6 +86,33 @@ const menuItems: MenuItem[] = [
   {
     title: 'Others',
     url: 'divider'
+  },
+  {
+    title: 'Master Data',
+    icon: Database,
+    url: '/master-data',
+    children: [
+      {
+        title: 'User',
+        url: '/master-data/user',
+        icon: UserCheck
+      },
+      {
+        title: 'Blok',
+        url: '/master-data/blok',
+        icon: Shapes
+      },
+      {
+        title: 'Tipe',
+        url: '/master-data/tipe',
+        icon: Tag
+      },
+      {
+        title: 'Unit',
+        url: '/master-data/unit',
+        icon: SquaresUnite
+      }
+    ]
   },
   {
     title: 'Konsumen',

@@ -167,11 +167,13 @@ const PaginateTable = memo(
         queryKey: queryKey ? queryKey : [url, payload],
         queryFn: () =>
           axios
-            .post(url, {
-              search: debouncedSearch,
-              page,
-              per: Number(per),
-              ...payload
+            .get(url, {
+              params: {
+                search: debouncedSearch,
+                page,
+                per: Number(per),
+                ...payload
+              }
             })
             .then((res) => res.data),
         placeholderData: { data: [] }

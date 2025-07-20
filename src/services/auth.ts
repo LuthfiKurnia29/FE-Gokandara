@@ -1,0 +1,69 @@
+import axios from '@/lib/axios';
+import type { CurrentUserResponse, LoginFormData, LoginResponse } from '@/types/auth';
+import { useQuery } from '@tanstack/react-query';
+
+export const authService = {
+  login: async (data: LoginFormData): Promise<LoginResponse> => {
+    const response = await axios.post<LoginResponse>('/login', data);
+    return response.data;
+  },
+
+  logout: () => {
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('user-data');
+  },
+
+  getStoredToken: (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth-token');
+    }
+    return null;
+  },
+
+  getStoredUser: () => {
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('user');
+      return user ? JSON.parse(user) : null;
+    }
+    return null;
+  },
+
+  getStoredUserData: (): CurrentUserResponse | null => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user-data');
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  },
+
+  storeAuth: (token: string, user: any) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth-token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  },
+
+  storeUserData: (userData: CurrentUserResponse) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user-data', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(userData.user));
+    }
+  },
+
+  getCurrentUser: async (): Promise<CurrentUserResponse> => {
+    const response = await axios.post<CurrentUserResponse>('/me');
+    return response.data;
+  }
+};
+
+export const useCurrentUser = () => {
+  const token = authService.getStoredToken();
+
+  return useQuery({
+    queryKey: ['currentUser'],
+    queryFn: authService.getCurrentUser,
+    enabled: !!token,
+    retry: false
+  });
+};
