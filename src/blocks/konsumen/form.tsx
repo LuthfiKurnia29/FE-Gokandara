@@ -278,6 +278,7 @@ export const KonsumenForm = memo(function KonsumenForm({
               {/* Preferensi Tab */}
               {activeTab === 'preferensi' && (
                 <div className='space-y-6'>
+                  {/* Baris Pertama: Referensi, Kesiapan Dana, Prospek */}
                   <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                     <div className='space-y-2'>
                       <Label className='font-medium text-gray-900'>Referensi</Label>
@@ -313,7 +314,8 @@ export const KonsumenForm = memo(function KonsumenForm({
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                  {/* Baris Kedua: Proyek yang Diminati, Pengalaman Pelanggan */}
+                  <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                     <div className='space-y-2'>
                       <Label className='font-medium text-gray-900'>Proyek yang Diminati</Label>
                       <Select
@@ -325,7 +327,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                       />
                     </div>
 
-                    <div className='space-y-2'>
+                    <div className='space-y-2 md:col-span-2'>
                       <Label className='font-medium text-gray-900'>Pengalaman Pelanggan</Label>
                       <Input
                         {...register('pengalaman_pelanggan')}
@@ -338,24 +340,37 @@ export const KonsumenForm = memo(function KonsumenForm({
 
               {/* Follow up Tab */}
               {activeTab === 'followup' && (
-                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                  <div className='space-y-2'>
-                    <Label className='font-medium text-gray-900'>Rencana Follow Up</Label>
-                    <Textarea
-                      {...register('rencana_followup')}
-                      className='h-12 min-h-[100px] border-gray-300 focus:border-teal-500 focus:ring-teal-500'
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className='space-y-2'>
-                    <Label className='font-medium text-gray-900'>Tanggal Follow Up</Label>
-                    <div className='relative'>
-                      <Input
-                        type='date'
-                        {...register('tanggal_followup')}
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                <div className='space-y-6'>
+                  <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                    <div className='space-y-2'>
+                      <Label className='font-medium text-gray-900'>Rencana Follow Up</Label>
+                      <Textarea
+                        {...register('rencana_followup')}
+                        placeholder='Masukkan rencana follow up...'
+                        className='min-h-[120px] resize-none border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        rows={4}
                       />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label className='font-medium text-gray-900'>Tanggal Follow Up</Label>
+                      <div className='relative'>
+                        <Input
+                          type='date'
+                          {...register('tanggal_followup')}
+                          className='h-12 border-gray-300 pr-10 focus:border-teal-500 focus:ring-teal-500'
+                        />
+                        <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3'>
+                          <svg className='h-5 w-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
