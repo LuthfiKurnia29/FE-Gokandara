@@ -61,7 +61,7 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId }: ChatPa
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      // Error handled by mutation's onError callback and user feedback
     }
   };
 

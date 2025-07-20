@@ -7,7 +7,7 @@ import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,8 @@ const KonsumenPage = memo(function KonsumenPage() {
       }
       handleCloseForm();
     } catch (error) {
-      console.error('Error saving konsumen:', error);
+      // Error is handled by React Query's error boundary and toast notifications
+      // No need for console.error in production
     }
   };
 
@@ -169,6 +170,18 @@ const KonsumenPage = memo(function KonsumenPage() {
             maxHeight: 'min(700px, 85vh)',
             minHeight: '500px'
           }}>
+          {/* Add DialogTitle for accessibility (visually hidden) */}
+          <DialogTitle className='sr-only'>
+            {mode === 'edit' ? 'Edit Data Konsumen' : 'Tambah Data Konsumen'}
+          </DialogTitle>
+
+          {/* Add DialogDescription for accessibility (visually hidden) */}
+          <DialogDescription className='sr-only'>
+            {mode === 'edit'
+              ? 'Form untuk mengedit data konsumen yang sudah ada'
+              : 'Form untuk menambahkan data konsumen baru ke dalam sistem'}
+          </DialogDescription>
+
           <KonsumenForm
             selectedId={mode === 'edit' ? selectedId : null}
             onSubmit={handleFormSubmit}

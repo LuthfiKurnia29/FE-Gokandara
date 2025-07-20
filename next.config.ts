@@ -3,7 +3,19 @@ import type { NextConfig } from 'next';
 import initializeBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
-  output: 'standalone'
+  // ✅ Migrated from experimental.turbo to turbopack (stable since Next.js 15.3)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js'
+      }
+    }
+  },
+  compiler: {
+    // Remove console logs only in production, but keep console.error for debugging
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false
+  }
 };
 
 const withBundleAnalyzer = initializeBundleAnalyzer({

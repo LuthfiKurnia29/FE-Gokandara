@@ -150,7 +150,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     try {
       await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Approved' } });
     } catch (error) {
-      console.error('Error approving penjualan:', error);
+      // Error handled by mutation's onError callback and toast notifications
     }
   };
 
@@ -166,7 +166,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       }
       handleCloseForm();
     } catch (error) {
-      console.error('Error updating penjualan:', error);
+      // Error handled by mutation's onError callback and toast notifications
     }
   };
 
@@ -247,7 +247,7 @@ const PenjualanPage = memo(function PenjualanPage() {
       await createPenjualan.mutateAsync(data);
       handleCloseForm();
     } catch (error) {
-      console.error('Error saving penjualan:', error);
+      // Error handled by mutation's onError callback and toast notifications
     }
   };
 

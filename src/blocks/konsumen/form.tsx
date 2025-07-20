@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect, useState } from 'react';
+import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,14 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useKonsumenById } from '@/services/konsumen';
+import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from '@/services/konsumen';
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// Form validation schema
+// Updated form validation schema to match Laravel migration with prospek
 const konsumenSchema = z.object({
   name: z.string().min(1, 'Nama harus diisi'),
   ktp_number: z.string().min(1, 'No. KTP/SIM harus diisi'),
@@ -23,13 +24,13 @@ const konsumenSchema = z.object({
   phone: z.string().min(1, 'Nomor telepon harus diisi'),
   email: z.string().email('Format email tidak valid'),
   description: z.string().optional(),
-  referensi: z.string().optional(),
+  refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
   kesiapan_dana: z.string().optional(),
-  prospek: z.string().optional(),
-  proyek_diminati: z.string().optional(),
-  pengalaman_pelanggan: z.string().optional(),
-  rencana_followup: z.string().optional(),
-  tanggal_followup: z.string().optional()
+  prospek_id: z.string().min(1, 'Prospek harus dipilih'),
+  project_id: z.string().min(1, 'Proyek harus dipilih'),
+  pengalaman: z.string().optional(),
+  materi_fu: z.string().optional(),
+  tgl_fu: z.string().optional()
 });
 
 type KonsumenFormData = z.infer<typeof konsumenSchema>;
@@ -41,26 +42,6 @@ interface KonsumenFormProps {
   isLoading?: boolean;
 }
 
-const referensiOptions = [
-  { value: 'sosial_media', label: 'Sosial Media' },
-  { value: 'teman', label: 'Teman/Keluarga' },
-  { value: 'iklan', label: 'Iklan' },
-  { value: 'website', label: 'Website' },
-  { value: 'lainnya', label: 'Lainnya' }
-];
-
-const prospekOptions = [
-  { value: 'new', label: 'New' },
-  { value: 'existing', label: 'Existing' },
-  { value: 'potential', label: 'Potential' }
-];
-
-const proyekOptions = [
-  { value: 'proyek_a', label: 'Proyek A' },
-  { value: 'proyek_b', label: 'Proyek B' },
-  { value: 'proyek_c', label: 'Proyek C' }
-];
-
 export const KonsumenForm = memo(function KonsumenForm({
   selectedId,
   onSubmit,
@@ -68,6 +49,83 @@ export const KonsumenForm = memo(function KonsumenForm({
   isLoading = false
 }: KonsumenFormProps) {
   const [activeTab, setActiveTab] = useState('basic');
+
+  // Fetch master data from APIs with improved error handling
+  const { data: referensiOptions = [], isLoading: isLoadingReferensi, error: errorReferensi } = useReferensiList();
+
+  const { data: proyekOptions = [], isLoading: isLoadingProyek, error: errorProyek } = useProjekList();
+
+  const { data: prospekOptions = [], isLoading: isLoadingProspek, error: errorProspek } = useProspekList();
+
+  // Safe option mapping to prevent Select component errors
+  const safeReferensiOptions = React.useMemo(() => {
+    if (!Array.isArray(referensiOptions)) return [];
+    return referensiOptions
+      .filter((ref) => ref && ref.id && ref.name)
+      .map((ref) => ({
+        value: ref.id.toString(),
+        label: ref.name
+      }));
+  }, [referensiOptions]);
+
+  const safeProspekOptions = React.useMemo(() => {
+    if (!Array.isArray(prospekOptions)) return [];
+    return prospekOptions
+      .filter((prospek) => prospek && prospek.id && prospek.name)
+      .map((prospek) => ({
+        value: prospek.id.toString(),
+        label: prospek.name
+      }));
+  }, [prospekOptions]);
+
+  const safeProjekOptions = React.useMemo(() => {
+    if (!Array.isArray(proyekOptions)) return [];
+    return proyekOptions
+      .filter((proyek) => proyek && proyek.id && proyek.name)
+      .map((proyek) => ({
+        value: proyek.id.toString(),
+        label: proyek.name
+      }));
+  }, [proyekOptions]);
+
+  // Debug information for development
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.group('🔍 Konsumen Form - Master Data Status');
+      console.log('📊 Referensi:', {
+        data: referensiOptions,
+        loading: isLoadingReferensi,
+        error: errorReferensi,
+        safeOptions: safeReferensiOptions.length
+      });
+      console.log('📊 Prospek:', {
+        data: prospekOptions,
+        loading: isLoadingProspek,
+        error: errorProspek,
+        safeOptions: safeProspekOptions.length
+      });
+      console.log('📊 Proyek:', {
+        data: proyekOptions,
+        loading: isLoadingProyek,
+        error: errorProyek,
+        safeOptions: safeProjekOptions.length
+      });
+      console.groupEnd();
+    }
+  }, [
+    referensiOptions,
+    isLoadingReferensi,
+    errorReferensi,
+    safeReferensiOptions,
+    prospekOptions,
+    isLoadingProspek,
+    errorProspek,
+    safeProspekOptions,
+    proyekOptions,
+    isLoadingProyek,
+    errorProyek,
+    safeProjekOptions
+  ]);
 
   // Get existing data for edit mode
   const { data: existingData } = useKonsumenById(selectedId || null);
@@ -88,20 +146,20 @@ export const KonsumenForm = memo(function KonsumenForm({
       phone: '',
       email: '',
       description: '',
-      referensi: '',
+      refrensi_id: '',
       kesiapan_dana: '',
-      prospek: 'new',
-      proyek_diminati: '',
-      pengalaman_pelanggan: '',
-      rencana_followup: '',
-      tanggal_followup: ''
+      prospek_id: '',
+      project_id: '',
+      pengalaman: '',
+      materi_fu: '',
+      tgl_fu: ''
     }
   });
 
   // Watch form values for Select components
-  const referensi = watch('referensi');
-  const prospek = watch('prospek');
-  const proyekDiminati = watch('proyek_diminati');
+  const referensiId = watch('refrensi_id');
+  const prospekId = watch('prospek_id');
+  const projectId = watch('project_id');
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -113,25 +171,33 @@ export const KonsumenForm = memo(function KonsumenForm({
         phone: existingData.phone || '',
         email: existingData.email || '',
         description: existingData.description || '',
-        referensi: '',
-        kesiapan_dana: '',
-        prospek: 'new',
-        proyek_diminati: '',
-        pengalaman_pelanggan: '',
-        rencana_followup: '',
-        tanggal_followup: ''
+        refrensi_id: existingData.refrensi_id?.toString() || '',
+        kesiapan_dana: existingData.kesiapan_dana?.toString() || '',
+        prospek_id: existingData.prospek_id?.toString() || '',
+        project_id: existingData.project_id?.toString() || '',
+        pengalaman: existingData.pengalaman || '',
+        materi_fu: existingData.materi_fu || '',
+        tgl_fu: existingData.tgl_fu || ''
       });
     }
   }, [existingData, reset]);
 
   const onFormSubmit = async (data: KonsumenFormData) => {
+    // Convert string IDs to numbers and format data for Laravel
     const submitData: CreateKonsumenData = {
       name: data.name,
       ktp_number: data.ktp_number,
       address: data.address,
       phone: data.phone,
       email: data.email,
-      description: data.description || ''
+      description: data.description || '',
+      refrensi_id: parseInt(data.refrensi_id),
+      prospek_id: parseInt(data.prospek_id),
+      project_id: parseInt(data.project_id),
+      kesiapan_dana: data.kesiapan_dana ? parseFloat(data.kesiapan_dana.replace(/,/g, '')) : null,
+      pengalaman: data.pengalaman || null,
+      materi_fu: data.materi_fu || null,
+      tgl_fu: data.tgl_fu || null
     };
 
     await onSubmit(submitData);
@@ -146,6 +212,20 @@ export const KonsumenForm = memo(function KonsumenForm({
     const formatted = formatCurrency(e.target.value);
     setValue('kesiapan_dana', formatted);
   };
+
+  // Enhanced error handling messages
+  const getMasterDataErrorMessage = () => {
+    const errors = [];
+    if (errorReferensi) errors.push('Referensi');
+    if (errorProspek) errors.push('Prospek');
+    if (errorProyek) errors.push('Proyek');
+
+    if (errors.length === 0) return null;
+
+    return `Gagal memuat data: ${errors.join(', ')}. Silakan refresh halaman atau hubungi administrator.`;
+  };
+
+  const masterDataError = getMasterDataErrorMessage();
 
   return (
     <div className='flex h-full w-full flex-col'>
@@ -190,6 +270,28 @@ export const KonsumenForm = memo(function KonsumenForm({
           <CardContent
             className='flex-1 px-6 pt-4'
             style={{ overflow: 'auto', minHeight: 0, maxHeight: 'calc(100% - 140px)' }}>
+            {/* Master Data Error Display */}
+            {masterDataError && (
+              <div className='mb-4 rounded-lg border border-red-200 bg-red-50 p-4'>
+                <div className='flex items-center'>
+                  <svg className='mr-2 h-5 w-5 text-red-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                    />
+                  </svg>
+                  <div>
+                    <p className='text-sm font-medium text-red-700'>{masterDataError}</p>
+                    <p className='mt-1 text-xs text-red-600'>
+                      Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Tab Content Container - Optimized Height for all tabs */}
             <div className='pb-4' style={{ height: '380px', minHeight: '380px', maxHeight: '380px' }}>
               {/* Basic Information Tab */}
@@ -275,22 +377,26 @@ export const KonsumenForm = memo(function KonsumenForm({
                 </div>
               )}
 
-              {/* Preferensi Tab */}
+              {/* Preferensi Tab - Updated Layout sesuai Design */}
               {activeTab === 'preferensi' && (
                 <div className='space-y-6'>
-                  {/* Baris Pertama: Referensi, Kesiapan Dana, Prospek */}
+                  {/* Baris Utama: Referensi | Kesiapan Dana | Prospek (3 kolom sejajar) */}
                   <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+                    {/* Kolom 1: Referensi */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Referensi</Label>
+                      <Label className='font-medium text-gray-900'>Referensi *</Label>
                       <Select
-                        options={referensiOptions}
-                        value={referensi}
-                        onChange={(value) => setValue('referensi', value as string)}
-                        placeholder='Pilih referensi'
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        options={safeReferensiOptions}
+                        value={referensiId}
+                        onChange={(value) => setValue('refrensi_id', value as string)}
+                        placeholder={isLoadingReferensi ? 'Loading...' : 'Pilih referensi'}
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        disabled={isLoadingReferensi}
                       />
+                      {errors.refrensi_id && <p className='text-sm text-red-500'>{errors.refrensi_id.message}</p>}
                     </div>
 
+                    {/* Kolom 2: Kesiapan Dana */}
                     <div className='space-y-2'>
                       <Label className='font-medium text-gray-900'>Kesiapan Dana</Label>
                       <Input
@@ -298,40 +404,48 @@ export const KonsumenForm = memo(function KonsumenForm({
                         placeholder='0,000,000'
                         {...register('kesiapan_dana')}
                         onChange={handleCurrencyChange}
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                       />
                     </div>
 
+                    {/* Kolom 3: Prospek */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Prospek</Label>
+                      <Label className='font-medium text-gray-900'>Prospek *</Label>
                       <Select
-                        options={prospekOptions}
-                        value={prospek}
-                        onChange={(value) => setValue('prospek', value as string)}
-                        placeholder='Pilih prospek'
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        options={safeProspekOptions}
+                        value={prospekId}
+                        onChange={(value) => setValue('prospek_id', value as string)}
+                        placeholder={isLoadingProspek ? 'Loading...' : 'Pilih prospek'}
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        disabled={isLoadingProspek}
                       />
+                      {errors.prospek_id && <p className='text-sm text-red-500'>{errors.prospek_id.message}</p>}
                     </div>
                   </div>
 
-                  {/* Baris Kedua: Proyek yang Diminati, Pengalaman Pelanggan */}
-                  <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+                  {/* Baris Kedua: Proyek yang Diminati | Pengalaman Pelanggan (2 kolom sejajar) */}
+                  <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                    {/* Kolom 1: Proyek yang Diminati */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Proyek yang Diminati</Label>
+                      <Label className='font-medium text-gray-900'>Proyek yang Diminati *</Label>
                       <Select
-                        options={proyekOptions}
-                        value={proyekDiminati}
-                        onChange={(value) => setValue('proyek_diminati', value as string)}
-                        placeholder='Pilih proyek'
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        options={safeProjekOptions}
+                        value={projectId}
+                        onChange={(value) => setValue('project_id', value as string)}
+                        placeholder={isLoadingProyek ? 'Loading...' : 'Pilih proyek'}
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        disabled={isLoadingProyek}
                       />
+                      {errors.project_id && <p className='text-sm text-red-500'>{errors.project_id.message}</p>}
                     </div>
 
-                    <div className='space-y-2 md:col-span-2'>
+                    {/* Kolom 2: Pengalaman Pelanggan */}
+                    <div className='space-y-2'>
                       <Label className='font-medium text-gray-900'>Pengalaman Pelanggan</Label>
                       <Input
-                        {...register('pengalaman_pelanggan')}
-                        className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        {...register('pengalaman')}
+                        placeholder='Masukkan pengalaman pelanggan...'
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                       />
                     </div>
                   </div>
@@ -343,10 +457,10 @@ export const KonsumenForm = memo(function KonsumenForm({
                 <div className='space-y-6'>
                   <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Rencana Follow Up</Label>
+                      <Label className='font-medium text-gray-900'>Materi Follow Up</Label>
                       <Textarea
-                        {...register('rencana_followup')}
-                        placeholder='Masukkan rencana follow up...'
+                        {...register('materi_fu')}
+                        placeholder='Masukkan materi follow up...'
                         className='min-h-[120px] resize-none border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                         rows={4}
                       />
@@ -357,7 +471,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                       <div className='relative'>
                         <Input
                           type='date'
-                          {...register('tanggal_followup')}
+                          {...register('tgl_fu')}
                           className='h-12 border-gray-300 pr-10 focus:border-teal-500 focus:ring-teal-500'
                         />
                         <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3'>
@@ -433,7 +547,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                   </Button>
                   <Button
                     type='submit'
-                    disabled={isLoading}
+                    disabled={isLoading || isLoadingReferensi || isLoadingProspek || isLoadingProyek}
                     className='h-12 rounded-lg bg-green-500 px-8 py-2 text-white hover:bg-green-600'>
                     {isLoading ? 'Menyimpan...' : 'Submit'}
                   </Button>
