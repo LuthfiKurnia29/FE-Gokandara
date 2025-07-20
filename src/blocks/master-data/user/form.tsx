@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useRoleList, useUserById } from '@/services/user';
 import { CreateUserData } from '@/types/user';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { Eye, EyeOff } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -93,6 +94,9 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
   const { data: user, isFetching } = useUserById(selectedId || null, ['role']);
   const { data: roleData } = useRoleList();
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -109,6 +113,14 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       password_confirmation: ''
     }
   });
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const togglePasswordConfirmationVisibility = () => {
+    setShowPasswordConfirmation(!showPasswordConfirmation);
+  };
 
   // Reset form when user data changes
   useEffect(() => {
@@ -129,6 +141,8 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
         password_confirmation: ''
       });
     }
+    setShowPassword(false);
+    setShowPasswordConfirmation(false);
   }, [user, reset]);
 
   const handleFormSubmit = (data: UserFormData) => {
@@ -157,6 +171,8 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       password: '',
       password_confirmation: ''
     });
+    setShowPassword(false);
+    setShowPasswordConfirmation(false);
     onCancel();
   };
 
@@ -231,13 +247,25 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
 
       <div className='space-y-2'>
         <Label htmlFor='password'>Password {selectedId ? '(Kosongkan jika tidak ingin mengubah)' : '*'}</Label>
-        <Input
-          id='password'
-          type='password'
-          {...register('password')}
-          placeholder='Masukkan password'
-          disabled={isLoading}
-        />
+        <div className='relative'>
+          <Input
+            id='password'
+            type={showPassword ? 'text' : 'password'}
+            {...register('password')}
+            placeholder='Masukkan password'
+            disabled={isLoading}
+            className='pr-10'
+          />
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent'
+            onClick={togglePasswordVisibility}
+            disabled={isLoading}>
+            {showPassword ? <EyeOff className='h-4 w-4 text-gray-500' /> : <Eye className='h-4 w-4 text-gray-500' />}
+          </Button>
+        </div>
         {errors.password && <p className='text-sm text-red-600'>{errors.password.message}</p>}
       </div>
 
@@ -245,13 +273,29 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
         <Label htmlFor='password_confirmation'>
           Konfirmasi Password {selectedId ? '(Kosongkan jika tidak ingin mengubah)' : '*'}
         </Label>
-        <Input
-          id='password_confirmation'
-          type='password'
-          {...register('password_confirmation')}
-          placeholder='Konfirmasi password'
-          disabled={isLoading}
-        />
+        <div className='relative'>
+          <Input
+            id='password_confirmation'
+            type={showPasswordConfirmation ? 'text' : 'password'}
+            {...register('password_confirmation')}
+            placeholder='Konfirmasi password'
+            disabled={isLoading}
+            className='pr-10'
+          />
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent'
+            onClick={togglePasswordConfirmationVisibility}
+            disabled={isLoading}>
+            {showPasswordConfirmation ? (
+              <EyeOff className='h-4 w-4 text-gray-500' />
+            ) : (
+              <Eye className='h-4 w-4 text-gray-500' />
+            )}
+          </Button>
+        </div>
         {errors.password_confirmation && <p className='text-sm text-red-600'>{errors.password_confirmation.message}</p>}
       </div>
 
