@@ -16,7 +16,7 @@ export const masterDataService = {
   // Get all referensi dari Laravel API
   getReferensi: async (): Promise<ReferensiData[]> => {
     try {
-      const response = await axios.get('/api/referensi');
+      const response = await axios.get('/referensi');
 
       // Handle different Laravel response formats
       if (response.data.data && Array.isArray(response.data.data)) {
@@ -36,7 +36,7 @@ export const masterDataService = {
   // Get all proyek dari Laravel API
   getProyek: async (): Promise<ProjekData[]> => {
     try {
-      const response = await axios.get('/api/all-projek');
+      const response = await axios.get('/all-projek');
 
       // Handle different Laravel response formats
       if (response.data.data && Array.isArray(response.data.data)) {
@@ -56,7 +56,7 @@ export const masterDataService = {
   // Get all prospek dari Laravel API
   getProspek: async (): Promise<ProspekData[]> => {
     try {
-      const response = await axios.get('/api/prospek');
+      const response = await axios.get('/prospek');
 
       // Handle different Laravel response formats
       if (response.data.data && Array.isArray(response.data.data)) {

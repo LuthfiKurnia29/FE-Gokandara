@@ -5,6 +5,7 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -165,6 +166,7 @@ export const KonsumenForm = memo(function KonsumenForm({
   const referensiId = watch('refrensi_id');
   const prospekId = watch('prospek_id');
   const projectId = watch('project_id');
+  const tglFu = watch('tgl_fu');
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -298,7 +300,7 @@ export const KonsumenForm = memo(function KonsumenForm({
             )}
 
             {/* Tab Content Container - Optimized Height for all tabs */}
-            <div className='pb-4' style={{ height: '380px', minHeight: '380px', maxHeight: '380px' }}>
+            <div className='pb-4'>
               {/* Basic Information Tab */}
               {activeTab === 'basic' && (
                 <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
@@ -472,23 +474,14 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label className='font-medium text-gray-900'>Tanggal Follow Up (Opsional)</Label>
-                      <div className='relative'>
-                        <Input
-                          type='date'
-                          {...register('tgl_fu')}
-                          className='h-12 border-gray-300 pr-10 focus:border-teal-500 focus:ring-teal-500'
-                        />
-                        <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3'>
-                          <svg className='h-5 w-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
-                            />
-                          </svg>
-                        </div>
-                      </div>
+                      <DatePicker
+                        value={tglFu ? new Date(tglFu) : undefined}
+                        onChange={(date) => setValue('tgl_fu', date ? date.toISOString().split('T')[0] : '')}
+                        placeholder='Pilih tanggal follow up...'
+                        format='dd/MM/yyyy'
+                        className='h-12'
+                        withInput={false}
+                      />
                     </div>
                   </div>
                 </div>
@@ -547,13 +540,13 @@ export const KonsumenForm = memo(function KonsumenForm({
                     onClick={() => setActiveTab('preferensi')}
                     disabled={isLoading}
                     className='h-12 border-gray-300 bg-transparent px-8 py-2 text-gray-700 hover:bg-gray-50'>
-                    Kembali
+                    Batal
                   </Button>
                   <Button
                     type='submit'
                     disabled={isLoading || isLoadingReferensi || isLoadingProspek || isLoadingProyek}
                     className='h-12 rounded-lg bg-green-500 px-8 py-2 text-white hover:bg-green-600'>
-                    {isLoading ? 'Menyimpan...' : 'Submit'}
+                    {isLoading ? 'Menyimpan...' : selectedId ? 'Update' : 'Simpan'}
                   </Button>
                 </>
               )}
