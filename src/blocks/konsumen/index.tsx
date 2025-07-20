@@ -162,16 +162,13 @@ const KonsumenPage = memo(function KonsumenPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-md'>
-          <DialogHeader>
-            <DialogTitle>{mode === 'create' ? 'Tambah Konsumen' : 'Edit Konsumen'}</DialogTitle>
-            <DialogDescription>
-              {mode === 'create'
-                ? 'Isi form berikut untuk menambah konsumen baru.'
-                : 'Edit data konsumen di form berikut.'}
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 sm:max-w-[900px] md:max-w-[1000px] lg:max-w-[1200px]'
+          style={{
+            height: 'min(700px, 85vh)',
+            maxHeight: 'min(700px, 85vh)',
+            minHeight: '500px'
+          }}>
           <KonsumenForm
             selectedId={mode === 'edit' ? selectedId : null}
             onSubmit={handleFormSubmit}
