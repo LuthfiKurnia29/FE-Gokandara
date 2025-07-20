@@ -261,11 +261,7 @@ export function ResourceCalendar({
     if (targetParentId && sourceParentId) {
       const isSameParent = targetParentId === sourceParentId;
 
-      // Log for debugging
-      if (!isSameParent) {
-        console.log(`Drag prevented: Cannot move events between different teams`);
-      }
-
+      // Return validation result without console logging
       return isSameParent;
     }
 
@@ -365,10 +361,7 @@ export function ResourceCalendar({
           const newResource = arg.event.getResources()[0];
           const oldResource = arg.oldEvent.getResources()[0];
 
-          // Log the move for feedback
-          console.log(
-            `Event "${arg.event.title}" moved from "${oldResource?.title}" to "${newResource?.title}" (${resourceGroupField ? newResource?.extendedProps?.[resourceGroupField] : newResource?._resource?.parentId})`
-          );
+          // Event moved successfully - no logging needed in production
 
           const updatedEvent = {
             id: arg.event.id,
@@ -481,9 +474,7 @@ export function ResourceCalendar({
             });
 
             if (hasOverlap) {
-              console.log(
-                `Drag prevented: Resource ${targetResourceId} already has an event scheduled during this time`
-              );
+              // Return false to prevent overlapping events
               return false;
             }
             // If no, continue to check the restrictions

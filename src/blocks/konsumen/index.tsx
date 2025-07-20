@@ -7,7 +7,7 @@ import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,8 @@ const KonsumenPage = memo(function KonsumenPage() {
       }
       handleCloseForm();
     } catch (error) {
-      console.error('Error saving konsumen:', error);
+      // Error is handled by React Query's error boundary and toast notifications
+      // No need for console.error in production
     }
   };
 
@@ -162,15 +163,24 @@ const KonsumenPage = memo(function KonsumenPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-md'>
-          <DialogHeader>
-            <DialogTitle>{mode === 'create' ? 'Tambah Konsumen' : 'Edit Konsumen'}</DialogTitle>
-            <DialogDescription>
-              {mode === 'create'
-                ? 'Isi form berikut untuk menambah konsumen baru.'
-                : 'Edit data konsumen di form berikut.'}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className='left-[56%] max-h-[700px] w-full max-w-[95vw] border-0 p-0 sm:max-w-[900px] md:max-w-[1000px] lg:max-w-[1200px]'
+          style={{
+            height: 'min(700px, 85vh)',
+            maxHeight: 'min(700px, 85vh)',
+            minHeight: '500px'
+          }}>
+          {/* Add DialogTitle for accessibility (visually hidden) */}
+          <DialogTitle className='sr-only'>
+            {mode === 'edit' ? 'Edit Data Konsumen' : 'Tambah Data Konsumen'}
+          </DialogTitle>
+
+          {/* Add DialogDescription for accessibility (visually hidden) */}
+          <DialogDescription className='sr-only'>
+            {mode === 'edit'
+              ? 'Form untuk mengedit data konsumen yang sudah ada'
+              : 'Form untuk menambahkan data konsumen baru ke dalam sistem'}
+          </DialogDescription>
 
           <KonsumenForm
             selectedId={mode === 'edit' ? selectedId : null}
