@@ -115,7 +115,7 @@ export interface UpdatePropertyData {
 
 export interface UsePropertyListParams {
   page?: number;
-  per_page?: number;
+  perPage?: number;
   search?: string;
   status?: PropertyStatus;
   type?: string;

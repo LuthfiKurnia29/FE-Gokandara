@@ -42,7 +42,7 @@ export const PenjualanForm = memo(function PenjualanForm({
 }: PenjualanFormProps) {
   const { data: penjualan, isFetching } = usePenjualanById(selectedId || null, ['konsumen', 'property']);
   const { data: konsumenData } = useKonsumenList({ per_page: 100 });
-  const { data: propertyData } = usePropertyList({ per_page: 100 });
+  const { data: propertyData } = usePropertyList({ perPage: 100 });
 
   const {
     register,
