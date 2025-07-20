@@ -16,21 +16,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// Updated form validation schema to match Laravel migration with prospek
+// Form validation schema sesuai dengan Laravel migration
 const konsumenSchema = z.object({
+  // Required fields (sesuai migration - tanpa nullable())
   name: z.string().min(1, 'Nama harus diisi'),
   ktp_number: z.string().min(1, 'No. KTP/SIM harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
   phone: z.string().min(1, 'Nomor telepon harus diisi'),
   email: z.string().email('Format email tidak valid'),
-  description: z.string().optional(),
   refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
-  kesiapan_dana: z.string().optional(),
-  prospek_id: z.string().min(1, 'Prospek harus dipilih'),
   project_id: z.string().min(1, 'Proyek harus dipilih'),
+
+  // Optional fields (sesuai migration - dengan nullable())
+  description: z.string().optional(),
+  kesiapan_dana: z.string().optional(),
   pengalaman: z.string().optional(),
   materi_fu: z.string().optional(),
-  tgl_fu: z.string().optional()
+  tgl_fu: z.string().optional(),
+
+  // ⚠️ Note: prospek_id tidak ada di migration konsumens - perlu koordinasi backend
+  prospek_id: z.string().min(1, 'Prospek harus dipilih')
 });
 
 type KonsumenFormData = z.infer<typeof konsumenSchema>;
@@ -300,7 +305,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                   <div className='space-y-4'>
                     <div className='space-y-2'>
                       <Label htmlFor='nama' className='font-medium text-gray-900'>
-                        Nama
+                        Nama *
                       </Label>
                       <Input
                         id='nama'
@@ -312,7 +317,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='ktp' className='font-medium text-gray-900'>
-                        No. KTP/SIM
+                        No. KTP/SIM *
                       </Label>
                       <Input
                         id='ktp'
@@ -324,7 +329,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='phone' className='font-medium text-gray-900'>
-                        Nomor Telepon
+                        Nomor Telepon *
                       </Label>
                       <Input
                         id='phone'
@@ -336,7 +341,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='email' className='font-medium text-gray-900'>
-                        Email
+                        Email *
                       </Label>
                       <Input
                         id='email'
@@ -351,7 +356,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                   <div className='space-y-4'>
                     <div className='space-y-2'>
                       <Label htmlFor='alamat' className='font-medium text-gray-900'>
-                        Alamat
+                        Alamat *
                       </Label>
                       <Textarea
                         id='alamat'
@@ -398,7 +403,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     {/* Kolom 2: Kesiapan Dana */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Kesiapan Dana</Label>
+                      <Label className='font-medium text-gray-900'>Kesiapan Dana (Opsional)</Label>
                       <Input
                         type='text'
                         placeholder='0,000,000'
@@ -441,7 +446,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     {/* Kolom 2: Pengalaman Pelanggan */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Pengalaman Pelanggan</Label>
+                      <Label className='font-medium text-gray-900'>Pengalaman Pelanggan (Opsional)</Label>
                       <Input
                         {...register('pengalaman')}
                         placeholder='Masukkan pengalaman pelanggan...'
@@ -457,17 +462,16 @@ export const KonsumenForm = memo(function KonsumenForm({
                 <div className='space-y-6'>
                   <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Materi Follow Up</Label>
-                      <Textarea
+                      <Label className='font-medium text-gray-900'>Materi Follow Up (Opsional)</Label>
+                      <Input
                         {...register('materi_fu')}
                         placeholder='Masukkan materi follow up...'
-                        className='min-h-[120px] resize-none border-gray-300 focus:border-teal-500 focus:ring-teal-500'
-                        rows={4}
+                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                       />
                     </div>
 
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Tanggal Follow Up</Label>
+                      <Label className='font-medium text-gray-900'>Tanggal Follow Up (Opsional)</Label>
                       <div className='relative'>
                         <Input
                           type='date'
