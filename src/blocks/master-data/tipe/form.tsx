@@ -5,39 +5,34 @@ import { memo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getProjek } from '@/services/projek';
-import { CreateProjekData, ProjekData } from '@/types/projek';
+import { getTipe } from '@/services/tipe';
+import { CreateTipeData, TipeData } from '@/types/tipe';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const projekSchema = z.object({
+const tipeSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').min(2, 'Nama minimal 2 karakter')
 });
 
-type ProjekFormData = z.infer<typeof projekSchema>;
+type TipeFormData = z.infer<typeof tipeSchema>;
 
-interface ProjekFormProps {
+interface TipeFormProps {
   selectedId?: number | null;
-  onSubmit: (data: CreateProjekData) => void;
+  onSubmit: (data: CreateTipeData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export const ProjekForm = memo(function ProjekForm({
-  selectedId,
-  onSubmit,
-  onCancel,
-  isLoading = false
-}: ProjekFormProps) {
+export const TipeForm = memo(function TipeForm({ selectedId, onSubmit, onCancel, isLoading = false }: TipeFormProps) {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm<ProjekFormData>({
-    resolver: zodResolver(projekSchema),
+  } = useForm<TipeFormData>({
+    resolver: zodResolver(tipeSchema),
     defaultValues: { name: '' }
   });
 
@@ -45,10 +40,10 @@ export const ProjekForm = memo(function ProjekForm({
     const fetchData = async () => {
       if (selectedId) {
         try {
-          const projek = await getProjek(selectedId);
-          reset({ name: projek.name });
+          const tipe = await getTipe(selectedId);
+          reset({ name: tipe.name });
         } catch (error) {
-          console.error('Error fetching projek:', error);
+          console.error('Error fetching tipe:', error);
         }
       } else {
         reset({ name: '' });
@@ -58,7 +53,7 @@ export const ProjekForm = memo(function ProjekForm({
     fetchData();
   }, [selectedId, reset]);
 
-  const handleFormSubmit = (data: ProjekFormData) => {
+  const handleFormSubmit = (data: TipeFormData) => {
     onSubmit({ name: data.name });
   };
 
@@ -70,8 +65,8 @@ export const ProjekForm = memo(function ProjekForm({
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-4'>
       <div className='space-y-2'>
-        <Label htmlFor='name'>Nama Projek *</Label>
-        <Input id='name' type='text' {...register('name')} placeholder='Masukkan nama projek' disabled={isLoading} />
+        <Label htmlFor='name'>Nama Tipe *</Label>
+        <Input id='name' type='text' {...register('name')} placeholder='Masukkan nama tipe' disabled={isLoading} />
         {errors.name && <p className='text-sm text-red-600'>{errors.name.message}</p>}
       </div>
       <div className='flex justify-end space-x-2 pt-4'>

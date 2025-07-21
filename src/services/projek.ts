@@ -1,21 +1,55 @@
 import axios from '@/lib/axios';
-import { CreateProjekData, ProjekApiResponse, ProjekData, ProjekResponse } from '@/types/projek';
+import { CreateProjekData, ProjekData } from '@/types/projek';
+import { useMutation } from '@tanstack/react-query';
 
-export const getAllProjek = async (): Promise<ProjekData[]> => {
-  const response = await axios.get<ProjekResponse>('/projek');
-  return response.data.data;
+import { toast } from 'react-toastify';
+
+export const getAllProjek = async (params?: any): Promise<ProjekData[]> => {
+  const { data } = await axios.get('/projek', { params });
+  return data.data || data;
 };
 
-export const createProjek = async (payload: CreateProjekData): Promise<ProjekData> => {
-  const response = await axios.post<ProjekApiResponse>('/projek', payload);
-  return response.data.data;
+export const getProjek = async (id: number): Promise<ProjekData> => {
+  const { data } = await axios.get(`/projek/${id}`);
+  return data.data || data;
 };
 
-export const updateProjek = async (id: number, payload: CreateProjekData): Promise<ProjekData> => {
-  const response = await axios.put<ProjekApiResponse>(`/projek/${id}`, payload);
-  return response.data.data;
+export const createProjek = async (payload: CreateProjekData) => {
+  return axios.post('/projek', payload);
 };
 
-export const deleteProjek = async (id: number): Promise<void> => {
-  await axios.delete(`/projek/${id}`);
+export const updateProjek = async (id: number, payload: CreateProjekData) => {
+  return axios.put(`/projek`, { id, ...payload });
+};
+
+export const deleteProjek = async (id: number) => {
+  return axios.delete(`/projek/${id}`);
+};
+
+// Custom hooks untuk react-query
+export const useCreateProjek = () => {
+  return useMutation({
+    mutationFn: createProjek,
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal membuat projek');
+    }
+  });
+};
+
+export const useUpdateProjek = () => {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: CreateProjekData }) => updateProjek(id, data),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal mengupdate projek');
+    }
+  });
+};
+
+export const useDeleteProjek = () => {
+  return useMutation({
+    mutationFn: deleteProjek,
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal menghapus projek');
+    }
+  });
 };

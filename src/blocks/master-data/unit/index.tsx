@@ -13,17 +13,17 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
-import { createProspek, deleteProspek, getAllProspek, updateProspek } from '@/services/prospek';
-import { CreateProspekData, ProspekData } from '@/types/prospek';
+import { createUnit, deleteUnit, getAllUnit, updateUnit } from '@/services/unit';
+import { CreateUnitData, UnitData } from '@/types/unit';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
-import { ProspekForm } from './form';
+import { UnitForm } from './form';
 import { MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const columnHelper = createColumnHelper<ProspekData>();
+const columnHelper = createColumnHelper<UnitData>();
 
 const columns = [
   columnHelper.accessor('id', {
@@ -48,20 +48,20 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const queryClient = useQueryClient();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/prospek'] });
+      queryClient.invalidateQueries({ queryKey: ['/unit'] });
     }
   });
 
   const [openForm, setOpenForm] = useState(false);
-  const [selectedData, setSelectedData] = useState<ProspekData | null>(null);
+  const [selectedData, setSelectedData] = useState<UnitData | null>(null);
 
-  const handleEdit = (data: ProspekData) => {
+  const handleEdit = (data: UnitData) => {
     setSelectedData(data);
     setOpenForm(true);
   };
 
-  const handleDeleteProspek = async (data: ProspekData) => {
-    handleDelete(`/prospek/${data.id}`, 'delete');
+  const handleDeleteUnit = async (data: UnitData) => {
+    handleDelete(`/unit/${data.id}`, 'delete');
   };
 
   const handleCloseForm = () => {
@@ -69,13 +69,13 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     setSelectedData(null);
   };
 
-  const handleFormSubmit = async (data: CreateProspekData) => {
+  const handleFormSubmit = async (data: CreateUnitData) => {
     try {
       if (selectedData) {
-        await updateProspek(selectedData.id, data);
+        await updateUnit(selectedData.id, data);
       }
       handleCloseForm();
-      queryClient.invalidateQueries({ queryKey: ['/prospek'] });
+      queryClient.invalidateQueries({ queryKey: ['/unit'] });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi error!');
     }
@@ -94,7 +94,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleDeleteProspek(row.original)} variant='destructive'>
+          <DropdownMenuItem onClick={() => handleDeleteUnit(row.original)} variant='destructive'>
             <Trash className='mr-2 h-4 w-4' />
             Delete
           </DropdownMenuItem>
@@ -104,10 +104,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='max-w-lg'>
           <DialogHeader>
-            <DialogTitle>Edit Prospek</DialogTitle>
-            <DialogDescription>Edit data prospek di form berikut.</DialogDescription>
+            <DialogTitle>Edit Unit</DialogTitle>
+            <DialogDescription>Edit data unit di form berikut.</DialogDescription>
           </DialogHeader>
-          <ProspekForm
+          <UnitForm
             selectedId={selectedData?.id ?? null}
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
@@ -121,19 +121,19 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   );
 });
 
-const ProspekPage = memo(function ProspekPage() {
+const UnitPage = memo(function UnitPage() {
   const queryClient = useQueryClient();
   const [openForm, setOpenForm] = useState(false);
 
-  const { data, isLoading } = useQuery(['/prospek'], getAllProspek);
-  const createMutation = useMutation(createProspek, {
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/prospek'] })
+  const { data, isLoading } = useQuery(['/unit'], getAllUnit);
+  const createMutation = useMutation(createUnit, {
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/unit'] })
   });
 
   const handleCreate = () => setOpenForm(true);
   const handleCloseForm = () => setOpenForm(false);
 
-  const handleFormSubmit = async (data: CreateProspekData) => {
+  const handleFormSubmit = async (data: CreateUnitData) => {
     try {
       await createMutation.mutateAsync(data);
       handleCloseForm();
@@ -144,27 +144,27 @@ const ProspekPage = memo(function ProspekPage() {
 
   return (
     <section className='p-4'>
-      <PageTitle title='Master Prospek' />
+      <PageTitle title='Master Unit' />
       <PaginateTable
         columns={columns}
-        id='prospek'
+        id='unit'
         perPage={10}
-        queryKey={['/prospek']}
-        url='/prospek'
+        queryKey={['/unit']}
+        url='/unit'
         Plugin={() => (
           <Button onClick={handleCreate} disabled={createMutation.isPending} className='text-white'>
             <Plus />
-            Tambah Prospek
+            Tambah Unit
           </Button>
         )}
       />
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='max-w-lg'>
           <DialogHeader>
-            <DialogTitle>Tambah Prospek</DialogTitle>
-            <DialogDescription>Isi form berikut untuk menambah prospek baru.</DialogDescription>
+            <DialogTitle>Tambah Unit</DialogTitle>
+            <DialogDescription>Isi form berikut untuk menambah unit baru.</DialogDescription>
           </DialogHeader>
-          <ProspekForm
+          <UnitForm
             selectedId={null}
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
@@ -176,4 +176,4 @@ const ProspekPage = memo(function ProspekPage() {
   );
 });
 
-export default ProspekPage;
+export default UnitPage;

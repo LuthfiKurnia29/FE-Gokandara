@@ -5,6 +5,7 @@ import { memo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getProspek } from '@/services/prospek';
 import { CreateProspekData, ProspekData } from '@/types/prospek';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -18,14 +19,14 @@ const prospekSchema = z.object({
 type ProspekFormData = z.infer<typeof prospekSchema>;
 
 interface ProspekFormProps {
-  selectedData?: ProspekData | null;
+  selectedId?: number | null;
   onSubmit: (data: CreateProspekData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
 export const ProspekForm = memo(function ProspekForm({
-  selectedData,
+  selectedId,
   onSubmit,
   onCancel,
   isLoading = false
@@ -41,12 +42,21 @@ export const ProspekForm = memo(function ProspekForm({
   });
 
   useEffect(() => {
-    if (selectedData) {
-      reset({ name: selectedData.name });
-    } else {
-      reset({ name: '' });
-    }
-  }, [selectedData, reset]);
+    const fetchData = async () => {
+      if (selectedId) {
+        try {
+          const prospek = await getProspek(selectedId);
+          reset({ name: prospek.name });
+        } catch (error) {
+          console.error('Error fetching prospek:', error);
+        }
+      } else {
+        reset({ name: '' });
+      }
+    };
+
+    fetchData();
+  }, [selectedId, reset]);
 
   const handleFormSubmit = (data: ProspekFormData) => {
     onSubmit({ name: data.name });
@@ -69,7 +79,7 @@ export const ProspekForm = memo(function ProspekForm({
           Batal
         </Button>
         <Button type='submit' disabled={isLoading}>
-          {isLoading ? 'Menyimpan...' : selectedData ? 'Update' : 'Simpan'}
+          {isLoading ? 'Menyimpan...' : selectedId ? 'Update' : 'Simpan'}
         </Button>
       </div>
     </form>

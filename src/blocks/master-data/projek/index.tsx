@@ -6,38 +6,52 @@ import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { useDelete } from '@/hooks/use-delete';
 import { createProjek, deleteProjek, getAllProjek, updateProjek } from '@/services/projek';
 import { CreateProjekData, ProjekData } from '@/types/projek';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { createColumnHelper } from '@tanstack/react-table';
 
 import { ProjekForm } from './form';
-import { Pencil, Plus, Trash } from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+const columnHelper = createColumnHelper<ProjekData>();
+
 const columns = [
-  {
+  columnHelper.accessor('id', {
     header: 'ID',
-    accessorKey: 'id',
-    cell: (row: any) => <span className='font-mono text-sm'>#{row.getValue()}</span>,
+    cell: ({ getValue }) => <span className='font-mono text-sm'>#{getValue()}</span>,
     meta: { style: { width: '80px' } }
-  },
-  {
+  }),
+  columnHelper.accessor('name', {
     header: 'Nama',
-    accessorKey: 'name',
-    cell: (row: any) => <span className='font-medium'>{row.getValue()}</span>,
+    cell: ({ getValue }) => <span className='font-medium'>{getValue()}</span>,
     meta: { style: { minWidth: '180px' } }
-  },
-  {
-    header: 'Actions',
+  }),
+  columnHelper.display({
     id: 'actions',
-    cell: ({ row }: any) => <ActionCell row={row} />,
+    header: 'Actions',
+    cell: ({ row }) => <ActionCell row={row} />,
     meta: { style: { width: '80px' } }
-  }
+  })
 ];
 
 const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const queryClient = useQueryClient();
+  const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/projek'] });
+    }
+  });
+
   const [openForm, setOpenForm] = useState(false);
   const [selectedData, setSelectedData] = useState<ProjekData | null>(null);
 
@@ -46,13 +60,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     setOpenForm(true);
   };
 
-  const handleDelete = async (data: ProjekData) => {
-    try {
-      await deleteProjek(data.id);
-      queryClient.invalidateQueries({ queryKey: ['/projek'] });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Terjadi error!');
-    }
+  const handleDeleteProjek = async (data: ProjekData) => {
+    handleDelete(`/projek/${data.id}`, 'delete');
   };
 
   const handleCloseForm = () => {
@@ -74,12 +83,24 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   return (
     <>
-      <Button variant='outline' size='sm' onClick={() => handleEdit(row.original)}>
-        <Pencil className='h-4 w-4' />
-      </Button>
-      <Button variant='outline' size='sm' onClick={() => handleDelete(row.original)}>
-        <Trash className='h-4 w-4' />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant='outline' size='sm'>
+            <MoreHorizontal className='h-4 w-4' />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end'>
+          <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+            <Pencil className='mr-2 h-4 w-4' />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleDeleteProjek(row.original)} variant='destructive'>
+            <Trash className='mr-2 h-4 w-4' />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='max-w-lg'>
           <DialogHeader>
@@ -87,13 +108,15 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <DialogDescription>Edit data projek di form berikut.</DialogDescription>
           </DialogHeader>
           <ProjekForm
-            selectedData={selectedData}
+            selectedId={selectedData?.id ?? null}
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
             isLoading={false}
           />
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog />
     </>
   );
 });
@@ -142,7 +165,7 @@ const ProjekPage = memo(function ProjekPage() {
             <DialogDescription>Isi form berikut untuk menambah projek baru.</DialogDescription>
           </DialogHeader>
           <ProjekForm
-            selectedData={null}
+            selectedId={null}
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
             isLoading={createMutation.isPending}
