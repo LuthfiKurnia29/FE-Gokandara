@@ -5,39 +5,47 @@ import { memo, useEffect, useState } from 'react';
 import { authService, useCurrentUser } from '@/services/auth';
 
 import { LoginScreen } from '../login-screen';
+import { Loader2 } from 'lucide-react';
 
 export const AuthProvider = memo(({ children }: { children: React.ReactNode }) => {
+  const [isClient, setIsClient] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { data: currentUser, isFetching, isError, error } = useCurrentUser();
+  const { data: currentUser, isFetching, isError } = useCurrentUser();
 
   useEffect(() => {
-    if (currentUser?.user) {
-      setIsLoggedIn(true);
-      // Store complete user data including roles and access
-      authService.storeUserData(currentUser);
-    } else if (isError) {
-      // If there's an error fetching current user, clear stored auth data
-      authService.logout();
-      setIsLoggedIn(false);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      if (currentUser?.user) {
+        setIsLoggedIn(true);
+        authService.storeUserData(currentUser);
+      } else if (isError) {
+        authService.logout();
+        setIsLoggedIn(false);
+      }
     }
-  }, [currentUser, isError]);
+  }, [currentUser, isError, isClient]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
-    authService.logout();
-    setIsLoggedIn(false);
+    if (isClient) {
+      authService.logout();
+      setIsLoggedIn(false);
+    }
   };
 
-  // Show loading state while checking authentication
-  if (isFetching) {
+  // Minimal, konsisten loading state
+  if (!isClient || isFetching) {
     return (
       <div className='flex min-h-screen items-center justify-center bg-[#353430]'>
-        <div className='flex items-center gap-2 text-white'>
-          <span className='text-3xl font-bold'>kandara</span>
-          <div className='h-6 w-6 rotate-45 transform bg-[#DAA961]'></div>
+        <div className='flex flex-col items-center justify-center gap-4 text-white'>
+          <Loader2 className='h-12 w-12 animate-spin text-white' />
+          <span className='text-xl font-medium'>Loading Kandara...</span>
         </div>
       </div>
     );

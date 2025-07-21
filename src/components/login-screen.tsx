@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,12 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen = memo(({ onLogin }: LoginScreenProps) => {
+  const [isClient, setIsClient] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const {
     register,
@@ -32,25 +37,46 @@ export const LoginScreen = memo(({ onLogin }: LoginScreenProps) => {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      authService.storeAuth(data.access_token, data.user);
-      onLogin();
+      if (isClient) {
+        authService.storeAuth(data.access_token, data.user);
+        onLogin();
+      }
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-      setError('root', {
-        type: 'manual',
-        message: errorMessage
-      });
+      if (isClient) {
+        const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+        setError('root', {
+          type: 'manual',
+          message: errorMessage
+        });
+      }
     }
   });
 
   const handleFormSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+    if (isClient) {
+      loginMutation.mutate(data);
+    }
   };
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    if (isClient) {
+      setShowPassword(!showPassword);
+    }
   };
+
+  // Konsisten rendering antara SSR dan CSR
+  if (!isClient) {
+    return (
+      <div className='flex min-h-screen w-full flex-col bg-[#353430]'>
+        <div className='flex items-center justify-center pt-16 pb-12'>
+          <div className='flex items-center gap-2 text-white'>
+            <span className='text-3xl font-bold'>kandara</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='flex min-h-screen w-full flex-col bg-[#353430]'>

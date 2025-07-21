@@ -287,24 +287,29 @@ const PaginateTable = memo(
                 </TableHeader>
                 <TableBody>
                   {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
+                    table.getRowModel().rows.map((row, idx) => (
                       <TableRow
                         key={
                           grouped
-                            ? `row.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`
-                            : `row.${row.original.uuid}`
+                            ? `row.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`
+                            : `row.${row.original.uuid ?? idx}`
                         }>
                         {row.original.type === 'group' ? (
                           <TableCell
-                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : row.original.data.uuid}`}
+                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`}
                             className={`py-4 ${
                               row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
                             }`}
                             colSpan={row.original.type === 'group' ? columns.length : 1}>
                             <div className='flex flex-col gap-2'>
-                              <p className='text-sm font-medium'>
-                                {format(new Date(row.original.date), 'EEEE, dd MMMM yyyy')}
-                              </p>
+                              {/* Patch: Client-only date formatting to prevent hydration mismatch */}
+                              {(() => {
+                                const [formattedDate, setFormattedDate] = useState('');
+                                useEffect(() => {
+                                  setFormattedDate(format(new Date(row.original.date), 'EEEE, dd MMMM yyyy'));
+                                }, [row.original.date]);
+                                return <p className='text-sm font-medium'>{formattedDate}</p>;
+                              })()}
                             </div>
                           </TableCell>
                         ) : (
@@ -318,9 +323,16 @@ const PaginateTable = memo(
                                   style={(cell.column.columnDef.meta as any)?.style}>
                                   {cell.row.original.type === 'group' ? (
                                     <div className='flex flex-col gap-2'>
-                                      <p className='text-sm font-medium'>
-                                        {format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')}
-                                      </p>
+                                      {/* Patch: Client-only date formatting to prevent hydration mismatch */}
+                                      {(() => {
+                                        const [formattedDate, setFormattedDate] = useState('');
+                                        useEffect(() => {
+                                          setFormattedDate(
+                                            format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')
+                                          );
+                                        }, [cell.row.original.date]);
+                                        return <p className='text-sm font-medium'>{formattedDate}</p>;
+                                      })()}
                                     </div>
                                   ) : (
                                     flexRender(cell.column.columnDef.cell, cell.getContext())

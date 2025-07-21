@@ -98,6 +98,16 @@ const menuItems: MenuItem[] = [
         icon: UserCheck
       },
       {
+        title: 'Prospek',
+        url: '/master-data/prospek',
+        icon: BookText
+      },
+      {
+        title: 'Projek',
+        url: '/master-data/projek',
+        icon: FileChartLine
+      },
+      {
         title: 'Blok',
         url: '/master-data/blok',
         icon: Shapes
