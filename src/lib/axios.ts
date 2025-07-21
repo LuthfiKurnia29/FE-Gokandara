@@ -27,16 +27,12 @@ axios.interceptors.response.use(
   (error) => {
     // Handle specific error cases
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      // Handle unauthorized access (token expired or invalid)
       localStorage.removeItem('auth-token');
 
-      // if (window.location.pathname !== "/login") {
-      // window.location.href = "/login";
-      // const authErrorEvent = new CustomEvent("auth:unauthorized");
-      // window.dispatchEvent(authErrorEvent);
-      // }
-
-      // You might want to redirect to login page or handle differently
+      // Dispatch custom event to notify AuthProvider about token expiration
+      const authErrorEvent = new CustomEvent('auth:unauthorized');
+      window.dispatchEvent(authErrorEvent);
     }
     return Promise.reject(error);
   }

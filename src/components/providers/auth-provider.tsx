@@ -6,6 +6,7 @@ import { authService, useCurrentUser } from '@/services/auth';
 
 import { LoginScreen } from '../login-screen';
 import { Loader2 } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
 
 export const AuthProvider = memo(({ children }: { children: React.ReactNode }) => {
   const [isClient, setIsClient] = useState(false);
@@ -27,6 +28,24 @@ export const AuthProvider = memo(({ children }: { children: React.ReactNode }) =
       }
     }
   }, [currentUser, isError, isClient]);
+
+  // Listen for token expiration events from axios interceptor
+  useEffect(() => {
+    const handleTokenExpiration = () => {
+      handleLogout();
+      setTimeout(() => {
+        toast.error('Sesi Anda telah berakhir, silahkan login kembali');
+      }, 2000);
+    };
+
+    if (isClient) {
+      window.addEventListener('auth:unauthorized', handleTokenExpiration);
+
+      return () => {
+        window.removeEventListener('auth:unauthorized', handleTokenExpiration);
+      };
+    }
+  }, [isClient]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -52,7 +71,12 @@ export const AuthProvider = memo(({ children }: { children: React.ReactNode }) =
   }
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return (
+      <>
+        <LoginScreen onLogin={handleLogin} />
+        <ToastContainer />
+      </>
+    );
   }
 
   return <>{children}</>;
