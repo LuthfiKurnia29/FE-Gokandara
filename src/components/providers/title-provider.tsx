@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, createContext, useContext, useState } from 'react';
+import { type ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface TitleContextType {
   title: string;
@@ -23,6 +23,12 @@ interface TitleProviderProps {
 
 export const TitleProvider = ({ children }: TitleProviderProps) => {
   const [title, setTitle] = useState('Dashboard');
+  const APP_NAME = 'Gokandara';
+
+  // Update document title when title changes
+  useEffect(() => {
+    document.title = `${title} - ${APP_NAME}`;
+  }, [title]);
 
   return <TitleContext.Provider value={{ title, setTitle }}>{children}</TitleContext.Provider>;
 };

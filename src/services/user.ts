@@ -39,8 +39,8 @@ export const userService = {
     }
 
     const url = `/user/${id}${params.toString() ? `?${params}` : ''}`;
-    const response = await axios.get<UserApiResponse>(url);
-    return response.data.data;
+    const response = await axios.get<UserWithRelations>(url);
+    return response.data;
   },
 
   // Create new user
