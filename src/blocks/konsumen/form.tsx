@@ -28,14 +28,22 @@ const konsumenSchema = z.object({
   refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
   project_id: z.string().min(1, 'Proyek harus dipilih'),
 
-  // Optional fields (sesuai migration - dengan nullable())
   description: z.string().optional(),
-  kesiapan_dana: z.string().optional(),
+  kesiapan_dana: z
+    .string()
+    .min(1, 'Kesiapan dana harus diisi')
+    .refine(
+      (value) => {
+        // Remove commas and check if it's a valid number
+        const numericValue = value.replace(/,/g, '');
+        return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
+      },
+      { message: 'Kesiapan dana harus berupa angka positif' }
+    ),
   pengalaman: z.string().optional(),
   materi_fu: z.string().optional(),
   tgl_fu: z.string().optional(),
 
-  // ⚠️ Note: prospek_id tidak ada di migration konsumens - perlu koordinasi backend
   prospek_id: z.string().min(1, 'Prospek harus dipilih')
 });
 
@@ -153,7 +161,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       email: '',
       description: '',
       refrensi_id: '',
-      kesiapan_dana: '',
+      kesiapan_dana: '0',
       prospek_id: '',
       project_id: '',
       pengalaman: '',
@@ -405,7 +413,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     {/* Kolom 2: Kesiapan Dana */}
                     <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Kesiapan Dana (Opsional)</Label>
+                      <Label className='font-medium text-gray-900'>Kesiapan Dana *</Label>
                       <Input
                         type='text'
                         placeholder='0,000,000'
@@ -540,7 +548,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                     onClick={() => setActiveTab('preferensi')}
                     disabled={isLoading}
                     className='h-12 border-gray-300 bg-transparent px-8 py-2 text-gray-700 hover:bg-gray-50'>
-                    Batal
+                    Kembali
                   </Button>
                   <Button
                     type='submit'
