@@ -19,7 +19,7 @@ export const createBlok = async (payload: CreateBlokData) => {
 };
 
 export const updateBlok = async (id: number, payload: CreateBlokData) => {
-  return axios.put(`/blok`, { id, ...payload });
+  return axios.put(`/blok/${id}`, payload);
 };
 
 export const deleteBlok = async (id: number) => {

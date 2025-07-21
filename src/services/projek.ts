@@ -19,7 +19,7 @@ export const createProjek = async (payload: CreateProjekData) => {
 };
 
 export const updateProjek = async (id: number, payload: CreateProjekData) => {
-  return axios.put(`/projek`, { id, ...payload });
+  return axios.put(`/projek/${id}`, payload);
 };
 
 export const deleteProjek = async (id: number) => {

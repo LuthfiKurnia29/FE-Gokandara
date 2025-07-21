@@ -137,6 +137,7 @@ const TipePage = memo(function TipePage() {
     try {
       await createMutation.mutateAsync(data);
       handleCloseForm();
+      queryClient.invalidateQueries({ queryKey: ['/tipe'] });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi error!');
     }

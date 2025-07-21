@@ -137,6 +137,7 @@ const UnitPage = memo(function UnitPage() {
     try {
       await createMutation.mutateAsync(data);
       handleCloseForm();
+      queryClient.invalidateQueries({ queryKey: ['/unit'] });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi error!');
     }

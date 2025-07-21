@@ -92,6 +92,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         await updateBlok.mutateAsync({ id: selectedId, data });
       }
       handleCloseForm();
+      queryClient.invalidateQueries({ queryKey: ['/blok'] });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi sesuatu Error!');
       console.error('Error updating blok:', error);
@@ -162,6 +163,7 @@ const BlokPage = memo(function BlokPage() {
     try {
       await createBlok.mutateAsync(data);
       handleCloseForm();
+      queryClient.invalidateQueries({ queryKey: ['/blok'] });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi sesuatu Error!');
       console.error('Error saving blok:', error);

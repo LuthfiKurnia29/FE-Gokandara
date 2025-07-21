@@ -19,7 +19,7 @@ export const createTipe = async (payload: CreateTipeData) => {
 };
 
 export const updateTipe = async (id: number, payload: CreateTipeData) => {
-  return axios.put(`/tipe`, { id, ...payload });
+  return axios.put(`/tipe/${id}`, payload);
 };
 
 export const deleteTipe = async (id: number) => {

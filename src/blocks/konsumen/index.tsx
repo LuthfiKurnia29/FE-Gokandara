@@ -133,7 +133,7 @@ const KonsumenPage = memo(function KonsumenPage() {
                   onClick={() => openWhatsApp(item.phone)}
                   className='p-2 text-green-600 hover:bg-green-50'
                   title='Hubungi via WhatsApp'>
-                  <WhatsappLogo className='h-8 w-8' weight='fill' />
+                  <WhatsappLogo className='!h-6 !w-6' weight='fill' />
                 </Button>
               </div>
             </div>

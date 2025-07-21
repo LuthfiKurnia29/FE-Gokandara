@@ -19,7 +19,7 @@ export const createUnit = async (payload: CreateUnitData) => {
 };
 
 export const updateUnit = async (id: number, payload: CreateUnitData) => {
-  return axios.put(`/unit`, { id, ...payload });
+  return axios.put(`/unit/${id}`, payload);
 };
 
 export const deleteUnit = async (id: number) => {
