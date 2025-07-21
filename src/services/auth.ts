@@ -54,6 +54,20 @@ export const authService = {
   getCurrentUser: async (): Promise<CurrentUserResponse> => {
     const response = await axios.post<CurrentUserResponse>('/me');
     return response.data;
+  },
+
+  // Permission checking utility
+  hasPermission: (userData: CurrentUserResponse | null, menuCode: string): boolean => {
+    // If no menuCode provided, allow access (no permission check needed)
+    if (!menuCode) {
+      return true;
+    }
+
+    if (!userData || !userData.access) {
+      return false;
+    }
+
+    return userData.access.some((access) => access.menu.code === menuCode && access.is_allowed === 1);
   }
 };
 
@@ -66,4 +80,24 @@ export const useCurrentUser = () => {
     enabled: !!token,
     retry: false
   });
+};
+
+// Hook to easily check permissions in components
+export const usePermissions = () => {
+  const { data: currentUser } = useCurrentUser();
+  const userData = currentUser || authService.getStoredUserData();
+
+  const hasPermission = (menuCode: string): boolean => {
+    return authService.hasPermission(userData, menuCode);
+  };
+
+  const getUserData = (): CurrentUserResponse | null => {
+    return userData;
+  };
+
+  return {
+    hasPermission,
+    getUserData,
+    userData
+  };
 };

@@ -37,6 +37,14 @@ export interface UserRole {
   role: Role;
 }
 
+export interface Menu {
+  id: number;
+  name: string;
+  code: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserAccess {
   id: number;
   user_role_id: number;
@@ -44,6 +52,7 @@ export interface UserAccess {
   is_allowed: number;
   created_at: string;
   updated_at: string;
+  menu: Menu;
 }
 
 export interface User {

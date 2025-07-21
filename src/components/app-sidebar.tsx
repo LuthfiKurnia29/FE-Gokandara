@@ -20,7 +20,8 @@ import {
   useSidebar
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-import { type MenuItem, menuItems } from '@/stores/menu-item';
+import { authService, useCurrentUser } from '@/services/auth';
+import { type MenuItem, permissionUtils } from '@/stores/menu-item';
 
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -164,6 +165,17 @@ SidebarMenuDropdown.displayName = 'SidebarMenuDropdown';
 
 export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const { state } = useSidebar();
+  const { data: currentUser } = useCurrentUser();
+
+  // Get user data from API response or fallback to stored data
+  const userData = React.useMemo(() => {
+    return currentUser || authService.getStoredUserData();
+  }, [currentUser]);
+
+  // Filter menu items based on user permissions
+  const permittedMenuItems = React.useMemo(() => {
+    return permissionUtils.getPermittedMenuItems(userData);
+  }, [userData]);
 
   return (
     <Sidebar collapsible='icon' className='border-r-0 bg-[#2a2a2a] text-white transition-all duration-300' {...props}>
@@ -179,7 +191,7 @@ export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof 
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {menuItems.map((item, index) =>
+                {permittedMenuItems.map((item, index) =>
                   item.url === 'divider' ? (
                     <SidebarGroupLabel
                       key={`divider-${index}-${item.title}`}
