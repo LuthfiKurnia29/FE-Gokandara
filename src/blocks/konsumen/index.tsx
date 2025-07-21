@@ -21,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import { Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<KonsumenData>();
 
@@ -66,9 +67,8 @@ const KonsumenPage = memo(function KonsumenPage() {
         await updateKonsumen.mutateAsync({ id: selectedId, data });
       }
       handleCloseForm();
-    } catch (error) {
-      // Error is handled by React Query's error boundary and toast notifications
-      // No need for console.error in production
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi sesuatu Error!');
     }
   };
 

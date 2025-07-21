@@ -126,8 +126,8 @@ export const konsumenService = {
 
   // Get konsumen by ID
   getKonsumenById: async (id: number): Promise<KonsumenData> => {
-    const response = await axios.get<KonsumenApiResponse>(`/konsumen/${id}`);
-    return response.data.data;
+    const response = await axios.get<KonsumenData>(`/konsumen/${id}`);
+    return response.data;
   },
 
   // Create new konsumen
