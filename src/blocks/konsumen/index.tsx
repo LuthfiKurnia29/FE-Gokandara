@@ -21,9 +21,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import { Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video } from 'lucide-react';
+import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<KonsumenData>();
+
+const openWhatsApp = (phoneNumber: string) => {
+  // Normalisasi nomor telepon
+  const cleanedNumber = phoneNumber.replace(/\D/g, '');
+  const waNumber = cleanedNumber.startsWith('0')
+    ? `62${cleanedNumber.slice(1)}`
+    : cleanedNumber.startsWith('62')
+      ? cleanedNumber
+      : `62${cleanedNumber}`;
+
+  const whatsappUrl = `https://wa.me/${waNumber}`;
+  window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+};
 
 const KonsumenPage = memo(function KonsumenPage() {
   const queryClient = useQueryClient();
@@ -113,14 +127,13 @@ const KonsumenPage = memo(function KonsumenPage() {
                 </DropdownMenu>
               </div>
               <div className='my-2 -ml-2 flex items-center gap-2'>
-                <Button variant='ghost' size='icon'>
-                  <PhoneCall className='h-4 w-4 text-gray-600' fill='currentColor' />
-                </Button>
-                <Button variant='ghost' size='icon'>
-                  <Video className='h-4 w-4 text-gray-600' fill='currentColor' />
-                </Button>
-                <Button variant='ghost' size='icon'>
-                  <Mail className='h-4 w-4 text-gray-600' fill='currentColor' />
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => openWhatsApp(item.phone)}
+                  className='p-2 text-green-600 hover:bg-green-50'
+                  title='Hubungi via WhatsApp'>
+                  <WhatsappLogo className='h-8 w-8' weight='fill' />
                 </Button>
               </div>
             </div>
