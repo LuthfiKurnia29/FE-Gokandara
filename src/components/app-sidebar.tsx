@@ -42,8 +42,14 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
   // Otherwise render as regular menu item
   const IconComponent = item.icon;
   // Badge logic (Transaksi dan Pesan sesuai Figma)
-  const showBadge = item.title === 'Transaksi' || item.title === 'Pesan';
-  const badgeCount = item.title === 'Transaksi' ? 7 : item.title === 'Pesan' ? 12 : 0;
+  const determineBadgeCount = (title: string) => {
+    if (title === 'Transaksi') return 1;
+    if (title === 'Pesan') return 1;
+    return 0;
+  };
+
+  const badgeCount = determineBadgeCount(item.title);
+  const showBadge = (item.title === 'Transaksi' || item.title === 'Pesan') && badgeCount > 0;
   const badgeColor = item.title === 'Transaksi' ? 'bg-green-500' : 'bg-orange-500';
 
   const isActive = item.url === '/' ? pathname === '/' : pathname.startsWith(item.url);
