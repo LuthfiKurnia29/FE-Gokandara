@@ -1,43 +1,38 @@
-export interface SalespersonData {
+import { UserData, UserWithRelations } from './user';
+
+export interface UserBasicData {
   id: number;
   name: string;
   email: string;
-  phone: string;
+  nip?: string;
+  email_verified_at?: string | null;
+  parent_id?: number | null;
   avatar?: string;
-  position: string;
-  department: string;
-  status: 'online' | 'offline' | 'busy';
   created_at: string;
   updated_at: string;
 }
 
 export interface PesanData {
   id: number;
-  sender_id: number;
-  receiver_id: number;
-  message: string;
-  message_type: 'text' | 'image' | 'file';
-  is_read: boolean;
-  sender: SalespersonData;
-  receiver: SalespersonData;
+  user_pengirim_id: number;
+  user_penerima_id: number;
+  pesan: string;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
+  penerima: UserBasicData;
+  pengirim: UserBasicData;
 }
 
-export interface ChatConversationData {
+export interface ChatConversationData extends UserWithRelations {
   id: number;
-  participant_1_id: number;
-  participant_2_id: number;
-  last_message: string;
-  last_message_at: string;
-  unread_count: number;
-  participant_1: SalespersonData;
-  participant_2: SalespersonData;
+  last_message: PesanData;
   created_at: string;
   updated_at: string;
+  unread_count: number;
 }
 
-export interface PesanResponse {
+export interface PesanPaginationResponse {
   current_page: number;
   data: PesanData[];
   first_page_url: string;
@@ -82,24 +77,10 @@ export interface PesanApiResponse {
   data: PesanData;
 }
 
-export interface SalespersonApiResponse {
-  message: string;
-  data: SalespersonData;
-}
-
-export interface CreatePesanData {
-  receiver_id: number;
-  message: string;
-  message_type?: 'text' | 'image' | 'file';
-}
-
 export interface UsePesanListParams {
   page?: number;
   perPage?: number;
-  search?: string;
-  sender_id?: number;
-  receiver_id?: number;
-  conversation_id?: number;
+  id_user: number;
 }
 
 export interface UseChatConversationListParams {
@@ -113,5 +94,9 @@ export interface UseSalespersonListParams {
   page?: number;
   perPage?: number;
   search?: string;
-  status?: 'online' | 'offline' | 'busy';
+}
+
+export interface CreatePesanData {
+  user_penerima_id: number;
+  pesan: string;
 }

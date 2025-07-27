@@ -20,7 +20,7 @@ const userSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi').min(2, 'Nama minimal 2 karakter'),
     email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
-    nip: z.string().min(1, 'NIP wajib diisi'),
+    nip: z.string(),
     role_id: z.number().min(1, 'Role wajib dipilih'),
     parent_id: z.number().optional().nullable(),
     password: z.string().optional(),
@@ -66,7 +66,7 @@ const userEditSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi').min(2, 'Nama minimal 2 karakter'),
     email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
-    nip: z.string().min(1, 'NIP wajib diisi'),
+    nip: z.string(),
     role_id: z.number().min(1, 'Role wajib dipilih'),
     parent_id: z.number().optional().nullable(),
     password: z.string().optional(),
@@ -156,7 +156,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       reset({
         name: user.name,
         email: user.email,
-        role_id: user.roles?.[0].role_id,
+        role_id: user.roles[0].role_id,
         parent_id: Number(user.parent_id) || null,
         password: '',
         password_confirmation: ''

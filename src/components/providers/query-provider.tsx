@@ -12,7 +12,9 @@ const queryClient = new QueryClient({
       refetchOnMount: false,
       refetchOnReconnect: true,
       refetchInterval: false,
-      refetchIntervalInBackground: false
+      refetchIntervalInBackground: false,
+      cacheTime: 0,
+      staleTime: 0
     },
     mutations: {
       retry: false

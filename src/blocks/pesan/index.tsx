@@ -1,9 +1,9 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 
 import { PageTitle } from '@/components/page-title';
-import { PaginateCustom } from '@/components/paginate-custom';
+import { PaginateCustom, PaginateCustomRef } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,13 @@ const ConversationItem = memo(
   ({
     conversation,
     onChatClick,
-    isSelected = false
+    isSelected = false,
+    isOpen = false
   }: {
     conversation: ChatConversationData;
     onChatClick: (conversation: ChatConversationData) => void;
     isSelected?: boolean;
+    isOpen: boolean;
   }) => {
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('id-ID', {
@@ -33,9 +35,6 @@ const ConversationItem = memo(
       });
     };
 
-    // For display purposes, we'll show participant_2 as the main contact
-    const mainParticipant = conversation.participant_2;
-
     return (
       <Card
         className={`mb-4 border-0 shadow transition-all hover:translate-y-[-2px] hover:shadow-lg ${isSelected ? 'ring-primary ring-2' : ''}`}>
@@ -43,52 +42,43 @@ const ConversationItem = memo(
           <div className='flex items-start gap-4'>
             {/* Avatar */}
             <Avatar className='h-12 w-12'>
-              <AvatarImage src={mainParticipant.avatar} alt={mainParticipant.name} />
-              <AvatarFallback>{mainParticipant.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src='https://github.com/shadcn.png' />
             </Avatar>
 
-            <div className='flex flex-1 flex-wrap'>
+            <div className={`${isOpen ? 'block' : 'flex'} flex-1 flex-wrap`}>
               {/* Content */}
               <div className='min-w-0 lg:mr-10'>
                 <div className='mb-1 flex flex-col'>
                   <div className='text-sm font-medium text-blue-600'>
-                    <span className='hidden lg:inline'>#{String(mainParticipant.id).padStart(6, '0')}</span>
+                    <span className='hidden lg:inline'>#{String(conversation.id).padStart(6, '0')}</span>
                   </div>
-                  <div className='font-semibold text-gray-900'>{mainParticipant.name}</div>
+                  <div className='font-semibold text-gray-900'>{conversation.name}</div>
                 </div>
 
                 <div className='mb-2 text-sm text-gray-600'>Join on {formatDate(conversation.created_at)}</div>
               </div>
 
               <div className='flex-1'>
-                <div className='mb-3 line-clamp-2 text-sm text-gray-700'>{conversation.last_message}</div>
-
                 {/* Tags */}
                 <div className='mb-3 flex flex-wrap gap-1'>
-                  <Badge variant='secondary' className='bg-blue-100 text-blue-800'>
-                    {mainParticipant.position}
-                  </Badge>
-                  <Badge variant='secondary' className='bg-green-100 text-green-800'>
-                    {mainParticipant.department}
-                  </Badge>
-                  <Badge variant={mainParticipant.status === 'online' ? 'default' : 'secondary'}>
-                    {mainParticipant.status}
-                  </Badge>
+                  <Badge className='bg-blue-100 text-blue-800'>{conversation.roles?.[0]?.role?.name}</Badge>
                 </div>
+
+                <div className='mb-3 line-clamp-2 text-gray-700'>{conversation.last_message?.pesan}</div>
               </div>
             </div>
 
             {/* Right Side - Rating and Actions */}
             <div className='flex flex-col items-end gap-3'>
               {/* Rating */}
-              <div className='flex items-center gap-1'>
+              {/* <div className='flex items-center gap-1'>
                 <span className='text-lg font-bold'>5.0</span>
                 <div className='flex'>
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className='h-4 w-4 fill-yellow-400 text-yellow-400' />
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Actions */}
               <div className='flex gap-2'>
@@ -120,11 +110,11 @@ const PesanBlocks = memo(() => {
   const [selectedConversation, setSelectedConversation] = useState<ChatConversationData | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Mock current user ID - in real app, this would come from auth context
-  const currentUserId = 1;
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
 
   const handleChatClick = (conversation: ChatConversationData) => {
     setSelectedConversation(conversation);
+    setCurrentUserId(conversation.id);
     setIsChatOpen(true);
   };
 
@@ -132,6 +122,11 @@ const PesanBlocks = memo(() => {
     setIsChatOpen(false);
     setSelectedConversation(null);
   };
+
+  const paginateRef = useRef<PaginateCustomRef>(null);
+  const refetchPaginate = useCallback(() => {
+    paginateRef.current?.refetch();
+  }, []);
 
   return (
     <div className='h-full space-y-6'>
@@ -141,7 +136,8 @@ const PesanBlocks = memo(() => {
         {/* Conversation List */}
         <div className={`pb-20 ${isChatOpen ? 'lg:block' : 'col-span-full'}`}>
           <PaginateCustom
-            url='/pesan/conversations'
+            ref={paginateRef}
+            url='/chatting-last'
             id='conversations-list'
             perPage={10}
             queryKey={['conversations']}
@@ -149,6 +145,7 @@ const PesanBlocks = memo(() => {
             renderItem={(conversation: ChatConversationData) => (
               <ConversationItem
                 key={conversation.id}
+                isOpen={isChatOpen}
                 conversation={conversation}
                 onChatClick={handleChatClick}
                 isSelected={selectedConversation?.id === conversation.id}
@@ -180,6 +177,7 @@ const PesanBlocks = memo(() => {
               isOpen={isChatOpen}
               onClose={handleChatClose}
               currentUserId={currentUserId}
+              refetchPaginate={refetchPaginate}
             />
           </div>
         )}
@@ -193,6 +191,7 @@ const PesanBlocks = memo(() => {
             isOpen={isChatOpen}
             onClose={handleChatClose}
             currentUserId={currentUserId}
+            refetchPaginate={refetchPaginate}
           />
         </div>
       )}

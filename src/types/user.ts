@@ -12,7 +12,7 @@ export interface UserData {
   email: string;
   role_id: number;
   parent_id: number | null;
-  nip: string;
+  nip?: string;
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
@@ -21,7 +21,7 @@ export interface UserData {
 // Enhanced interface with optional relations
 export interface UserWithRelations extends UserData {
   role?: Role;
-  roles?: Array<{
+  roles: Array<{
     role_id: number;
     role: Role;
   }>;
