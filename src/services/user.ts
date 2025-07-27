@@ -106,6 +106,17 @@ export const useRoleList = () => {
   });
 };
 
+export const useSupervisorList = () => {
+  return useQuery({
+    queryKey: ['supervisors'],
+    queryFn: async () => {
+      const response = await axios.get('/user-spv');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
 // Mutation hooks
 export const useCreateUser = () => {
   const queryClient = useQueryClient();

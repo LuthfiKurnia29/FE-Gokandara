@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useRoleList, useUserById } from '@/services/user';
-import { CreateUserData } from '@/types/user';
+import { useRoleList, useSupervisorList, useUserById } from '@/services/user';
+import { CreateUserData, UserData } from '@/types/user';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Eye, EyeOff } from 'lucide-react';
@@ -20,11 +20,22 @@ const userSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi').min(2, 'Nama minimal 2 karakter'),
     email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
+    nip: z.string().min(1, 'NIP wajib diisi'),
     role_id: z.number().min(1, 'Role wajib dipilih'),
+    parent_id: z.number().optional().nullable(),
     password: z.string().optional(),
     password_confirmation: z.string().optional()
   })
   .superRefine((data, ctx) => {
+    // Add atasan validation for role_id 3
+    if (data.role_id === 3 && (!data.parent_id || data.parent_id === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Atasan wajib dipilih untuk role ini',
+        path: ['parent_id']
+      });
+    }
+
     // For new users, password is required
     if (!data.password || data.password.length === 0) {
       ctx.addIssue({
@@ -55,11 +66,22 @@ const userEditSchema = z
   .object({
     name: z.string().min(1, 'Nama wajib diisi').min(2, 'Nama minimal 2 karakter'),
     email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
+    nip: z.string().min(1, 'NIP wajib diisi'),
     role_id: z.number().min(1, 'Role wajib dipilih'),
+    parent_id: z.number().optional().nullable(),
     password: z.string().optional(),
     password_confirmation: z.string().optional()
   })
   .superRefine((data, ctx) => {
+    // Add atasan validation for role_id 3
+    if (data.role_id === 3 && (!data.parent_id || data.parent_id === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Atasan wajib dipilih untuk role ini',
+        path: ['parent_id']
+      });
+    }
+
     // For editing, password is optional but if provided, must meet requirements
     if (data.password && data.password.length > 0) {
       if (data.password.length < 6) {
@@ -93,6 +115,7 @@ interface UserFormProps {
 export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel, isLoading = false }: UserFormProps) {
   const { data: user, isFetching } = useUserById(selectedId || null, ['role']);
   const { data: roleData } = useRoleList();
+  const { data: supervisorData } = useSupervisorList();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
@@ -102,6 +125,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors }
   } = useForm<UserFormData>({
     resolver: zodResolver(selectedId ? userEditSchema : userSchema),
@@ -109,10 +133,14 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       name: '',
       email: '',
       role_id: 0,
+      parent_id: null,
       password: '',
       password_confirmation: ''
     }
   });
+
+  // Watch role_id to conditionally render atasan select
+  const roleId = watch('role_id');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -128,7 +156,8 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       reset({
         name: user.name,
         email: user.email,
-        role_id: user.role_id,
+        role_id: user.roles?.[0].role_id,
+        parent_id: Number(user.parent_id) || null,
         password: '',
         password_confirmation: ''
       });
@@ -137,6 +166,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
         name: '',
         email: '',
         role_id: 0,
+        parent_id: null,
         password: '',
         password_confirmation: ''
       });
@@ -151,7 +181,9 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       name: data.name,
       email: data.email,
       role_id: data.role_id,
-      password: data.password || ''
+      nip: data.nip,
+      password: data.password || '',
+      parent_id: data.role_id === 3 ? data.parent_id : null
     };
 
     // If editing and password is empty, remove password from data
@@ -168,6 +200,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       name: '',
       email: '',
       role_id: 0,
+      parent_id: null,
       password: '',
       password_confirmation: ''
     });
@@ -223,6 +256,12 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       </div>
 
       <div className='space-y-2'>
+        <Label htmlFor='nip'>NIP *</Label>
+        <Input id='nip' type='nip' {...register('nip')} placeholder='Masukkan nip' disabled={isLoading} />
+        {errors.nip && <p className='text-sm text-red-600'>{errors.nip.message}</p>}
+      </div>
+
+      <div className='space-y-2'>
         <Label htmlFor='role_id'>Role *</Label>
         <Controller
           name='role_id'
@@ -244,6 +283,31 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
         />
         {errors.role_id && <p className='text-sm text-red-600'>{errors.role_id.message}</p>}
       </div>
+
+      {roleId === 3 && (
+        <div className='space-y-2'>
+          <Label htmlFor='parent_id'>Atasan *</Label>
+          <Controller
+            name='parent_id'
+            control={control}
+            render={({ field }) => (
+              <Select
+                options={
+                  supervisorData?.data?.map((supervisor: UserData) => ({
+                    value: supervisor.id.toString(),
+                    label: supervisor.name
+                  })) || []
+                }
+                value={field.value?.toString() || ''}
+                onChange={(value) => field.onChange(Number(value))}
+                placeholder='Pilih atasan'
+                disabled={isLoading}
+              />
+            )}
+          />
+          {errors.parent_id && <p className='text-sm text-red-600'>{errors.parent_id.message}</p>}
+        </div>
+      )}
 
       <div className='space-y-2'>
         <Label htmlFor='password'>Password {selectedId ? '(Kosongkan jika tidak ingin mengubah)' : '*'}</Label>

@@ -47,6 +47,13 @@ const columns = [
     },
     meta: { style: { minWidth: '200px' } }
   }),
+  columnHelper.accessor('nip', {
+    header: 'NIP',
+    cell: ({ getValue }) => {
+      return <span className='text-muted-foreground'>{getValue()}</span>;
+    },
+    meta: { style: { minWidth: '100px' } }
+  }),
   columnHelper.accessor('role.name', {
     header: 'Role',
     cell: ({ row, getValue }) => {
