@@ -1,5 +1,21 @@
 export type PenjualanStatus = 'Negotiation' | 'Pending' | 'Approved';
 
+// PropertyData interface matching the seeder structure
+export interface PropertyData {
+  id: number;
+  name: string;
+  code: string;
+  project_id: number;
+  blok_id: number;
+  unit_id: number;
+  tipe_id: number;
+  luas_bangunan: string;
+  luas_tanah: string;
+  kelebihan: string;
+  lokasi: string;
+  harga: number;
+}
+
 export interface PenjualanData {
   id: number;
   konsumen_id: number;
@@ -17,7 +33,7 @@ export interface PenjualanData {
 // Enhanced interface with optional relations
 export interface PenjualanWithRelations extends PenjualanData {
   konsumen?: import('./konsumen').KonsumenData;
-  properti?: import('./property').PropertyData;
+  properti?: PropertyData;
   blok?: import('./blok').BlokData;
   tipe?: import('./tipe').TipeData;
   unit?: import('./unit').UnitData;

@@ -3,23 +3,15 @@
 import { memo, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  useAllBlok,
-  useAllKonsumen,
-  useAllProperti,
-  useAllTipe,
-  useAllUnit,
-  usePenjualanById
-} from '@/services/penjualan';
+import { useAllBlok, useAllKonsumen, useAllProperti, useAllTipe, useAllUnit } from '@/services/penjualan';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { ArrowLeft, Check, Home, X } from 'lucide-react';
+import { Check, Home } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
@@ -40,32 +32,19 @@ interface PropertyTypeModalProps {
   onClose?: () => void;
   selectedId?: number | null;
   onSubmit?: (data: CreatePenjualanData | UpdatePenjualanData) => Promise<void>;
+  onProceedToBooking?: (formData: TransaksiFormData) => void;
 }
 
-interface BookingDetails {
-  blok: string;
-  unit: string;
-  lbLt: string;
-  kelebihanTanah: string;
-  lokasi: string;
-  harga: number;
-  propertyImage?: string;
-}
-
-const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalProps) => {
+const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }: PropertyTypeModalProps) => {
   const [selectedType, setSelectedType] = useState<string>('');
-  const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
 
   // Fetch master data from APIs
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
   const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
-  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
   const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
-
-  // Get existing data for edit mode
-  const { data: existingData } = usePenjualanById(selectedId || null);
+  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
 
   const {
     register,
@@ -73,7 +52,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
     setValue,
     watch,
     reset,
-    formState: { errors }
+    formState: { errors, isValid }
   } = useForm<TransaksiFormData>({
     resolver: zodResolver(transaksiSchema),
     defaultValues: {
@@ -83,7 +62,8 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
       tipe_id: '',
       unit_id: '',
       diskon: ''
-    }
+    },
+    mode: 'onChange'
   });
 
   // Watch form values
@@ -101,18 +81,13 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
   }));
 
   const safePropertiOptions = propertiOptions.map((properti) => ({
-    value: properti.id.toString(),
-    label: properti.name
+    value: properti.id?.toString() ?? '',
+    label: `${properti.lokasi ?? 'Lokasi'} - ${properti.id ?? 'ID'}`
   }));
 
   const safeBlokOptions = blokOptions.map((blok) => ({
     value: blok.id.toString(),
     label: blok.name
-  }));
-
-  const safeTipeOptions = tipeOptions.map((tipe) => ({
-    value: tipe.id.toString(),
-    label: tipe.name
   }));
 
   const safeUnitOptions = unitOptions.map((unit) => ({
@@ -122,27 +97,40 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
 
   // Update selected properti when properti_id changes
   useEffect(() => {
-    if (propertiId) {
-      const properti = propertiOptions.find((p) => p.id.toString() === propertiId);
+    if (propertiId && propertiOptions.length > 0) {
+      const properti = propertiOptions.find((p) => p.id?.toString() === propertiId);
       setSelectedProperti(properti);
-    } else {
-      setSelectedProperti(null);
+
+      // Note: blok_id, tipe_id, unit_id are not available in API response
+      // These fields need to be selected manually by user
     }
   }, [propertiId, propertiOptions]);
 
-  // Populate form with existing data in edit mode
-  useEffect(() => {
-    if (existingData) {
-      reset({
-        konsumen_id: existingData.konsumen_id?.toString() || '',
-        properti_id: existingData.properti_id?.toString() || '',
-        blok_id: existingData.blok_id?.toString() || '',
-        tipe_id: existingData.tipe_id?.toString() || '',
-        unit_id: existingData.unit_id?.toString() || '',
-        diskon: existingData.diskon?.toString() || ''
-      });
+  // Calculate final price with discount
+  const calculateFinalPrice = () => {
+    if (!selectedProperti?.harga) {
+      return {
+        basePrice: 0,
+        discountAmount: 0,
+        finalPrice: 0,
+        discountPercent: 0
+      };
     }
-  }, [existingData, reset]);
+
+    const basePrice = selectedProperti.harga;
+    const discountPercent = parseFloat(diskon || '0') || 0;
+    const discountAmount = (basePrice * discountPercent) / 100;
+    const finalPrice = basePrice - discountAmount;
+
+    return {
+      basePrice,
+      discountAmount,
+      finalPrice,
+      discountPercent
+    };
+  };
+
+  const priceCalculation = calculateFinalPrice();
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(typeId);
@@ -156,188 +144,53 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
   };
 
   const handleChoose = () => {
+    // Validate all required fields
+    if (!konsumenId) {
+      toast.error('Silakan pilih konsumen');
+      return;
+    }
+    if (!propertiId) {
+      toast.error('Silakan pilih properti');
+      return;
+    }
+    if (!blokId) {
+      toast.error('Silakan pilih blok');
+      return;
+    }
     if (!selectedType) {
       toast.error('Silakan pilih tipe terlebih dahulu');
       return;
     }
+    if (!unitId) {
+      toast.error('Silakan pilih unit');
+      return;
+    }
+
     console.log('Selected type:', selectedType);
-    setShowBookingForm(true);
-  };
 
-  const handleBack = () => {
-    setShowBookingForm(false);
-  };
-
-  const handleFormSubmit = async (data: TransaksiFormData) => {
-    if (!onSubmit) return;
-
-    const submitData = {
-      konsumen_id: parseInt(data.konsumen_id),
-      properti_id: parseInt(data.properti_id),
-      blok_id: parseInt(data.blok_id),
-      tipe_id: parseInt(data.tipe_id),
-      unit_id: parseInt(data.unit_id),
-      diskon: data.diskon ? parseFloat(data.diskon) : null
+    // Get current form data
+    const formData = {
+      konsumen_id: konsumenId,
+      properti_id: propertiId,
+      blok_id: blokId,
+      tipe_id: tipeId,
+      unit_id: unitId,
+      diskon: diskon || '' // Store as percentage string
     };
 
-    await onSubmit(submitData);
-  };
-
-  const handleBooking = () => {
-    handleSubmit(handleFormSubmit)();
-  };
-
-  // Mock data - replace with actual data from your form/API
-  const bookingDetails: BookingDetails = {
-    blok: blokOptions.find((b) => b.id.toString() === blokId)?.name || '-',
-    unit: unitOptions.find((u) => u.id.toString() === unitId)?.name || '-',
-    lbLt: selectedProperti?.lb_lt || '0m²/0m²',
-    kelebihanTanah: selectedProperti?.kelebihan_tanah || '0m²',
-    lokasi: selectedProperti?.location || 'Lorem Ipsum',
-    harga: selectedProperti?.price || 0
+    if (onProceedToBooking) {
+      onProceedToBooking(formData);
+    }
   };
 
   // Dynamic property types based on actual tipe data
   const propertyTypes = tipeOptions.map((tipe) => ({
     id: tipe.id.toString(),
     name: tipe.name,
-    features: ['Lorem ipsum dolor sit amet', 'Lorem ipsum dolor sit amet'], // You can add more features if available in API
+    features: ['Lorem ipsum dolor sit amet', 'Lorem ipsum dolor sit amet'],
     selected: selectedType === tipe.id.toString()
   }));
 
-  // Booking Form
-  if (showBookingForm) {
-    return (
-      <div className='flex h-full w-full items-center justify-center p-2'>
-        <div className='w-full max-w-6xl'>
-          {/* Back Button */}
-          <Button variant='ghost' size='sm' onClick={handleBack} className='mb-4 p-0 hover:bg-transparent'>
-            <ArrowLeft className='mr-2 h-4 w-4' />
-            Kembali
-          </Button>
-
-          {/* Title */}
-          <h1 className='mb-6 text-3xl font-bold text-gray-900'>Pemesanan</h1>
-
-          <div className='grid gap-6 lg:grid-cols-2'>
-            {/* Property Image */}
-            <div className='overflow-hidden rounded-xl bg-gray-300'>
-              <div className='aspect-[4/3] w-full bg-gray-300' />
-            </div>
-
-            {/* Booking Details */}
-            <div className='space-y-4'>
-              {/* Form Fields */}
-              <div className='grid grid-cols-2 gap-3'>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Konsumen</Label>
-                  <Select
-                    options={safeKonsumenOptions}
-                    value={konsumenId}
-                    onChange={(value) => setValue('konsumen_id', value as string)}
-                    placeholder={isLoadingKonsumen ? 'Loading...' : 'Pilih Konsumen'}
-                    disabled={isLoadingKonsumen}
-                    className='h-10'
-                  />
-                  {errors.konsumen_id && <p className='text-xs text-red-500'>{errors.konsumen_id.message}</p>}
-                </div>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Properti</Label>
-                  <Select
-                    options={safePropertiOptions}
-                    value={propertiId}
-                    onChange={(value) => setValue('properti_id', value as string)}
-                    placeholder={isLoadingProperti ? 'Loading...' : 'Pilih Properti'}
-                    disabled={isLoadingProperti}
-                    className='h-10'
-                  />
-                  {errors.properti_id && <p className='text-xs text-red-500'>{errors.properti_id.message}</p>}
-                </div>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Blok</Label>
-                  <Select
-                    options={safeBlokOptions}
-                    value={blokId}
-                    onChange={(value) => setValue('blok_id', value as string)}
-                    placeholder={isLoadingBlok ? 'Loading...' : 'Pilih Blok'}
-                    disabled={isLoadingBlok}
-                    className='h-10'
-                  />
-                  {errors.blok_id && <p className='text-xs text-red-500'>{errors.blok_id.message}</p>}
-                </div>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Tipe</Label>
-                  <Select
-                    options={safeTipeOptions}
-                    value={tipeId}
-                    onChange={(value) => setValue('tipe_id', value as string)}
-                    placeholder={isLoadingTipe ? 'Loading...' : 'Pilih Tipe'}
-                    disabled={isLoadingTipe}
-                    className='h-10'
-                  />
-                  {errors.tipe_id && <p className='text-xs text-red-500'>{errors.tipe_id.message}</p>}
-                </div>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Unit</Label>
-                  <Select
-                    options={safeUnitOptions}
-                    value={unitId}
-                    onChange={(value) => setValue('unit_id', value as string)}
-                    placeholder={isLoadingUnit ? 'Loading...' : 'Pilih Unit'}
-                    disabled={isLoadingUnit}
-                    className='h-10'
-                  />
-                  {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
-                </div>
-                <div>
-                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Diskon (Opsional)</Label>
-                  <Input
-                    type='number'
-                    placeholder='0'
-                    {...register('diskon')}
-                    className='h-10 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
-                  />
-                </div>
-              </div>
-
-              {/* Property Details */}
-              <div className='space-y-3'>
-                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                  <span className='text-sm text-gray-600'>LB/LT</span>
-                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lbLt}</span>
-                </div>
-                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                  <span className='text-sm text-gray-600'>Kelebihan Tanah</span>
-                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.kelebihanTanah}</span>
-                </div>
-                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                  <span className='text-sm text-gray-600'>Lokasi</span>
-                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lokasi}</span>
-                </div>
-              </div>
-
-              {/* Price */}
-              <div className='flex items-center justify-between pt-2'>
-                <span className='text-sm text-gray-600'>Harga</span>
-                <span className='text-2xl font-bold text-red-500'>
-                  Rp {bookingDetails.harga.toLocaleString('id-ID')} M
-                </span>
-              </div>
-
-              {/* Booking Button */}
-              <Button
-                onClick={handleBooking}
-                className='mt-6 h-12 w-full rounded-lg bg-green-500 text-base font-semibold text-white hover:bg-green-600'>
-                Pesan
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Property Type Selection Form
   return (
     <div className='flex h-full w-full items-center justify-center p-2'>
       <div className='max-h-[80vh] w-full max-w-2xl overflow-auto'>
@@ -395,20 +248,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
               {errors.blok_id && <p className='text-xs text-red-500'>{errors.blok_id.message}</p>}
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='tipe' className='text-sm'>
-                Tipe
-              </Label>
-              <Select
-                options={safeTipeOptions}
-                value={tipeId}
-                onChange={(value) => setValue('tipe_id', value as string)}
-                placeholder={isLoadingTipe ? 'Loading...' : 'Pilih Tipe'}
-                disabled={isLoadingTipe}
-                className='h-10'
-              />
-              {errors.tipe_id && <p className='text-xs text-red-500'>{errors.tipe_id.message}</p>}
-            </div>
-            <div className='space-y-1'>
               <Label htmlFor='unit' className='text-sm'>
                 Unit
               </Label>
@@ -426,22 +265,56 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit }: PropertyTypeModalP
               <Label htmlFor='diskon' className='text-sm'>
                 Diskon (Opsional)
               </Label>
-              <Input
-                id='diskon'
-                type='number'
-                placeholder='0'
-                {...register('diskon')}
-                className='h-10 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
-              />
+              <div className='relative'>
+                <Input
+                  id='diskon'
+                  type='number'
+                  placeholder='0'
+                  {...register('diskon')}
+                  className='h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500'
+                />
+                <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>%</span>
+              </div>
             </div>
           </div>
+
+          {/* Price Calculation Display */}
+          {selectedProperti?.harga && (
+            <div className='mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4'>
+              <h4 className='mb-3 text-sm font-semibold text-gray-700'>Kalkulasi Harga</h4>
+              <div className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-gray-600'>Harga Dasar:</span>
+                  <span className='font-medium'>Rp {priceCalculation.basePrice.toLocaleString('id-ID')}</span>
+                </div>
+                {priceCalculation.discountPercent > 0 && (
+                  <>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Diskon ({priceCalculation.discountPercent}%):</span>
+                      <span className='font-medium text-red-600'>
+                        -Rp {priceCalculation.discountAmount.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className='border-t border-gray-200 pt-2'>
+                      <div className='flex justify-between'>
+                        <span className='font-semibold text-gray-700'>Harga Akhir:</span>
+                        <span className='text-lg font-bold text-green-600'>
+                          Rp {priceCalculation.finalPrice.toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Property Type Cards */}
         <div className='px-4 pb-4'>
           {isLoadingTipe ? (
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-              {[1, 2].map((index) => (
+              {[1, 2, 3].map((index) => (
                 <div key={index} className='rounded-xl border-2 border-gray-200 bg-white p-4'>
                   <div className='mb-4 flex justify-center'>
                     <Skeleton className='h-12 w-12 rounded-lg' />

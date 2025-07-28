@@ -21,11 +21,15 @@ interface PropertyData {
   id: number;
   name: string;
   code: string;
-  location: string;
-  price: number;
-  area: number;
-  lb_lt?: string;
-  kelebihan_tanah?: string;
+  project_id: number;
+  blok_id: number;
+  unit_id: number;
+  tipe_id: number;
+  luas_bangunan: string;
+  luas_tanah: string;
+  kelebihan: string;
+  lokasi: string;
+  harga: number;
 }
 
 export const penjualanService = {
