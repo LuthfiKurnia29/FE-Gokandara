@@ -2,7 +2,7 @@
 
 import { memo, useState } from 'react';
 
-import { PenjualanForm } from '@/blocks/transaksi.tsx/form';
+import { PenjualanForm } from '@/blocks/transaksi/form';
 import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Badge } from '@/components/ui/badge';
@@ -207,18 +207,20 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-h-[95vh] max-w-6xl'>
           <DialogHeader>
             <DialogTitle>Edit Transaksi</DialogTitle>
             <DialogDescription>Edit data transaksi di form berikut.</DialogDescription>
           </DialogHeader>
 
-          <PenjualanForm
-            selectedId={selectedId}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={updatePenjualan.isPending}
-          />
+          <div className='h-[80vh] overflow-hidden'>
+            <PenjualanForm
+              selectedId={selectedId}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCloseForm}
+              isLoading={updatePenjualan.isPending}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -277,18 +279,20 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-h-[95vh] max-w-6xl'>
           <DialogHeader>
             <DialogTitle>Tambah Transaksi</DialogTitle>
             <DialogDescription>Isi form berikut untuk menambah transaksi penjualan baru.</DialogDescription>
           </DialogHeader>
 
-          <PenjualanForm
-            selectedId={null}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={isFormLoading}
-          />
+          <div className='h-[80vh] overflow-hidden'>
+            <PenjualanForm
+              selectedId={null}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCloseForm}
+              isLoading={isFormLoading}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </section>

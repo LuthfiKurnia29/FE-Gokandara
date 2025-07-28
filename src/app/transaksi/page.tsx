@@ -1,4 +1,4 @@
-import PenjualanPage from '@/blocks/transaksi.tsx';
+import PenjualanPage from '@/blocks/transaksi';
 
 export default function TransaksiPage() {
   return <PenjualanPage />;
