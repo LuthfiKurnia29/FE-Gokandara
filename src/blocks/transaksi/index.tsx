@@ -7,7 +7,6 @@ import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -22,36 +21,17 @@ import {
   useUpdatePenjualan,
   useUpdatePenjualanStatus
 } from '@/services/penjualan';
-import { CreatePenjualanData, PenjualanWithRelations } from '@/types/penjualan';
+import { CreatePenjualanData, PenjualanWithRelations, UpdatePenjualanData } from '@/types/penjualan';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import MetricsSection from './metric-section';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { CheckCircle, MoreHorizontal, Pencil, Plus, ShieldCheck, ShoppingCart, Trash, Users } from 'lucide-react';
+import { CheckCircle, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<PenjualanWithRelations>();
 
 const columns = [
-  columnHelper.accessor('id', {
-    header: 'Order ID',
-    cell: ({ getValue }) => <span className='font-mono text-sm'>#{getValue()}</span>,
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('createdAt', {
-    header: 'Tanggal',
-    cell: ({ getValue }) => {
-      const date = new Date(getValue());
-      return (
-        <div className='flex flex-col'>
-          <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
-          <span className='text-muted-foreground text-xs'>{format(date, 'HH:mm')}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '120px' } }
-  }),
   columnHelper.accessor('konsumen.name', {
     header: 'Konsumen',
     cell: ({ row, getValue }) => {
@@ -65,33 +45,54 @@ const columns = [
     },
     meta: { style: { minWidth: '180px' } }
   }),
-  columnHelper.accessor('property.name', {
+  columnHelper.accessor('properti.name', {
     header: 'Properti',
     cell: ({ row, getValue }) => {
-      const property = row.original.property;
+      const properti = row.original.properti;
       return (
         <div className='flex flex-col'>
-          <span className='font-medium'>{getValue() || property?.name || '-'}</span>
-          {property?.code && <span className='text-muted-foreground text-xs'>{property.code}</span>}
+          <span className='font-medium'>{getValue() || properti?.name || '-'}</span>
+          {properti?.code && <span className='text-muted-foreground text-xs'>{properti.code}</span>}
         </div>
       );
     },
     meta: { style: { minWidth: '180px' } }
   }),
-  columnHelper.accessor('property.location', {
-    header: 'Lokasi',
-    meta: { style: { minWidth: '180px' } }
-  }),
-  columnHelper.accessor('grandTotal', {
-    header: 'Harga',
-    cell: ({ getValue }) => {
-      const total = getValue();
-      return <span className='font-mono font-semibold'>Rp {total.toLocaleString('id-ID')}</span>;
+  columnHelper.accessor('blok.name', {
+    header: 'Blok',
+    cell: ({ row, getValue }) => {
+      const blok = row.original.blok;
+      return <span className='font-medium'>{getValue() || blok?.name || '-'}</span>;
     },
-    meta: { style: { width: '140px' } }
+    meta: { style: { width: '80px' } }
   }),
-  columnHelper.accessor('sales', {
-    header: 'Sales'
+  columnHelper.accessor('tipe.name', {
+    header: 'Tipe',
+    cell: ({ row, getValue }) => {
+      const tipe = row.original.tipe;
+      return <span className='font-medium'>{getValue() || tipe?.name || '-'}</span>;
+    },
+    meta: { style: { width: '80px' } }
+  }),
+  columnHelper.accessor('unit.name', {
+    header: 'Unit',
+    cell: ({ row, getValue }) => {
+      const unit = row.original.unit;
+      return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
+    },
+    meta: { style: { width: '80px' } }
+  }),
+  columnHelper.accessor('diskon', {
+    header: 'Diskon',
+    cell: ({ getValue }) => {
+      const diskon = getValue();
+      return diskon ? (
+        <span className='font-mono text-green-600'>-Rp {diskon.toLocaleString('id-ID')}</span>
+      ) : (
+        <span className='text-muted-foreground'>-</span>
+      );
+    },
+    meta: { style: { width: '120px' } }
   }),
   columnHelper.accessor('status', {
     header: 'Status',
@@ -126,7 +127,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const queryClient = useQueryClient();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
     }
   });
 
@@ -143,14 +145,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   };
 
   const handleDeletePenjualan = async (penjualan: PenjualanWithRelations) => {
-    handleDelete(`/penjualan/${penjualan.id}`, 'delete');
+    handleDelete(`/delete-transaksi/${penjualan.id}`, 'delete');
   };
 
   const handleApprovePenjualan = async (penjualan: PenjualanWithRelations) => {
     try {
       await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Approved' } });
-    } catch (error) {
-      // Error handled by mutation's onError callback and toast notifications
+      toast.success('Status transaksi berhasil diubah menjadi Approved');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+      console.error('Error updating status:', error);
     }
   };
 
@@ -159,14 +163,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     setSelectedId(null);
   };
 
-  const handleFormSubmit = async (data: CreatePenjualanData) => {
+  const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
       if (selectedId) {
-        await updatePenjualan.mutateAsync({ id: selectedId, data });
+        await updatePenjualan.mutateAsync({ id: selectedId, data: data as UpdatePenjualanData });
+        toast.success('Data transaksi berhasil diperbarui');
       }
       handleCloseForm();
-    } catch (error) {
-      // Error handled by mutation's onError callback and toast notifications
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat memperbarui data');
+      console.error('Error updating transaksi:', error);
     }
   };
 
@@ -208,17 +214,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
-          {/* Add DialogTitle for accessibility (visually hidden) */}
-          <DialogTitle className='sr-only'>{selectedId ? 'Edit Data Transaksi' : 'Tambah Data Transaksi'}</DialogTitle>
+          <DialogHeader>
+            <DialogTitle>Edit Data Transaksi</DialogTitle>
+            <DialogDescription>Edit data transaksi yang sudah ada di form berikut.</DialogDescription>
+          </DialogHeader>
 
-          {/* Add DialogDescription for accessibility (visually hidden) */}
-          <DialogDescription className='sr-only'>
-            {selectedId
-              ? 'Form untuk mengedit data transaksi yang sudah ada'
-              : 'Form untuk menambahkan data transaksi baru ke dalam sistem'}
-          </DialogDescription>
-
-          <PropertyTypeModal onClose={handleCloseForm} />
+          <PropertyTypeModal onClose={handleCloseForm} selectedId={selectedId} onSubmit={handleFormSubmit} />
         </DialogContent>
       </Dialog>
 
@@ -242,12 +243,14 @@ const PenjualanPage = memo(function PenjualanPage() {
     setOpenForm(false);
   };
 
-  const handleFormSubmit = async (data: CreatePenjualanData) => {
+  const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
-      await createPenjualan.mutateAsync(data);
+      await createPenjualan.mutateAsync(data as CreatePenjualanData);
+      toast.success('Data transaksi berhasil ditambahkan');
       handleCloseForm();
-    } catch (error) {
-      // Error handled by mutation's onError callback and toast notifications
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat menambahkan data');
+      console.error('Error creating transaksi:', error);
     }
   };
 
@@ -262,11 +265,11 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       <PaginateTable
         columns={columns}
-        url='/penjualan'
-        id='penjualan'
+        url='/list-transaksi'
+        id='transaksi'
         perPage={10}
-        queryKey={['/penjualan']}
-        payload={{ include: 'konsumen,property' }}
+        queryKey={['/list-transaksi']}
+        payload={{ include: 'konsumen,properti,blok,tipe,unit' }}
         Plugin={() => (
           <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
             <Plus />
@@ -278,15 +281,14 @@ const PenjualanPage = memo(function PenjualanPage() {
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
-          {/* Add DialogTitle for accessibility (visually hidden) */}
-          <DialogTitle className='sr-only'>Tambah Data Transaksi</DialogTitle>
+          <DialogHeader>
+            <DialogTitle>Tambah Data Transaksi</DialogTitle>
+            <DialogDescription>
+              Isi form berikut untuk menambahkan data transaksi baru ke dalam sistem.
+            </DialogDescription>
+          </DialogHeader>
 
-          {/* Add DialogDescription for accessibility (visually hidden) */}
-          <DialogDescription className='sr-only'>
-            Form untuk menambahkan data transaksi baru ke dalam sistem
-          </DialogDescription>
-
-          <PropertyTypeModal onClose={handleCloseForm} />
+          <PropertyTypeModal onClose={handleCloseForm} selectedId={null} onSubmit={handleFormSubmit} />
         </DialogContent>
       </Dialog>
     </section>

@@ -11,6 +11,23 @@ import {
 } from '@/types/penjualan';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+// Master Data Interfaces for form dropdowns
+interface MasterDataItem {
+  id: number;
+  name: string;
+}
+
+interface PropertyData {
+  id: number;
+  name: string;
+  code: string;
+  location: string;
+  price: number;
+  area: number;
+  lb_lt?: string;
+  kelebihan_tanah?: string;
+}
+
 export const penjualanService = {
   // Get paginated list of penjualan
   getList: async ({
@@ -18,7 +35,8 @@ export const penjualanService = {
     perPage = 10,
     search = '',
     status,
-    konsumenId,
+    konsumen_id,
+    properti_id,
     include
   }: UsePenjualanListParams = {}): Promise<PenjualanResponse> => {
     const params = new URLSearchParams({
@@ -26,11 +44,12 @@ export const penjualanService = {
       per_page: perPage.toString(),
       ...(search && { search }),
       ...(status && { status }),
-      ...(konsumenId && { konsumen_id: konsumenId.toString() }),
+      ...(konsumen_id && { konsumen_id: konsumen_id.toString() }),
+      ...(properti_id && { properti_id: properti_id.toString() }),
       ...(include && include.length > 0 && { include: include.join(',') })
     });
 
-    const response = await axios.get(`/penjualan?${params}`);
+    const response = await axios.get(`/list-transaksi?${params}`);
     return response.data;
   },
 
@@ -41,39 +60,78 @@ export const penjualanService = {
       params.append('include', include.join(','));
     }
 
-    const url = `/penjualan/${id}${params.toString() ? `?${params}` : ''}`;
+    const url = `/list-transaksi/${id}${params.toString() ? `?${params}` : ''}`;
     const response = await axios.get<PenjualanApiResponse>(url);
     return response.data.data;
   },
 
   // Create new penjualan
   create: async (data: CreatePenjualanData): Promise<PenjualanWithRelations> => {
-    const response = await axios.post<PenjualanApiResponse>('/penjualan', data);
+    const response = await axios.post<PenjualanApiResponse>('/create-transaksi', data);
     return response.data.data;
   },
 
   // Update penjualan by ID
   update: async (id: number, data: UpdatePenjualanData): Promise<PenjualanWithRelations> => {
-    const response = await axios.put<PenjualanApiResponse>(`/penjualan/${id}`, data);
+    const response = await axios.put<PenjualanApiResponse>(`/update-transaksi/${id}`, data);
     return response.data.data;
   },
 
   // Partial update penjualan by ID
   partialUpdate: async (id: number, data: UpdatePenjualanData): Promise<PenjualanWithRelations> => {
-    const response = await axios.patch<PenjualanApiResponse>(`/penjualan/${id}`, data);
+    const response = await axios.patch<PenjualanApiResponse>(`/update-transaksi/${id}`, data);
     return response.data.data;
   },
 
   // Update penjualan status only
   updateStatus: async (id: number, data: UpdatePenjualanStatusData): Promise<PenjualanWithRelations> => {
-    const response = await axios.patch<PenjualanApiResponse>(`/penjualan/${id}/status`, data);
+    const response = await axios.post<PenjualanApiResponse>(`/update-status-transaksi/${id}`, data);
     return response.data.data;
   },
 
   // Delete penjualan by ID
   delete: async (id: number): Promise<PenjualanWithRelations> => {
-    const response = await axios.delete<PenjualanApiResponse>(`/penjualan/${id}`);
+    const response = await axios.delete<PenjualanApiResponse>(`/delete-transaksi/${id}`);
     return response.data.data;
+  },
+
+  // Get metrics data
+  getMetrics: async () => {
+    const [konsumenResponse, transaksiResponse] = await Promise.all([
+      axios.get('/konsumen?per_page=1'), // Get first page to get total count
+      axios.get('/list-transaksi?per_page=1') // Get first page to get total count
+    ]);
+
+    return {
+      totalKonsumen: konsumenResponse.data.total || 0,
+      totalTransaksi: transaksiResponse.data.total || 0
+    };
+  },
+
+  // Master Data Services for form dropdowns
+  getAllKonsumen: async (): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-konsumen');
+    return response.data.data || response.data || [];
+  },
+
+  getAllProperti: async (): Promise<PropertyData[]> => {
+    const response = await axios.get('/all-properti');
+    return response.data.data || response.data || [];
+  },
+
+  getAllBlok: async (): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-blok');
+    return response.data.data || response.data || [];
+  },
+
+  getAllTipe: async (): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-tipe');
+    return response.data.data || response.data || [];
+  },
+
+  getAllUnit: async (): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-unit');
+    return response.data.data || response.data || [];
   }
 };
 
@@ -83,25 +141,82 @@ export const usePenjualanList = ({
   perPage = 10,
   search = '',
   status,
-  konsumenId,
+  konsumen_id,
+  properti_id,
   include
 }: UsePenjualanListParams = {}) => {
   return useQuery({
-    queryKey: ['/penjualan', { page, perPage, search, status, konsumenId, include }],
+    queryKey: ['/list-transaksi', { page, perPage, search, status, konsumen_id, properti_id, include }],
     queryFn: (): Promise<PenjualanResponse> => {
-      return penjualanService.getList({ page, perPage, search, status, konsumenId, include });
+      return penjualanService.getList({ page, perPage, search, status, konsumen_id, properti_id, include });
     }
   });
 };
 
 export const usePenjualanById = (id: number | null, include?: string[]) => {
   return useQuery({
-    queryKey: ['/penjualan', id, { include }],
+    queryKey: ['/list-transaksi', id, { include }],
     queryFn: (): Promise<PenjualanWithRelations> => {
       if (!id) throw new Error('ID is required');
       return penjualanService.getById(id, include);
     },
     enabled: !!id
+  });
+};
+
+// Metrics hook
+export const usePenjualanMetrics = () => {
+  return useQuery({
+    queryKey: ['/penjualan-metrics'],
+    queryFn: penjualanService.getMetrics,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+
+// Master Data Hooks for form dropdowns
+export const useAllKonsumen = () => {
+  return useQuery({
+    queryKey: ['/all-konsumen'],
+    queryFn: penjualanService.getAllKonsumen,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+
+export const useAllProperti = () => {
+  return useQuery({
+    queryKey: ['/all-properti'],
+    queryFn: penjualanService.getAllProperti,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+
+export const useAllBlok = () => {
+  return useQuery({
+    queryKey: ['/all-blok'],
+    queryFn: penjualanService.getAllBlok,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+
+export const useAllTipe = () => {
+  return useQuery({
+    queryKey: ['/all-tipe'],
+    queryFn: penjualanService.getAllTipe,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
+  });
+};
+
+export const useAllUnit = () => {
+  return useQuery({
+    queryKey: ['/all-unit'],
+    queryFn: penjualanService.getAllUnit,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };
 
@@ -114,8 +229,9 @@ export const useCreatePenjualan = () => {
       return penjualanService.create(data);
     },
     onSuccess: () => {
-      // Invalidate and refetch penjualan list
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
+      // Invalidate and refetch penjualan list and metrics
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
     }
   });
 };
@@ -129,8 +245,8 @@ export const useUpdatePenjualan = () => {
     },
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
-      queryClient.invalidateQueries({ queryKey: ['/penjualan', id] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
     }
   });
 };
@@ -144,8 +260,8 @@ export const usePartialUpdatePenjualan = () => {
     },
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
-      queryClient.invalidateQueries({ queryKey: ['/penjualan', id] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
     }
   });
 };
@@ -159,8 +275,8 @@ export const useUpdatePenjualanStatus = () => {
     },
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
-      queryClient.invalidateQueries({ queryKey: ['/penjualan', id] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
     }
   });
 };
@@ -173,8 +289,9 @@ export const useDeletePenjualan = () => {
       return penjualanService.delete(id);
     },
     onSuccess: () => {
-      // Invalidate and refetch penjualan list
-      queryClient.invalidateQueries({ queryKey: ['/penjualan'] });
+      // Invalidate and refetch penjualan list and metrics
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
+      queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
     }
   });
 };

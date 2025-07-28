@@ -2,20 +2,25 @@ export type PenjualanStatus = 'Negotiation' | 'Pending' | 'Approved';
 
 export interface PenjualanData {
   id: number;
-  konsumenId: number;
-  propertiId: number;
-  diskon: number;
-  grandTotal: number;
+  konsumen_id: number;
+  properti_id: number;
+  blok_id: number;
+  tipe_id: number;
+  unit_id: number;
+  diskon: number | null;
+  grand_total: number;
   status: PenjualanStatus;
-  sales?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Enhanced interface with optional relations
 export interface PenjualanWithRelations extends PenjualanData {
   konsumen?: import('./konsumen').KonsumenData;
-  property?: import('./property').PropertyData;
+  properti?: import('./property').PropertyData;
+  blok?: import('./blok').BlokData;
+  tipe?: import('./tipe').TipeData;
+  unit?: import('./unit').UnitData;
 }
 
 export interface PenjualanResponse {
@@ -44,19 +49,21 @@ export interface PenjualanApiResponse {
 }
 
 export interface CreatePenjualanData {
-  konsumenId: number;
-  propertiId: number;
-  diskon: number;
-  grandTotal: number;
-  status: PenjualanStatus;
+  konsumen_id: number;
+  properti_id: number;
+  blok_id: number;
+  tipe_id: number;
+  unit_id: number;
+  diskon?: number | null;
 }
 
 export interface UpdatePenjualanData {
-  konsumenId?: number;
-  propertiId?: number;
-  diskon?: number;
-  grandTotal?: number;
-  status?: PenjualanStatus;
+  konsumen_id?: number;
+  properti_id?: number;
+  blok_id?: number;
+  tipe_id?: number;
+  unit_id?: number;
+  diskon?: number | null;
 }
 
 export interface UpdatePenjualanStatusData {
@@ -68,6 +75,7 @@ export interface UsePenjualanListParams {
   perPage?: number;
   search?: string;
   status?: PenjualanStatus;
-  konsumenId?: number;
-  include?: string[]; // Array of relations to include: ['konsumen', 'property']
+  konsumen_id?: number;
+  properti_id?: number;
+  include?: string[]; // Array of relations to include: ['konsumen', 'properti', 'blok', 'tipe', 'unit']
 }

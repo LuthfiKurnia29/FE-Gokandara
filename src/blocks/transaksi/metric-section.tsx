@@ -1,10 +1,16 @@
 import { memo } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { usePenjualanMetrics } from '@/services/penjualan';
 
 import { ShieldCheck, ShoppingCart, Users } from 'lucide-react';
 
 const MetricsSection = memo(function MetricsSection() {
+  const { data: metrics, isLoading, error } = usePenjualanMetrics();
+
+  const totalKonsumen = metrics?.totalKonsumen || 0;
+  const totalTransaksi = metrics?.totalTransaksi || 0;
+
   return (
     <div className='mb-6 grid gap-4 lg:grid-cols-2'>
       {/* Information Card */}
@@ -17,7 +23,7 @@ const MetricsSection = memo(function MetricsSection() {
             <div>
               <h3 className='text-lg font-bold'>INFORMASI</h3>
               <p className='text-sm opacity-90'>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
+                Kelola data transaksi penjualan properti dengan informasi konsumen, properti, dan status transaksi
               </p>
             </div>
           </div>
@@ -30,7 +36,9 @@ const MetricsSection = memo(function MetricsSection() {
           <CardContent className='p-6'>
             <div className='flex items-center justify-between'>
               <div>
-                <div className='text-3xl font-bold text-gray-900'>00</div>
+                <div className='text-3xl font-bold text-gray-900'>
+                  {isLoading ? '...' : totalKonsumen.toLocaleString('id-ID')}
+                </div>
                 <div className='text-sm font-medium text-gray-600'>Total Konsumen</div>
               </div>
               <div className='rounded-full bg-gray-200 p-3'>
@@ -44,7 +52,9 @@ const MetricsSection = memo(function MetricsSection() {
           <CardContent className='p-6'>
             <div className='flex items-center justify-between'>
               <div>
-                <div className='text-3xl font-bold text-gray-900'>00</div>
+                <div className='text-3xl font-bold text-gray-900'>
+                  {isLoading ? '...' : totalTransaksi.toLocaleString('id-ID')}
+                </div>
                 <div className='text-sm font-medium text-gray-600'>Total Transaksi</div>
               </div>
               <div className='rounded-full bg-gray-200 p-3'>
