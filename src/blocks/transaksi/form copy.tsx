@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-
 import { Check, Home, X } from 'lucide-react';
 
-interface PropertyTypeModalProps {
-  onClose?: () => void;
-}
-
-const PropertyTypeModal = ({ onClose }: PropertyTypeModalProps) => {
+const PropertyTypeModal = () => {
+  const [isOpen, setIsOpen] = useState(true);
   const [selectedType, setSelectedType] = useState('Tipe 12');
 
   const propertyTypes = [
@@ -37,23 +26,37 @@ const PropertyTypeModal = ({ onClose }: PropertyTypeModalProps) => {
   };
 
   const handleClose = () => {
-    if (onClose) {
-      onClose();
-    }
+    setIsOpen(false);
   };
 
   const handleChoose = () => {
     console.log('Selected type:', selectedType);
-    if (onClose) {
-      onClose();
-    }
+    setIsOpen(false);
   };
 
+  if (!isOpen) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+        <button
+          onClick={() => setIsOpen(true)}
+          className='rounded-lg bg-teal-600 px-6 py-3 text-white hover:bg-teal-700'>
+          Open Property Type Modal
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className='flex h-full w-full items-center justify-center p-4'>
-      <div className='max-h-[90vh] w-full max-w-2xl overflow-auto'>
+    <div className='bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4'>
+      <div className='max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white shadow-2xl'>
         {/* Header */}
-        <div className='p-8 pb-6'>
+        <div className='relative p-8 pb-6'>
+          <button
+            onClick={handleClose}
+            className='absolute top-6 right-6 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition-colors hover:bg-gray-200'>
+            <X className='h-4 w-4 text-gray-500' />
+          </button>
+
           <div className='text-center'>
             <h2 className='mb-3 text-3xl font-bold text-gray-900'>Lorem Ipsum</h2>
             <p className='text-lg text-gray-600'>Lorem ipsum dolor sit amet, consectetur adipiscing elit</p>
@@ -98,7 +101,7 @@ const PropertyTypeModal = ({ onClose }: PropertyTypeModalProps) => {
                 </div>
 
                 {/* Select Button */}
-                <Button
+                <button
                   className={`w-full rounded-xl py-4 font-semibold transition-all duration-300 ${
                     selectedType === type.name
                       ? 'bg-green-500 text-white shadow-lg hover:bg-green-600'
@@ -109,7 +112,7 @@ const PropertyTypeModal = ({ onClose }: PropertyTypeModalProps) => {
                     handleTypeSelect(type.name);
                   }}>
                   Pilih
-                </Button>
+                </button>
 
                 {/* Selection Indicator */}
                 {selectedType === type.name && (
@@ -119,6 +122,15 @@ const PropertyTypeModal = ({ onClose }: PropertyTypeModalProps) => {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Bottom Action Button */}
+          <div className='mt-8 flex justify-center'>
+            <button
+              onClick={handleChoose}
+              className='rounded-xl bg-teal-600 px-12 py-4 font-semibold text-white shadow-lg transition-colors hover:bg-teal-700'>
+              Pilih {selectedType}
+            </button>
           </div>
         </div>
       </div>

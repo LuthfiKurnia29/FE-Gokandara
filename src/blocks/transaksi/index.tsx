@@ -2,7 +2,7 @@
 
 import { memo, useState } from 'react';
 
-import { PenjualanForm } from '@/blocks/transaksi/form';
+import PropertyTypeModal from '@/blocks/transaksi/form';
 import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Badge } from '@/components/ui/badge';
@@ -208,7 +208,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent
-          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'
           style={{
             height: 'min(700px, 85vh)',
             maxHeight: 'min(700px, 85vh)',
@@ -224,12 +224,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               : 'Form untuk menambahkan data transaksi baru ke dalam sistem'}
           </DialogDescription>
 
-          <PenjualanForm
-            selectedId={selectedId}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={updatePenjualan.isPending}
-          />
+          <PropertyTypeModal onClose={handleCloseForm} />
         </DialogContent>
       </Dialog>
 
@@ -289,7 +284,7 @@ const PenjualanPage = memo(function PenjualanPage() {
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent
-          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'
           style={{
             height: 'min(700px, 85vh)',
             maxHeight: 'min(700px, 85vh)',
@@ -303,12 +298,7 @@ const PenjualanPage = memo(function PenjualanPage() {
             Form untuk menambahkan data transaksi baru ke dalam sistem
           </DialogDescription>
 
-          <PenjualanForm
-            selectedId={null}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={isFormLoading}
-          />
+          <PropertyTypeModal onClose={handleCloseForm} />
         </DialogContent>
       </Dialog>
     </section>
