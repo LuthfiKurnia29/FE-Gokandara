@@ -199,10 +199,14 @@ export const PenjualanForm = memo(function PenjualanForm({
           {/* Scrollable Content Area */}
           <CardContent
             className='flex-1 px-6 pt-4'
-            style={{ overflow: 'auto', minHeight: 0, maxHeight: 'calc(100% - 140px)' }}>
-            <div className='space-y-8 pb-4'>
+            style={{
+              overflow: 'auto',
+              minHeight: 0,
+              maxHeight: 'calc(100% - 140px)'
+            }}>
+            <div className='space-y-6 pb-4'>
               {/* Form Inputs - Yellow highlighted area */}
-              <div className='rounded-lg border-2 border-orange-400 bg-white p-6'>
+              <div className='rounded-lg border-2 border-orange-400 bg-white p-4'>
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
                   <div className='space-y-2'>
                     <Label htmlFor='properti'>Properti</Label>
@@ -319,95 +323,6 @@ export const PenjualanForm = memo(function PenjualanForm({
                   )}
                 />
                 {errors.status && <p className='text-sm text-red-500'>{errors.status.message}</p>}
-              </div>
-
-              {/* Pricing Cards */}
-              <div className='grid gap-6 md:grid-cols-2'>
-                {/* Tipe 12 - Selected */}
-                <Card
-                  className={`relative cursor-pointer transition-all ${
-                    selectedPropertyType === 'tipe-12'
-                      ? 'border-2 border-teal-500 bg-white shadow-lg'
-                      : 'border border-gray-200 bg-white hover:shadow-md'
-                  }`}>
-                  <CardContent className='p-8'>
-                    <div className='mb-6 text-center'>
-                      <div className='mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-teal-600'>
-                        <Home className='h-6 w-6 text-white' />
-                      </div>
-                      <h3 className='text-2xl font-bold text-teal-600'>Tipe 12</h3>
-                    </div>
-
-                    <div className='mb-8 space-y-4'>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>Luas 12x12 meter</span>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>2 Kamar Tidur</span>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>1 Kamar Mandi</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      type='button'
-                      onClick={() => setSelectedPropertyType('tipe-12')}
-                      className={`w-full rounded-full py-3 font-medium ${
-                        selectedPropertyType === 'tipe-12'
-                          ? 'bg-green-500 text-white hover:bg-green-600'
-                          : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}>
-                      {selectedPropertyType === 'tipe-12' ? 'Dipilih' : 'Pilih'}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Tipe 16 - Unselected */}
-                <Card
-                  className={`relative cursor-pointer transition-all ${
-                    selectedPropertyType === 'tipe-16'
-                      ? 'border-2 border-teal-500 bg-white shadow-lg'
-                      : 'border border-gray-200 bg-white hover:shadow-md'
-                  }`}>
-                  <CardContent className='p-8'>
-                    <div className='mb-6 text-center'>
-                      <div className='mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-teal-600'>
-                        <Home className='h-6 w-6 text-white' />
-                      </div>
-                      <h3 className='text-2xl font-bold text-teal-600'>Tipe 16</h3>
-                    </div>
-
-                    <div className='mb-8 space-y-4'>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>Luas 16x16 meter</span>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>3 Kamar Tidur</span>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <Check className='h-5 w-5 flex-shrink-0 text-green-500' />
-                        <span className='text-gray-600'>2 Kamar Mandi</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      type='button'
-                      onClick={() => setSelectedPropertyType('tipe-16')}
-                      className={`w-full rounded-full py-3 font-medium ${
-                        selectedPropertyType === 'tipe-16'
-                          ? 'bg-green-500 text-white hover:bg-green-600'
-                          : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                      }`}>
-                      {selectedPropertyType === 'tipe-16' ? 'Dipilih' : 'Pilih'}
-                    </Button>
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Pricing Details */}

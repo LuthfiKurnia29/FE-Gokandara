@@ -207,20 +207,29 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-h-[95vh] max-w-6xl'>
-          <DialogHeader>
-            <DialogTitle>Edit Transaksi</DialogTitle>
-            <DialogDescription>Edit data transaksi di form berikut.</DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          style={{
+            height: 'min(700px, 85vh)',
+            maxHeight: 'min(700px, 85vh)',
+            minHeight: '500px'
+          }}>
+          {/* Add DialogTitle for accessibility (visually hidden) */}
+          <DialogTitle className='sr-only'>{selectedId ? 'Edit Data Transaksi' : 'Tambah Data Transaksi'}</DialogTitle>
 
-          <div className='h-[80vh] overflow-hidden'>
-            <PenjualanForm
-              selectedId={selectedId}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCloseForm}
-              isLoading={updatePenjualan.isPending}
-            />
-          </div>
+          {/* Add DialogDescription for accessibility (visually hidden) */}
+          <DialogDescription className='sr-only'>
+            {selectedId
+              ? 'Form untuk mengedit data transaksi yang sudah ada'
+              : 'Form untuk menambahkan data transaksi baru ke dalam sistem'}
+          </DialogDescription>
+
+          <PenjualanForm
+            selectedId={selectedId}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCloseForm}
+            isLoading={updatePenjualan.isPending}
+          />
         </DialogContent>
       </Dialog>
 
@@ -279,20 +288,27 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-h-[95vh] max-w-6xl'>
-          <DialogHeader>
-            <DialogTitle>Tambah Transaksi</DialogTitle>
-            <DialogDescription>Isi form berikut untuk menambah transaksi penjualan baru.</DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          style={{
+            height: 'min(700px, 85vh)',
+            maxHeight: 'min(700px, 85vh)',
+            minHeight: '500px'
+          }}>
+          {/* Add DialogTitle for accessibility (visually hidden) */}
+          <DialogTitle className='sr-only'>Tambah Data Transaksi</DialogTitle>
 
-          <div className='h-[80vh] overflow-hidden'>
-            <PenjualanForm
-              selectedId={null}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCloseForm}
-              isLoading={isFormLoading}
-            />
-          </div>
+          {/* Add DialogDescription for accessibility (visually hidden) */}
+          <DialogDescription className='sr-only'>
+            Form untuk menambahkan data transaksi baru ke dalam sistem
+          </DialogDescription>
+
+          <PenjualanForm
+            selectedId={null}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCloseForm}
+            isLoading={isFormLoading}
+          />
         </DialogContent>
       </Dialog>
     </section>
