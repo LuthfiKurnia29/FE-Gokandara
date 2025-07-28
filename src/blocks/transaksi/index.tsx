@@ -34,6 +34,28 @@ import { toast } from 'react-toastify';
 const columnHelper = createColumnHelper<PenjualanWithRelations>();
 
 const columns = [
+  columnHelper.accessor('id', {
+    header: 'Order ID',
+    cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
+    meta: { style: { width: '100px' } }
+  }),
+  columnHelper.accessor('created_at', {
+    header: 'Waktu',
+    cell: ({ getValue }) => {
+      const date = new Date(getValue());
+      return (
+        <div className='flex flex-col'>
+          <span className='text-sm font-medium'>
+            {date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+          </span>
+          <span className='text-muted-foreground text-xs'>
+            {date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      );
+    },
+    meta: { style: { width: '120px' } }
+  }),
   columnHelper.accessor('konsumen.name', {
     header: 'Konsumen',
     cell: ({ row, getValue }) => {
@@ -65,6 +87,63 @@ const columns = [
     },
     meta: { style: { minWidth: '180px' } }
   }),
+  columnHelper.display({
+    id: 'lokasi',
+    header: 'Lokasi',
+    cell: ({ row }) => {
+      const properti = row.original.properti;
+      return <span className='text-sm'>{properti?.lokasi || '-'}</span>;
+    },
+    meta: { style: { minWidth: '200px' } }
+  }),
+  columnHelper.display({
+    id: 'harga_sebelum_diskon',
+    header: 'Harga (Sebelum Diskon)',
+    cell: ({ row }) => {
+      const properti = row.original.properti;
+      const diskon = row.original.diskon;
+      const hargaSebelumDiskon = properti?.harga || 0;
+
+      return (
+        <div className='flex flex-col'>
+          <span className='font-medium text-green-600'>Rp {hargaSebelumDiskon.toLocaleString('id-ID')}</span>
+          {diskon && <span className='text-muted-foreground text-xs'>Diskon: {diskon}%</span>}
+        </div>
+      );
+    },
+    meta: { style: { width: '150px' } }
+  }),
+  columnHelper.display({
+    id: 'harga_sesudah_diskon',
+    header: 'Harga (Sesudah Diskon)',
+    cell: ({ row }) => {
+      const properti = row.original.properti;
+      const diskon = row.original.diskon;
+      const hargaSebelumDiskon = properti?.harga || 0;
+      const diskonAmount = (hargaSebelumDiskon * (diskon || 0)) / 100;
+      const hargaSesudahDiskon = hargaSebelumDiskon - diskonAmount;
+
+      return <span className='font-bold text-green-600'>Rp {hargaSesudahDiskon.toLocaleString('id-ID')}</span>;
+    },
+    meta: { style: { width: '150px' } }
+  }),
+  columnHelper.accessor('unit.name', {
+    header: 'Unit',
+    cell: ({ row, getValue }) => {
+      const unit = row.original.unit;
+      return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
+    },
+    meta: { style: { width: '80px' } }
+  }),
+  columnHelper.display({
+    id: 'sales',
+    header: 'Sales',
+    cell: ({ row }) => {
+      // TODO: Backend belum ada data sales, tampilkan placeholder
+      return <span className='text-muted-foreground'>-</span>;
+    },
+    meta: { style: { width: '100px' } }
+  }),
   columnHelper.accessor('blok.name', {
     header: 'Blok',
     cell: ({ row, getValue }) => {
@@ -80,26 +159,6 @@ const columns = [
       return <span className='font-medium'>{getValue() || tipe?.name || '-'}</span>;
     },
     meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('unit.name', {
-    header: 'Unit',
-    cell: ({ row, getValue }) => {
-      const unit = row.original.unit;
-      return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
-    },
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('diskon', {
-    header: 'Diskon',
-    cell: ({ getValue }) => {
-      const diskon = getValue();
-      return diskon ? (
-        <span className='font-mono text-green-600'>{diskon}%</span>
-      ) : (
-        <span className='text-muted-foreground'>-</span>
-      );
-    },
-    meta: { style: { width: '120px' } }
   }),
   columnHelper.accessor('status', {
     header: 'Status',
