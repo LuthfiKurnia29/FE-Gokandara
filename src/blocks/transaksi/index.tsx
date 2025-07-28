@@ -207,13 +207,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent
-          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'
-          style={{
-            height: 'min(700px, 85vh)',
-            maxHeight: 'min(700px, 85vh)',
-            minHeight: '500px'
-          }}>
+        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           {/* Add DialogTitle for accessibility (visually hidden) */}
           <DialogTitle className='sr-only'>{selectedId ? 'Edit Data Transaksi' : 'Tambah Data Transaksi'}</DialogTitle>
 
@@ -283,13 +277,7 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent
-          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'
-          style={{
-            height: 'min(700px, 85vh)',
-            maxHeight: 'min(700px, 85vh)',
-            minHeight: '500px'
-          }}>
+        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           {/* Add DialogTitle for accessibility (visually hidden) */}
           <DialogTitle className='sr-only'>Tambah Data Transaksi</DialogTitle>
 
