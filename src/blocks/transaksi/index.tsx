@@ -455,30 +455,6 @@ const PenjualanPage = memo(function PenjualanPage() {
     <section className='p-4'>
       <PageTitle title='Penjualan' />
 
-      {/* Role Information for Debugging */}
-      <div className='mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3'>
-        <div className='flex items-center gap-2 text-sm text-blue-700'>
-          <span className='font-medium'>Current User:</span>
-          <Badge variant='outline' className='border-blue-300 text-blue-700'>
-            {userData?.user?.name || 'Unknown'} (ID: {userId})
-          </Badge>
-          <span className='text-blue-600'>•</span>
-          <span className='font-medium'>Role:</span>
-          <Badge variant='outline' className='border-blue-300 text-blue-700'>
-            {userRole} (ID: {userRoleId})
-          </Badge>
-          <span className='text-blue-600'>•</span>
-          <span className='text-blue-600'>
-            {userId === 2 || userRole === 'Supervisor' || userRoleId === 2 ? 'Can move Pending → Negotiation' : ''}
-            {userId === 1 || userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1
-              ? 'Can move Negotiation → Approved'
-              : ''}
-            {userId === 3 || userRole === 'Sales' ? 'No status update permissions' : ''}
-            {!userId || (userId !== 1 && userId !== 2 && userId !== 3) ? 'Unknown user permissions' : ''}
-          </span>
-        </div>
-      </div>
-
       {/* Metrics Section */}
       <MetricsSection />
 
