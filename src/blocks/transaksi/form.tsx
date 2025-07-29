@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAllBlok, useAllKonsumen, useAllProperti, useAllTipe, useAllUnit } from '@/services/penjualan';
+import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit } from '@/services/penjualan';
+import { useAllProperti } from '@/services/properti';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
 

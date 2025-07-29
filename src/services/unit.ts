@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import { CreateUnitData, UnitData } from '@/types/unit';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { toast } from 'react-toastify';
 
@@ -51,5 +51,19 @@ export const useDeleteUnit = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Gagal menghapus unit');
     }
+  });
+};
+
+// Query hooks
+export const useUnitById = (id: number | null) => {
+  return useQuery({
+    queryKey: ['/unit', 'by-id', id],
+    queryFn: (): Promise<UnitData> => {
+      if (!id) throw new Error('ID is required');
+      return getUnit(id);
+    },
+    enabled: id !== null && id !== undefined,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };

@@ -5,7 +5,8 @@ import { memo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getTipe } from '@/services/tipe';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useTipeById } from '@/services/tipe';
 import { CreateTipeData, TipeData } from '@/types/tipe';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -26,6 +27,9 @@ interface TipeFormProps {
 }
 
 export const TipeForm = memo(function TipeForm({ selectedId, onSubmit, onCancel, isLoading = false }: TipeFormProps) {
+  // Get existing data for edit mode using React Query hook
+  const { data: existingData, isFetching } = useTipeById(selectedId || null);
+
   const {
     register,
     handleSubmit,
@@ -36,22 +40,14 @@ export const TipeForm = memo(function TipeForm({ selectedId, onSubmit, onCancel,
     defaultValues: { name: '' }
   });
 
+  // Populate form with existing data in edit mode
   useEffect(() => {
-    const fetchData = async () => {
-      if (selectedId) {
-        try {
-          const tipe = await getTipe(selectedId);
-          reset({ name: tipe.name });
-        } catch (error) {
-          console.error('Error fetching tipe:', error);
-        }
-      } else {
-        reset({ name: '' });
-      }
-    };
-
-    fetchData();
-  }, [selectedId, reset]);
+    if (existingData && selectedId) {
+      reset({ name: existingData.name });
+    } else if (!selectedId) {
+      reset({ name: '' });
+    }
+  }, [existingData, reset, selectedId]);
 
   const handleFormSubmit = (data: TipeFormData) => {
     onSubmit({ name: data.name });
@@ -61,6 +57,22 @@ export const TipeForm = memo(function TipeForm({ selectedId, onSubmit, onCancel,
     reset({ name: '' });
     onCancel();
   };
+
+  // Show skeleton while fetching tipe data for edit mode
+  if (selectedId && isFetching) {
+    return (
+      <div className='space-y-4'>
+        <div className='space-y-2'>
+          <Skeleton className='h-4 w-16' />
+          <Skeleton className='h-10 w-full' />
+        </div>
+        <div className='flex justify-end space-x-2 pt-4'>
+          <Skeleton className='h-10 w-16' />
+          <Skeleton className='h-10 w-20' />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-4'>

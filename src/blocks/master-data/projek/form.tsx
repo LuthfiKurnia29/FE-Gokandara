@@ -5,7 +5,8 @@ import { memo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getProjek } from '@/services/projek';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useProjekById } from '@/services/projek';
 import { CreateProjekData, ProjekData } from '@/types/projek';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -31,6 +32,9 @@ export const ProjekForm = memo(function ProjekForm({
   onCancel,
   isLoading = false
 }: ProjekFormProps) {
+  // Get existing data for edit mode using React Query hook
+  const { data: existingData, isFetching } = useProjekById(selectedId || null);
+
   const {
     register,
     handleSubmit,
@@ -41,22 +45,14 @@ export const ProjekForm = memo(function ProjekForm({
     defaultValues: { name: '' }
   });
 
+  // Populate form with existing data in edit mode
   useEffect(() => {
-    const fetchData = async () => {
-      if (selectedId) {
-        try {
-          const projek = await getProjek(selectedId);
-          reset({ name: projek.name });
-        } catch (error) {
-          console.error('Error fetching projek:', error);
-        }
-      } else {
-        reset({ name: '' });
-      }
-    };
-
-    fetchData();
-  }, [selectedId, reset]);
+    if (existingData && selectedId) {
+      reset({ name: existingData.name });
+    } else if (!selectedId) {
+      reset({ name: '' });
+    }
+  }, [existingData, reset, selectedId]);
 
   const handleFormSubmit = (data: ProjekFormData) => {
     onSubmit({ name: data.name });
@@ -66,6 +62,22 @@ export const ProjekForm = memo(function ProjekForm({
     reset({ name: '' });
     onCancel();
   };
+
+  // Show skeleton while fetching projek data for edit mode
+  if (selectedId && isFetching) {
+    return (
+      <div className='space-y-4'>
+        <div className='space-y-2'>
+          <Skeleton className='h-4 w-16' />
+          <Skeleton className='h-10 w-full' />
+        </div>
+        <div className='flex justify-end space-x-2 pt-4'>
+          <Skeleton className='h-10 w-16' />
+          <Skeleton className='h-10 w-20' />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-4'>

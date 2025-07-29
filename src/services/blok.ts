@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import { BlokData, CreateBlokData } from '@/types/blok';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { toast } from 'react-toastify';
 
@@ -51,5 +51,19 @@ export const useDeleteBlok = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Gagal menghapus blok');
     }
+  });
+};
+
+// Query hooks
+export const useBlokById = (id: number | null) => {
+  return useQuery({
+    queryKey: ['/blok', 'by-id', id],
+    queryFn: (): Promise<BlokData> => {
+      if (!id) throw new Error('ID is required');
+      return getBlok(id);
+    },
+    enabled: id !== null && id !== undefined,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };

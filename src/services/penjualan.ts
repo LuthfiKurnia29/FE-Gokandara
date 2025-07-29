@@ -118,6 +118,8 @@ export const penjualanService = {
     return response.data.data || response.data || [];
   },
 
+  // Note: getAllProperti is now handled by properti service
+  // This is kept for backward compatibility
   getAllProperti: async (): Promise<PropertyData[]> => {
     const response = await axios.get('/all-properti');
     return response.data.data || response.data || [];

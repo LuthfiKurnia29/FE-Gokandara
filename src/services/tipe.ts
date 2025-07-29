@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import { CreateTipeData, TipeData } from '@/types/tipe';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { toast } from 'react-toastify';
 
@@ -51,5 +51,19 @@ export const useDeleteTipe = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Gagal menghapus tipe');
     }
+  });
+};
+
+// Query hooks
+export const useTipeById = (id: number | null) => {
+  return useQuery({
+    queryKey: ['/tipe', 'by-id', id],
+    queryFn: (): Promise<TipeData> => {
+      if (!id) throw new Error('ID is required');
+      return getTipe(id);
+    },
+    enabled: id !== null && id !== undefined,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };

@@ -85,6 +85,15 @@ const useDelete = (callbacks?: UseDeleteCallbacks, options?: UseDeleteOptions) =
       return response.data;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Terjadi kesalahan';
+
+      // Filter out unlink errors (file not found) as they don't affect the main operation
+      if (errorMessage.includes('unlink') || errorMessage.includes('No such file or directory')) {
+        // Don't show unlink errors to user, treat as success
+        setOpen(false);
+        onSuccess && onSuccess();
+        return;
+      }
+
       setError(errorMessage);
       onError && onError(err);
     } finally {
@@ -104,7 +113,9 @@ const useDelete = (callbacks?: UseDeleteCallbacks, options?: UseDeleteOptions) =
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
-          {error && <div className='text-destructive mt-2 text-sm font-medium'>{error}</div>}
+          {error && !error.includes('unlink') && !error.includes('No such file or directory') && (
+            <div className='text-destructive mt-2 text-sm font-medium'>{error}</div>
+          )}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel className={cancelButtonClass} disabled={isDeleting}>

@@ -147,6 +147,11 @@ const menuItems: MenuItem[] = [
         title: 'Unit',
         url: '/master-data/unit',
         icon: SquaresUnite
+      },
+      {
+        title: 'Properti',
+        url: '/master-data/properti',
+        icon: Building
       }
     ]
   },

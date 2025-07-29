@@ -292,11 +292,11 @@ const PaginateTable = memo(
                         key={
                           grouped
                             ? `row.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`
-                            : `row.${row.original.uuid ?? idx}`
+                            : `row.${row.original.uuid ?? row.original.id ?? idx}`
                         }>
                         {row.original.type === 'group' ? (
                           <TableCell
-                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`}
+                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? row.original.data?.id ?? idx)}`}
                             className={`py-4 ${
                               row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
                             }`}
@@ -317,7 +317,7 @@ const PaginateTable = memo(
                             if (grouped) {
                               return (
                                 <TableCell
-                                  key={`cell.${cell.id}.${cell.row.original.uuid}`}
+                                  key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
                                   className={`py-4 ${cell.row.original.type === 'group' ? 'bg-muted' : ''}`}
                                   colSpan={cell.row.original.type === 'group' ? columns.length : 1}
                                   style={(cell.column.columnDef.meta as any)?.style}>
@@ -342,7 +342,7 @@ const PaginateTable = memo(
                             } else {
                               return (
                                 <TableCell
-                                  key={`cell.${cell.id}.${cell.row.original.uuid}`}
+                                  key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
                                   className='py-4'
                                   style={(cell.column.columnDef.meta as any)?.style}>
                                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -354,7 +354,7 @@ const PaginateTable = memo(
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow>
+                    <TableRow key='no-data'>
                       <TableCell colSpan={columns.length} className='h-24 text-center'>
                         <p className='text-muted-foreground text-sm'>Data not found</p>
                       </TableCell>
