@@ -143,7 +143,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     }
   };
 
-  const handleChoose = () => {
+  const handleChoose = (typeId: string) => {
     // Validate all required fields
     if (!konsumenId) {
       toast.error('Silakan pilih konsumen');
@@ -153,27 +153,25 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
       toast.error('Silakan pilih properti');
       return;
     }
-    if (!blokId) {
-      toast.error('Silakan pilih blok');
-      return;
-    }
-    if (!selectedType) {
+    // if (!blokId) {
+    //   toast.error('Silakan pilih blok');
+    //   return;
+    // }
+    if (!selectedType && !typeId) {
       toast.error('Silakan pilih tipe terlebih dahulu');
       return;
     }
-    if (!unitId) {
-      toast.error('Silakan pilih unit');
-      return;
-    }
-
-    console.log('Selected type:', selectedType);
+    // if (!unitId) {
+    //   toast.error('Silakan pilih unit');
+    //   return;
+    // }
 
     // Get current form data
     const formData = {
       konsumen_id: konsumenId,
       properti_id: propertiId,
       blok_id: blokId,
-      tipe_id: tipeId,
+      tipe_id: typeId || tipeId,
       unit_id: unitId,
       diskon: diskon || '' // Store as percentage string
     };
@@ -233,7 +231,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
               />
               {errors.properti_id && <p className='text-xs text-red-500'>{errors.properti_id.message}</p>}
             </div>
-            <div className='space-y-1'>
+            {/* <div className='space-y-1'>
               <Label htmlFor='blok' className='text-sm'>
                 Blok
               </Label>
@@ -260,7 +258,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                 className='h-10'
               />
               {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
-            </div>
+            </div> */}
             <div className='space-y-1'>
               <Label htmlFor='diskon' className='text-sm'>
                 Diskon (Opsional)
@@ -370,11 +368,11 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                       type.selected
                         ? 'bg-green-500 text-white shadow-lg hover:bg-green-600'
                         : 'bg-gray-300 text-gray-500 hover:bg-gray-400'
-                    }`}
+                    } hover:bg-green-600 hover:text-white hover:shadow-lg`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTypeSelect(type.id);
-                      handleChoose();
+                      handleChoose(type.id);
                     }}>
                     Pilih
                   </Button>
