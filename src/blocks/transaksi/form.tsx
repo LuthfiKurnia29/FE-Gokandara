@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit } from '@/services/penjualan';
+import { useAllKonsumen, useAllTipe } from '@/services/penjualan';
 import { useAllProperti } from '@/services/properti';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,9 +21,7 @@ import { z } from 'zod';
 const transaksiSchema = z.object({
   konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
   properti_id: z.string().min(1, 'Properti harus dipilih'),
-  blok_id: z.string().min(1, 'Blok harus dipilih'),
   tipe_id: z.string().min(1, 'Tipe harus dipilih'),
-  unit_id: z.string().min(1, 'Unit harus dipilih'),
   diskon: z.string().optional()
 });
 
@@ -43,8 +41,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   // Fetch master data from APIs
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
-  const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
-  const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
 
   const {
@@ -59,9 +55,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     defaultValues: {
       konsumen_id: '',
       properti_id: '',
-      blok_id: '',
       tipe_id: '',
-      unit_id: '',
       diskon: ''
     },
     mode: 'onChange'
@@ -70,9 +64,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   // Watch form values
   const konsumenId = watch('konsumen_id');
   const propertiId = watch('properti_id');
-  const blokId = watch('blok_id');
   const tipeId = watch('tipe_id');
-  const unitId = watch('unit_id');
   const diskon = watch('diskon');
 
   // Safe option mapping
@@ -84,16 +76,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   const safePropertiOptions = propertiOptions.map((properti) => ({
     value: properti.id?.toString() ?? '',
     label: `${properti.lokasi ?? 'Lokasi'} - ${properti.id ?? 'ID'}`
-  }));
-
-  const safeBlokOptions = blokOptions.map((blok) => ({
-    value: blok.id.toString(),
-    label: blok.name
-  }));
-
-  const safeUnitOptions = unitOptions.map((unit) => ({
-    value: unit.id.toString(),
-    label: unit.name
   }));
 
   // Update selected properti when properti_id changes
@@ -171,9 +153,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     const formData = {
       konsumen_id: konsumenId,
       properti_id: propertiId,
-      blok_id: blokId,
       tipe_id: typeId || tipeId,
-      unit_id: unitId,
       diskon: diskon || '' // Store as percentage string
     };
 
