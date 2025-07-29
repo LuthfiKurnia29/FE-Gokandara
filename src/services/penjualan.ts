@@ -57,6 +57,17 @@ export const penjualanService = {
     return response.data;
   },
 
+  // Get total count of transaksi for badge
+  getTotalCount: async (): Promise<number> => {
+    try {
+      const response = await axios.get('/list-transaksi?page=1&per_page=1');
+      return response.data.total || 0;
+    } catch (error) {
+      console.error('Error fetching transaksi total count:', error);
+      return 0;
+    }
+  },
+
   // Get penjualan by ID
   getById: async (id: number, include?: string[]): Promise<PenjualanWithRelations> => {
     const params = new URLSearchParams();
@@ -226,6 +237,16 @@ export const useAllUnit = () => {
   });
 };
 
+// Hook untuk mendapatkan total transaksi untuk badge
+export const useTransaksiTotalCount = () => {
+  return useQuery({
+    queryKey: ['/transaksi-total-count'],
+    queryFn: penjualanService.getTotalCount,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    cacheTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
 // Mutation hooks
 export const useCreatePenjualan = () => {
   const queryClient = useQueryClient();
@@ -238,6 +259,7 @@ export const useCreatePenjualan = () => {
       // Invalidate and refetch penjualan list and metrics
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
 };
@@ -253,6 +275,7 @@ export const useUpdatePenjualan = () => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
 };
@@ -268,6 +291,7 @@ export const usePartialUpdatePenjualan = () => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
 };
@@ -283,6 +307,7 @@ export const useUpdatePenjualanStatus = () => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
 };
@@ -298,6 +323,7 @@ export const useDeletePenjualan = () => {
       // Invalidate and refetch penjualan list and metrics
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
 };

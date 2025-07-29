@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { authService, useCurrentUser } from '@/services/auth';
+import { useTransaksiTotalCount } from '@/services/penjualan';
 import { type MenuItem, permissionUtils } from '@/stores/menu-item';
 
 import { Button } from './ui/button';
@@ -30,6 +31,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 // Sidebar Menu Item Component
 const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
   const pathname = usePathname();
+  const { data: transaksiTotal = 0 } = useTransaksiTotalCount();
 
   // Only render if item.url is defined
   if (!item.url) return null;
@@ -43,8 +45,8 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
   const IconComponent = item.icon;
   // Badge logic (Transaksi dan Pesan sesuai Figma)
   const determineBadgeCount = (title: string) => {
-    if (title === 'Transaksi') return 1;
-    if (title === 'Pesan') return 1;
+    if (title === 'Transaksi') return transaksiTotal;
+    if (title === 'Pesan') return 1; // TODO: Implement pesan count when API is available
     return 0;
   };
 

@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { authService, useCurrentUser } from '@/services/auth';
 import { notificationService } from '@/services/notification';
+import { useTransaksiTotalCount } from '@/services/penjualan';
 
 import { useTitleContext } from '../title';
 import { SidebarTrigger } from '../ui/sidebar';
@@ -19,7 +20,7 @@ import { Bell, Calendar, ChevronDown, LogOut, MessageSquare, Search, Star, User 
 import { Toaster, toast } from 'react-hot-toast';
 
 // Notification badge logic
-const determineBadgeCount = (title: string) => {
+const determineBadgeCount = (title: string, transaksiTotal: number = 0) => {
   // Only Transaksi and Pesan have notification counts
   switch (title) {
     case 'Star':
@@ -27,7 +28,7 @@ const determineBadgeCount = (title: string) => {
     case 'Pesan':
       return 0; // Example: 3 message notifications
     case 'Transaksi':
-      return 1; // Example: 1 transaction notification
+      return transaksiTotal; // Use actual transaksi total
     case 'Calendar':
       return 0;
     default:
@@ -35,35 +36,37 @@ const determineBadgeCount = (title: string) => {
   }
 };
 
-const starBadgeCount = determineBadgeCount('Star');
-const messageBadgeCount = determineBadgeCount('Pesan');
-const transaksiBadgeCount = determineBadgeCount('Transaksi');
-const calendarBadgeCount = determineBadgeCount('Calendar');
-
 // Notification click handlers for each type
 const handleStarNotificationClick = () => {
   // No action for Star notifications
 };
 
-const handleMessageNotificationClick = () => {
-  notificationService.showNotification('Pesan', messageBadgeCount);
+const handleMessageNotificationClick = (count: number) => {
+  notificationService.showNotification('Pesan', count);
 };
 
-const handleTransaksiNotificationClick = () => {
-  notificationService.showNotification('Transaksi', transaksiBadgeCount);
+const handleTransaksiNotificationClick = (count: number) => {
+  notificationService.showNotification('Transaksi', count);
 };
 
 const handleCalendarNotificationClick = () => {
   // No action for Calendar notifications
 };
 
-const handleNotificationClick = () => {
-  notificationService.showNotification('Transaksi', transaksiBadgeCount);
+const handleNotificationClick = (count: number) => {
+  notificationService.showNotification('Transaksi', count);
 };
 
 export function DashboardHeader() {
   const { title } = useTitleContext();
   const { data: currentUser } = useCurrentUser();
+  const { data: transaksiTotal = 0 } = useTransaksiTotalCount();
+
+  // Calculate badge counts
+  const starBadgeCount = determineBadgeCount('Star');
+  const messageBadgeCount = determineBadgeCount('Pesan');
+  const transaksiBadgeCount = determineBadgeCount('Transaksi', transaksiTotal);
+  const calendarBadgeCount = determineBadgeCount('Calendar');
 
   const handleLogout = () => {
     authService.logout();
@@ -118,7 +121,7 @@ export function DashboardHeader() {
 
             {/* Bell Icon with Orange Badge */}
             {transaksiBadgeCount > 0 && (
-              <div className='relative' onClick={handleTransaksiNotificationClick}>
+              <div className='relative' onClick={() => handleTransaksiNotificationClick(transaksiBadgeCount)}>
                 <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
                 <span className='font-sf-pro absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[11px] leading-3 font-bold text-white'>
                   {transaksiBadgeCount}
@@ -126,14 +129,14 @@ export function DashboardHeader() {
               </div>
             )}
             {transaksiBadgeCount === 0 && (
-              <div className='relative' onClick={handleTransaksiNotificationClick}>
+              <div className='relative' onClick={() => handleTransaksiNotificationClick(0)}>
                 <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
               </div>
             )}
 
             {/* Message Icon with Red Badge */}
             {messageBadgeCount > 0 && (
-              <div className='relative' onClick={handleMessageNotificationClick}>
+              <div className='relative' onClick={() => handleMessageNotificationClick(messageBadgeCount)}>
                 <MessageSquare className='h-6 w-6 cursor-pointer text-gray-600' />
                 <span className='font-sf-pro absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] leading-3 font-bold text-white'>
                   {messageBadgeCount}
@@ -141,7 +144,7 @@ export function DashboardHeader() {
               </div>
             )}
             {messageBadgeCount === 0 && (
-              <div className='relative' onClick={handleMessageNotificationClick}>
+              <div className='relative' onClick={() => handleMessageNotificationClick(0)}>
                 <MessageSquare className='h-6 w-6 cursor-pointer text-gray-600' />
               </div>
             )}
