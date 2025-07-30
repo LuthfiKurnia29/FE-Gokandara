@@ -6,6 +6,7 @@ import {
   BookText,
   Building,
   Building2,
+  Calendar,
   CalendarCheck,
   CalendarRange,
   ChartArea,
@@ -166,6 +167,12 @@ const menuItems: MenuItem[] = [
     url: '/pesan',
     icon: MessageSquareText,
     code: 'Chat'
+  },
+  {
+    title: 'Kalender',
+    url: '/kalender',
+    icon: Calendar
+    // code: 'Chat'
   },
   {
     title: 'Pengaturan',
