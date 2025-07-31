@@ -1,11 +1,11 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 
 import { PropertiForm } from '@/blocks/master-data/properti/form';
 import { PageTitle } from '@/components/page-title';
+import { PaginateTable } from '@/components/paginate-table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -13,10 +13,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDelete } from '@/hooks/use-delete';
-import { useCreateProperty, useDeleteProperty, usePropertyList, useUpdateProperty } from '@/services/properti';
+import { useCreateProperty, useDeleteProperty, useUpdateProperty } from '@/services/properti';
 import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/properti';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -118,8 +116,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   const handleEdit = (property: PropertyData) => {
     console.log('Edit clicked for property:', property.id, property);
-    setSelectedId(property.id); // ← Set ID yang akan diedit
-    setOpenForm(true); // ← Buka dialog form
+    setSelectedId(property.id);
+    setOpenForm(true);
   };
 
   const handleDeleteProperty = async (property: PropertyData) => {
@@ -203,34 +201,9 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 const PropertiPage = memo(function PropertiPage() {
   const queryClient = useQueryClient();
   const [openForm, setOpenForm] = useState<boolean>(false);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // API hooks
   const createProperty = useCreateProperty();
-
-  // Use service directly for better control
-  const {
-    data: propertiData,
-    isLoading,
-    refetch
-  } = usePropertyList({
-    page,
-    perPage,
-    search: debouncedSearch,
-    include: ['project', 'properti_gambar']
-  });
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [search]);
 
   const handleCreate = () => {
     setOpenForm(true);
@@ -264,113 +237,20 @@ const PropertiPage = memo(function PropertiPage() {
     <section className='p-4'>
       <PageTitle title='Master Properti' />
 
-      <Card className='w-full'>
-        <CardContent>
-          <div className='mb-4 flex flex-wrap justify-between gap-2 pt-4'>
-            <div className='flex items-center gap-2'>
-              <Input
-                type='search'
-                className='w-full'
-                placeholder='Cari properti...'
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div className='flex items-center gap-4'>
-              <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
-                <Plus />
-                Tambah Properti
-              </Button>
-            </div>
-          </div>
-
-          <div className='rounded-md border'>
-            <Table>
-              <TableHeader className='bg-muted'>
-                <TableRow key='header'>
-                  {columns.map((column, index) => (
-                    <TableHead
-                      key={column.id || `column-${index}`}
-                      className='py-4 font-medium'
-                      style={(column.meta as any)?.style}>
-                      {typeof column.header === 'string' ? column.header : 'Actions'}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {propertiData?.data?.length ? (
-                  propertiData.data.map((properti, index) => (
-                    <TableRow key={`properti-${properti.id || index}`}>
-                      <TableCell className='py-4' style={{ width: '80px' }}>
-                        <span className='font-mono text-sm'>#{properti.id}</span>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ minWidth: '200px' }}>
-                        <span className='font-medium'>{properti.lokasi}</span>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ width: '120px' }}>
-                        <span className='text-muted-foreground'>
-                          {properti.luas_bangunan} / {properti.luas_tanah}
-                        </span>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ minWidth: '150px' }}>
-                        <span className='text-sm'>{properti.kelebihan}</span>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ width: '150px' }}>
-                        <span className='font-medium text-green-600'>Rp {properti.harga.toLocaleString('id-ID')}</span>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ minWidth: '150px' }}>
-                        <div className='flex flex-col text-xs'>
-                          <span className='font-medium'>{properti.projek?.name || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className='py-4' style={{ width: '140px' }}>
-                        <div className='flex flex-col'>
-                          <span className='text-sm'>
-                            {format(new Date(properti.created_at), 'dd MMM yyyy', { locale: id })}
-                          </span>
-                          <span className='text-muted-foreground text-xs'>
-                            {format(new Date(properti.created_at), 'HH:mm')}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell key={`action-${properti.id || index}`} className='py-4' style={{ width: '80px' }}>
-                        <ActionCell row={{ original: properti }} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow key='no-data'>
-                    <TableCell colSpan={columns.length} className='h-24 text-center'>
-                      <p className='text-muted-foreground text-sm'>{isLoading ? 'Loading...' : 'Data not found'}</p>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Simple Pagination */}
-          <div className='mt-4 flex items-center justify-between'>
-            <div className='text-muted-foreground text-sm'>
-              Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, propertiData?.total || 0)} of{' '}
-              {propertiData?.total || 0} results
-            </div>
-            <div className='flex gap-2'>
-              <Button variant='outline' size='sm' onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}>
-                Previous
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setPage(page + 1)}
-                disabled={!propertiData?.data || propertiData.data.length < perPage}>
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PaginateTable
+        columns={columns}
+        url='/properti'
+        id='properti'
+        perPage={10}
+        queryKey={['/properti']}
+        payload={{ include: ['projek', 'properti_gambar'] }}
+        Plugin={() => (
+          <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+            <Plus />
+            Tambah Properti
+          </Button>
+        )}
+      />
 
       {/* Form Dialog */}
       <Dialog key='create-dialog-properti' open={openForm} onOpenChange={setOpenForm}>
