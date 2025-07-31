@@ -75,7 +75,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
 
   const safePropertiOptions = propertiOptions.map((properti) => ({
     value: properti.id?.toString() ?? '',
-    label: `${properti.projek?.name} - ${properti.lokasi ?? 'Lokasi'}`
+    label: `#${properti.id} ${properti.projek?.name} - ${properti.lokasi ?? 'Lokasi'}`
   }));
 
   // Update selected properti when properti_id changes
