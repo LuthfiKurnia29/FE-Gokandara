@@ -20,8 +20,9 @@ export interface PesanData {
   deleted_at?: string | null;
   created_at: string;
   updated_at: string;
-  penerima: UserBasicData;
-  pengirim: UserBasicData;
+  penerima: UserWithRelations;
+  pengirim: UserWithRelations;
+  file?: string;
 }
 
 export interface ChatConversationData extends UserWithRelations {
@@ -97,6 +98,7 @@ export interface UseSalespersonListParams {
 }
 
 export interface CreatePesanData {
-  user_penerima_id: number;
+  user_penerima_id: number[];
   pesan: string;
+  file?: File;
 }

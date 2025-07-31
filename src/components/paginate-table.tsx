@@ -53,8 +53,8 @@ interface PaginateTableProps<TData> {
   url: string;
   id: string;
   payload?: Record<string, any>;
-  massSelect?: string[];
-  onChangeMassSelect?: (values: string[]) => void;
+  massSelect?: string[] | number[];
+  onChangeMassSelect?: (values: any) => void;
   massSelectField?: string;
   Plugin?: () => ReactNode;
   grouped?: boolean;
@@ -218,7 +218,11 @@ const PaginateTable = memo(
       const handleMassSelect = useCallback(
         (checked: boolean) => {
           if (checked && data?.data) {
-            onChangeMassSelect(data.data.map((item) => String(item[massSelectField])));
+            onChangeMassSelect(
+              data.data.map((item) =>
+                isNaN(item[massSelectField]) ? String(item[massSelectField]) : item[massSelectField]
+              )
+            );
           } else {
             onChangeMassSelect([]);
           }
@@ -272,7 +276,7 @@ const PaginateTable = memo(
                           {header.column.columnDef.header === 'check' && Boolean(data?.data?.length) ? (
                             <div className='flex h-4 w-4 items-center'>
                               <Checkbox
-                                className='cursor-pointer'
+                                className='h-5 w-5 cursor-pointer'
                                 checked={massSelect?.length === data?.data?.length}
                                 onCheckedChange={(checked) => handleMassSelect(checked as boolean)}
                               />

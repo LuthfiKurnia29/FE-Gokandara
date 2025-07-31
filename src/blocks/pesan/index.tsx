@@ -8,10 +8,24 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChatConversationData } from '@/types/pesan';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { useCreatePesan } from '@/services/pesan';
+import { CreatePesanData, PesanData } from '@/types/pesan';
+import { useQueryClient } from '@tanstack/react-query';
 
-import ChatPanel from './chat-panel';
-import { MessageCircle, Star } from 'lucide-react';
+import { PesanForm } from './form';
+// import ChatPanel from './chat-panel';
+import { ArrowRight, ExternalLink, MessageCircle, Plus, Star } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const ConversationItem = memo(
   ({
@@ -20,8 +34,8 @@ const ConversationItem = memo(
     isSelected = false,
     isOpen = false
   }: {
-    conversation: ChatConversationData;
-    onChatClick: (conversation: ChatConversationData) => void;
+    conversation: PesanData;
+    onChatClick: (conversation: PesanData) => void;
     isSelected?: boolean;
     isOpen: boolean;
   }) => {
@@ -35,70 +49,83 @@ const ConversationItem = memo(
       });
     };
 
+    const handleOpenFile = () => {
+      window.open(conversation.file, '_blank', 'noopener,noreferrer');
+    };
+
+    const formattedId = String(conversation.id).padStart(6, '0');
+    const createdAtDate = new Date(conversation.created_at);
+    const formattedDate = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(createdAtDate);
+
+    const senderRole = conversation.pengirim.roles[0]?.role.name || 'User';
+    const recipientRole = conversation.penerima.roles[0]?.role.name || 'User';
+
     return (
-      <Card
-        className={`mb-4 border-0 shadow transition-all hover:translate-y-[-2px] hover:shadow-lg ${isSelected ? 'ring-primary ring-2' : ''}`}>
-        <CardContent className='p-4'>
-          <div className='flex items-start gap-4'>
-            {/* Avatar */}
-            <Avatar className='h-12 w-12'>
-              <AvatarImage src='https://github.com/shadcn.png' />
-            </Avatar>
-
-            <div className={`${isOpen ? 'block' : 'flex'} flex-1 flex-wrap`}>
-              {/* Content */}
-              <div className='min-w-0 lg:mr-10'>
-                <div className='mb-1 flex flex-col'>
-                  <div className='text-sm font-medium text-blue-600'>
-                    <span className='hidden lg:inline'>#{String(conversation.id).padStart(6, '0')}</span>
-                  </div>
-                  <div className='font-semibold text-gray-900'>{conversation.name}</div>
-                </div>
-
-                <div className='mb-2 text-sm text-gray-600'>Join on {formatDate(conversation.created_at)}</div>
-              </div>
-
-              <div className='flex-1'>
-                {/* Tags */}
-                <div className='mb-3 flex flex-wrap gap-1'>
-                  <Badge className='bg-blue-100 text-blue-800'>{conversation.roles?.[0]?.role?.name}</Badge>
-                </div>
-
-                <div className='mb-3 line-clamp-2 text-gray-700'>{conversation.last_message?.pesan}</div>
-              </div>
+      <Card className='mb-4 flex w-full flex-col items-start justify-between gap-4 rounded-xl border-0 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg md:flex-row md:items-center'>
+        <div className='flex flex-grow items-center gap-4'>
+          <Avatar className='h-12 w-12 border-2 border-blue-400 shadow-md'>
+            <AvatarImage src='https://github.com/shadcn.png' alt={conversation.pengirim.name} />
+            <AvatarFallback className='bg-blue-500 text-lg font-semibold text-white'>
+              {conversation.pengirim.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className='grid gap-1'>
+            <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
+              <span className='text-base font-bold text-blue-700'>#{formattedId}</span>
+              <span className='text-lg font-semibold text-gray-800'>{conversation.pengirim.name}</span>
+              <Badge
+                variant='secondary'
+                className='rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800'>
+                {senderRole}
+              </Badge>
+              <ArrowRight className='mx-1 h-4 w-4 text-gray-500' />
+              <span className='text-lg font-semibold text-gray-800'>{conversation.penerima.name}</span>
+              <Badge
+                variant='secondary'
+                className='rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800'>
+                {recipientRole}
+              </Badge>
             </div>
-
-            {/* Right Side - Rating and Actions */}
-            <div className='flex flex-col items-end gap-3'>
-              {/* Rating */}
-              {/* <div className='flex items-center gap-1'>
-                <span className='text-lg font-bold'>5.0</span>
-                <div className='flex'>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className='h-4 w-4 fill-yellow-400 text-yellow-400' />
-                  ))}
-                </div>
-              </div> */}
-
-              {/* Actions */}
-              <div className='flex gap-2'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => onChatClick(conversation)}
-                  className='flex cursor-pointer items-center gap-1'>
-                  <MessageCircle className='h-4 w-4' />
-                  Chat
-                </Button>
-                {conversation.unread_count > 0 && (
-                  <Badge variant='destructive' className='flex h-6 w-6 items-center justify-center rounded-full p-0'>
-                    {conversation.unread_count}
-                  </Badge>
-                )}
-              </div>
-            </div>
+            <span className='text-sm text-gray-500'>{formattedDate}</span>
+            <p className='mt-1 line-clamp-2 text-base text-gray-700'>{conversation.pesan}</p>
           </div>
-        </CardContent>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant='outline' size='sm' className='flex cursor-pointer items-center gap-1'>
+              <MessageCircle className='h-4 w-4' />
+              Open
+            </Button>
+          </DialogTrigger>
+          <DialogContent className='w-lg max-w-[calc(100vw-2rem)] md:w-2xl'>
+            <DialogHeader>
+              <DialogTitle>{conversation.pengirim.name}</DialogTitle>
+              <DialogDescription>{formatDate(conversation.created_at)}</DialogDescription>
+            </DialogHeader>
+
+            <article className='mb-2'>{conversation.pesan}</article>
+
+            {Boolean(conversation.file) && (
+              <Button onClick={handleOpenFile} className='bg-gray-800 text-white hover:bg-gray-700'>
+                Lihat File
+                <ExternalLink className='ml-2 h-4 w-4' />
+              </Button>
+            )}
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant='outline'>Tutup</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   }
@@ -107,12 +134,13 @@ const ConversationItem = memo(
 ConversationItem.displayName = 'ConversationItem';
 
 const PesanBlocks = memo(() => {
-  const [selectedConversation, setSelectedConversation] = useState<ChatConversationData | null>(null);
+  const queryClient = useQueryClient();
+  const [selectedConversation, setSelectedConversation] = useState<PesanData | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<number>(0);
 
-  const handleChatClick = (conversation: ChatConversationData) => {
+  const handleChatClick = (conversation: PesanData) => {
     setSelectedConversation(conversation);
     setCurrentUserId(conversation.id);
     setIsChatOpen(true);
@@ -128,6 +156,32 @@ const PesanBlocks = memo(() => {
     paginateRef.current?.refetch();
   }, []);
 
+  const [openForm, setOpenForm] = useState<boolean>(false);
+
+  // API hooks
+  const createPesan = useCreatePesan();
+
+  const handleCreate = () => {
+    setOpenForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setOpenForm(false);
+  };
+
+  const handleFormSubmit = async (data: CreatePesanData) => {
+    try {
+      await createPesan.mutateAsync(data);
+      handleCloseForm();
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi sesuatu Error!');
+      console.error('Error saving chatting:', error);
+    }
+  };
+
+  const isFormLoading = createPesan.isPending;
+
   return (
     <div className='h-full space-y-6'>
       <PageTitle title='Pesan' />
@@ -137,12 +191,12 @@ const PesanBlocks = memo(() => {
         <div className={`pb-20 ${isChatOpen ? 'lg:block' : 'col-span-full'}`}>
           <PaginateCustom
             ref={paginateRef}
-            url='/chatting-last'
+            url='/chatting'
             id='conversations-list'
             perPage={10}
             queryKey={['conversations']}
             emptyMessage='No conversations found'
-            renderItem={(conversation: ChatConversationData) => (
+            renderItem={(conversation: PesanData) => (
               <ConversationItem
                 key={conversation.id}
                 isOpen={isChatOpen}
@@ -152,17 +206,23 @@ const PesanBlocks = memo(() => {
               />
             )}
             Plugin={() => (
-              <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                  <Button variant='outline' size='sm'>
-                    All
-                  </Button>
-                  <Button variant='ghost' size='sm'>
-                    Published
-                  </Button>
-                  <Button variant='ghost' size='sm'>
-                    Archived
-                  </Button>
+              <div className='flex flex-col items-end'>
+                <Button onClick={handleCreate} disabled={isFormLoading} className='mb-4 text-white'>
+                  <Plus />
+                  Kirim Pesan
+                </Button>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <Button variant='outline' size='sm'>
+                      All
+                    </Button>
+                    <Button variant='ghost' size='sm'>
+                      Published
+                    </Button>
+                    <Button variant='ghost' size='sm'>
+                      Archived
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -170,7 +230,7 @@ const PesanBlocks = memo(() => {
         </div>
 
         {/* Chat Panel */}
-        {isChatOpen && (
+        {/* {isChatOpen && (
           <div className='hidden lg:block'>
             <ChatPanel
               conversation={selectedConversation}
@@ -180,11 +240,11 @@ const PesanBlocks = memo(() => {
               refetchPaginate={refetchPaginate}
             />
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Mobile Chat Panel - Full Screen */}
-      {isChatOpen && (
+      {/* {isChatOpen && (
         <div className='fixed inset-0 z-50 bg-white lg:hidden'>
           <ChatPanel
             conversation={selectedConversation}
@@ -194,7 +254,24 @@ const PesanBlocks = memo(() => {
             refetchPaginate={refetchPaginate}
           />
         </div>
-      )}
+      )} */}
+
+      {/* Form Dialog */}
+      <Dialog open={openForm} onOpenChange={setOpenForm}>
+        <DialogContent className='w-3xl max-w-[calc(100vw-2rem)] sm:max-w-3xl'>
+          <DialogHeader>
+            <DialogTitle>Kirim Pesan</DialogTitle>
+            <DialogDescription>Isi form berikut untuk mengirim pesan.</DialogDescription>
+          </DialogHeader>
+
+          <PesanForm
+            selectedId={null}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCloseForm}
+            isLoading={isFormLoading}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });
