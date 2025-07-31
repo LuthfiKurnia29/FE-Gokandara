@@ -78,7 +78,7 @@ const ChatPanel = memo(({ conversation, isOpen, onClose, currentUserId, refetchP
 
     try {
       await createPesan.mutateAsync({
-        user_penerima_id: currentUserId,
+        user_penerima_id: [currentUserId],
         pesan: newMessage.trim()
       });
       setNewMessage('');
