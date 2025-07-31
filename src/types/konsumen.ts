@@ -15,6 +15,8 @@ export interface KonsumenData {
   pengalaman?: string | null;
   materi_fu?: string | null;
   tgl_fu?: string | null;
+  materi_fu_2?: string | null;
+  tgl_fu_2?: string | null;
   project_id: number;
   refrensi_id: number;
   prospek_id: number;
@@ -60,6 +62,8 @@ export interface CreateKonsumenData {
   pengalaman?: string | null;
   materi_fu?: string | null;
   tgl_fu?: string | null;
+  materi_fu_2?: string | null;
+  tgl_fu_2?: string | null;
   project_id: number;
   refrensi_id: number;
   prospek_id: number;

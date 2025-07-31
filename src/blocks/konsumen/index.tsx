@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 
 import { KonsumenForm } from '@/blocks/konsumen/form';
+import { HistoryFollowUp } from '@/blocks/konsumen/history_follow_up';
 import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +21,7 @@ import { KonsumenData } from '@/types/konsumen';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
-import { Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video } from 'lucide-react';
+import { History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video } from 'lucide-react';
 import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
 
@@ -42,7 +43,9 @@ const openWhatsApp = (phoneNumber: string) => {
 const KonsumenPage = memo(function KonsumenPage() {
   const queryClient = useQueryClient();
   const [openForm, setOpenForm] = useState<boolean>(false);
+  const [openHistory, setOpenHistory] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedKonsumen, setSelectedKonsumen] = useState<KonsumenData | null>(null);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
@@ -71,6 +74,16 @@ const KonsumenPage = memo(function KonsumenPage() {
     setOpenForm(false);
     setSelectedId(null);
     setMode('create');
+  };
+
+  const handleOpenHistory = (konsumen: KonsumenData) => {
+    setSelectedKonsumen(konsumen);
+    setOpenHistory(true);
+  };
+
+  const handleCloseHistory = () => {
+    setOpenHistory(false);
+    setSelectedKonsumen(null);
   };
 
   const handleFormSubmit = async (data: Omit<KonsumenData, 'id' | 'no'>) => {
@@ -116,6 +129,10 @@ const KonsumenPage = memo(function KonsumenPage() {
                       <Pencil className='mr-2 h-4 w-4' />
                       Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleOpenHistory(item)}>
+                      <History className='mr-2 h-4 w-4' />
+                      History Follow Up
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleDeleteKonsumen(item)}
                       disabled={deleteKonsumen.isPending}
@@ -140,14 +157,20 @@ const KonsumenPage = memo(function KonsumenPage() {
           </div>
           <div className='mt-2 space-y-1'>
             <p className='text-sm'>
-              <span className='font-medium'>Email:</span> {item.email}
-            </p>
-            <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
-            <p className='text-sm'>
-              <span className='font-medium'>Alamat:</span> {item.address}
-            </p>
+            {item.tgl_fu && (
+              <p className='text-sm'>
+                <span className='font-medium'>Tanggal Follow Up:</span>{' '}
+                {new Date(item.tgl_fu).toLocaleString('id-ID', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -204,9 +227,26 @@ const KonsumenPage = memo(function KonsumenPage() {
         </DialogContent>
       </Dialog>
 
+      {/* History Follow Up Dialog */}
+      <Dialog open={openHistory} onOpenChange={setOpenHistory}>
+        <DialogContent
+          className='max-h-[700px] w-full max-w-[95vw] overflow-hidden border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          style={{
+            height: 'min(700px, 85vh)',
+            maxHeight: 'min(700px, 85vh)',
+            minHeight: '500px'
+          }}>
+          <DialogTitle className='sr-only'>History Follow Up</DialogTitle>
+          <DialogDescription className='sr-only'>Modal untuk menampilkan riwayat follow up konsumen</DialogDescription>
+
+          <HistoryFollowUp konsumen={selectedKonsumen} onClose={handleCloseHistory} />
+        </DialogContent>
+      </Dialog>
+
       <DeleteConfirmDialog />
     </section>
   );
 });
 
+export { HistoryFollowUp } from './history_follow_up';
 export default KonsumenPage;

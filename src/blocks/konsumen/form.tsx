@@ -5,7 +5,7 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -41,8 +41,10 @@ const konsumenSchema = z.object({
       { message: 'Kesiapan dana harus berupa angka positif' }
     ),
   pengalaman: z.string().optional(),
-  materi_fu: z.string().optional(),
-  tgl_fu: z.string().optional(),
+  materi_fu: z.string().min(1, 'Materi follow up harus diisi'),
+  tgl_fu: z.string().min(1, 'Tanggal & waktu follow up harus diisi'),
+  materi_fu_2: z.string().min(1, 'Materi follow up 2 harus diisi'),
+  tgl_fu_2: z.string().min(1, 'Tanggal & waktu follow up 2 harus diisi'),
 
   prospek_id: z.string().min(1, 'Prospek harus dipilih')
 });
@@ -166,7 +168,9 @@ export const KonsumenForm = memo(function KonsumenForm({
       project_id: '',
       pengalaman: '',
       materi_fu: '',
-      tgl_fu: ''
+      tgl_fu: '',
+      materi_fu_2: '',
+      tgl_fu_2: ''
     }
   });
 
@@ -175,6 +179,7 @@ export const KonsumenForm = memo(function KonsumenForm({
   const prospekId = watch('prospek_id');
   const projectId = watch('project_id');
   const tglFu = watch('tgl_fu');
+  const tglFu2 = watch('tgl_fu_2');
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -192,7 +197,9 @@ export const KonsumenForm = memo(function KonsumenForm({
         project_id: existingData.project_id?.toString() || '',
         pengalaman: existingData.pengalaman || '',
         materi_fu: existingData.materi_fu || '',
-        tgl_fu: existingData.tgl_fu || ''
+        tgl_fu: existingData.tgl_fu || '',
+        materi_fu_2: existingData.materi_fu_2 || '',
+        tgl_fu_2: existingData.tgl_fu_2 || ''
       });
     }
   }, [existingData, reset]);
@@ -212,7 +219,9 @@ export const KonsumenForm = memo(function KonsumenForm({
       kesiapan_dana: data.kesiapan_dana ? parseFloat(data.kesiapan_dana.replace(/,/g, '')) : null,
       pengalaman: data.pengalaman || null,
       materi_fu: data.materi_fu || null,
-      tgl_fu: data.tgl_fu || null
+      tgl_fu: data.tgl_fu || null,
+      materi_fu_2: data.materi_fu_2 || null,
+      tgl_fu_2: data.tgl_fu_2 || null
     };
 
     await onSubmit(submitData);
@@ -470,26 +479,61 @@ export const KonsumenForm = memo(function KonsumenForm({
               {/* Follow up Tab */}
               {activeTab === 'followup' && (
                 <div className='space-y-6'>
-                  <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                    <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Materi Follow Up (Opsional)</Label>
-                      <Input
-                        {...register('materi_fu')}
-                        placeholder='Masukkan materi follow up...'
-                        className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
-                      />
-                    </div>
+                  {/* Follow Up 1 */}
+                  <div className='space-y-4'>
+                    <h3 className='border-b border-gray-200 pb-2 text-lg font-medium text-gray-900'>Follow Up 1</h3>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                      <div className='space-y-2'>
+                        <Label className='font-medium text-gray-900'>Materi Follow Up *</Label>
+                        <Input
+                          {...register('materi_fu')}
+                          placeholder='Masukkan materi follow up...'
+                          className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        />
+                        {errors.materi_fu && <p className='text-sm text-red-500'>{errors.materi_fu.message}</p>}
+                      </div>
 
-                    <div className='space-y-2'>
-                      <Label className='font-medium text-gray-900'>Tanggal Follow Up (Opsional)</Label>
-                      <DatePicker
-                        value={tglFu ? new Date(tglFu) : undefined}
-                        onChange={(date) => setValue('tgl_fu', date ? date.toISOString().split('T')[0] : '')}
-                        placeholder='Pilih tanggal follow up...'
-                        format='dd/MM/yyyy'
-                        className='h-12'
-                        withInput={false}
-                      />
+                      <div className='space-y-2'>
+                        <Label className='font-medium text-gray-900'>Tanggal & Waktu Follow Up *</Label>
+                        <DateTimePicker
+                          value={tglFu ? new Date(tglFu) : undefined}
+                          onChange={(date: Date | undefined) => setValue('tgl_fu', date ? date.toISOString() : '')}
+                          placeholder='Pilih tanggal & waktu follow up...'
+                          format='dd/MM/yyyy HH:mm'
+                          className='h-12'
+                          withInput={false}
+                        />
+                        {errors.tgl_fu && <p className='text-sm text-red-500'>{errors.tgl_fu.message}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Follow Up 2 */}
+                  <div className='space-y-4'>
+                    <h3 className='border-b border-gray-200 pb-2 text-lg font-medium text-gray-900'>Follow Up 2</h3>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                      <div className='space-y-2'>
+                        <Label className='font-medium text-gray-900'>Materi Follow Up 2 *</Label>
+                        <Input
+                          {...register('materi_fu_2')}
+                          placeholder='Masukkan materi follow up 2...'
+                          className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                        />
+                        {errors.materi_fu_2 && <p className='text-sm text-red-500'>{errors.materi_fu_2.message}</p>}
+                      </div>
+
+                      <div className='space-y-2'>
+                        <Label className='font-medium text-gray-900'>Tanggal & Waktu Follow Up 2 *</Label>
+                        <DateTimePicker
+                          value={tglFu2 ? new Date(tglFu2) : undefined}
+                          onChange={(date: Date | undefined) => setValue('tgl_fu_2', date ? date.toISOString() : '')}
+                          placeholder='Pilih tanggal & waktu follow up 2...'
+                          format='dd/MM/yyyy HH:mm'
+                          className='h-12'
+                          withInput={false}
+                        />
+                        {errors.tgl_fu_2 && <p className='text-sm text-red-500'>{errors.tgl_fu_2.message}</p>}
+                      </div>
                     </div>
                   </div>
                 </div>
