@@ -54,13 +54,13 @@ const columns = [
     },
     meta: { style: { minWidth: '100px' } }
   }),
-  columnHelper.accessor('role.name', {
+  columnHelper.accessor('roles', {
     header: 'Role',
     cell: ({ row, getValue }) => {
       const role = row.original.role;
       return (
         <div className='flex flex-col'>
-          <span className='font-medium'>{getValue() || role?.name || '-'}</span>
+          <span className='font-medium'>{getValue()?.[0]?.role?.name || '-'}</span>
           {role?.code && <span className='text-muted-foreground text-xs'>{role.code}</span>}
         </div>
       );

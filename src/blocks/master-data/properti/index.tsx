@@ -73,7 +73,7 @@ const columns = [
       const properti = row.original;
       return (
         <div className='flex flex-col text-xs'>
-          <span className='font-medium'>{properti.project?.name || '-'}</span>
+          <span className='font-medium'>{properti.projek?.name || '-'}</span>
         </div>
       );
     },
@@ -321,7 +321,7 @@ const PropertiPage = memo(function PropertiPage() {
                       </TableCell>
                       <TableCell className='py-4' style={{ minWidth: '150px' }}>
                         <div className='flex flex-col text-xs'>
-                          <span className='font-medium'>{properti.project?.name || '-'}</span>
+                          <span className='font-medium'>{properti.projek?.name || '-'}</span>
                         </div>
                       </TableCell>
                       <TableCell className='py-4' style={{ width: '140px' }}>
