@@ -10,7 +10,7 @@ export interface PropertyData {
   created_at: string;
   updated_at: string;
   // Relations (optional when included)
-  project?: {
+  projek?: {
     id: number;
     name: string;
   };
