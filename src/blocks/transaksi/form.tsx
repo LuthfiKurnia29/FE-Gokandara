@@ -130,7 +130,8 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
       konsumen_id: konsumenId,
       properti_id: propertiId,
       tipe_id: typeId || tipeId,
-      diskon: '' // Empty string for diskon, will be handled in booking form
+      diskon: '', // Empty string for diskon, will be handled in booking form
+      status: 'Negotiation' as const // Set default status
     };
 
     if (onProceedToBooking) {

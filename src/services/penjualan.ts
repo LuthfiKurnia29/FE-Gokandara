@@ -82,7 +82,9 @@ export const penjualanService = {
 
   // Create new penjualan
   create: async (data: CreatePenjualanData): Promise<PenjualanWithRelations> => {
+    console.log('🚀 Frontend sending data to backend:', JSON.stringify(data, null, 2));
     const response = await axios.post<PenjualanApiResponse>('/create-transaksi', data);
+    console.log('📥 Backend response:', JSON.stringify(response.data, null, 2));
     return response.data.data;
   },
 

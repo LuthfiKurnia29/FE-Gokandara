@@ -71,6 +71,7 @@ export interface CreatePenjualanData {
   tipe_id: number;
   unit_id: number;
   diskon?: number | null;
+  status?: PenjualanStatus;
 }
 
 export interface UpdatePenjualanData {

@@ -227,18 +227,27 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
   const userId = userData?.user?.id || 0;
 
-  // Role-based status update permissions based on user seeder
-  const canUpdateToNegotiation = (currentStatus: string) => {
-    // Supervisor (ID: 2) can update from Pending to Negotiation
-    return (userId === 2 || userRole === 'Supervisor' || userRoleId === 2) && currentStatus === 'Pending';
+  // Role-based status update permissions - only Admin and Supervisor can change status
+  const canChangeStatus = () => {
+    return (
+      userRole === 'Administrator' ||
+      userRole === 'Admin' ||
+      userRole === 'Supervisor' ||
+      userRoleId === 1 ||
+      userRoleId === 2
+    );
+  };
+
+  const canUpdateToPending = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Negotiation';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
-    // Administrator (ID: 1) can update from Negotiation to Approved
-    return (
-      (userId === 1 || userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1) &&
-      currentStatus === 'Negotiation'
-    );
+    return canChangeStatus() && currentStatus === 'Negotiation';
+  };
+
+  const canUpdateToNegotiation = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Pending';
   };
 
   const [openForm, setOpenForm] = useState<boolean>(false);
@@ -253,6 +262,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   const handleDeletePenjualan = async (penjualan: PenjualanWithRelations) => {
     handleDelete(`/delete-transaksi/${penjualan.id}`, 'delete');
+  };
+
+  const handleUpdateToPending = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Pending' } });
+      toast.success('Status transaksi berhasil diubah menjadi Pending');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+      console.error('Error updating status:', error);
+    }
   };
 
   const handleUpdateToNegotiation = async (penjualan: PenjualanWithRelations) => {
@@ -322,13 +341,13 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
-          {canUpdateToNegotiation(row.original.status) && (
+          {canUpdateToPending(row.original.status) && (
             <DropdownMenuItem
-              onClick={() => handleUpdateToNegotiation(row.original)}
+              onClick={() => handleUpdateToPending(row.original)}
               disabled={updatePenjualanStatus.isPending}
-              className='text-blue-600'>
-              <MessageSquare className='mr-2 h-4 w-4' />
-              Move to Negotiation
+              className='text-orange-600'>
+              <Clock className='mr-2 h-4 w-4' />
+              Move to Pending
             </DropdownMenuItem>
           )}
           {canUpdateToApproved(row.original.status) && (
@@ -338,6 +357,15 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               className='text-green-600'>
               <CheckCircle className='mr-2 h-4 w-4' />
               Approve
+            </DropdownMenuItem>
+          )}
+          {canUpdateToNegotiation(row.original.status) && (
+            <DropdownMenuItem
+              onClick={() => handleUpdateToNegotiation(row.original)}
+              disabled={updatePenjualanStatus.isPending}
+              className='text-blue-600'>
+              <MessageSquare className='mr-2 h-4 w-4' />
+              Move to Negotiation
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
@@ -400,18 +428,27 @@ const PenjualanPage = memo(function PenjualanPage() {
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
   const userId = userData?.user?.id || 0;
 
-  // Role-based status update permissions based on user seeder
-  const canUpdateToNegotiation = (currentStatus: string) => {
-    // Supervisor (ID: 2) can update from Pending to Negotiation
-    return (userId === 2 || userRole === 'Supervisor' || userRoleId === 2) && currentStatus === 'Pending';
+  // Role-based status update permissions - only Admin and Supervisor can change status
+  const canChangeStatus = () => {
+    return (
+      userRole === 'Administrator' ||
+      userRole === 'Admin' ||
+      userRole === 'Supervisor' ||
+      userRoleId === 1 ||
+      userRoleId === 2
+    );
+  };
+
+  const canUpdateToPending = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Negotiation';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
-    // Administrator (ID: 1) can update from Negotiation to Approved
-    return (
-      (userId === 1 || userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1) &&
-      currentStatus === 'Negotiation'
-    );
+    return canChangeStatus() && currentStatus === 'Negotiation';
+  };
+
+  const canUpdateToNegotiation = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Pending';
   };
 
   // API hooks
@@ -440,7 +477,18 @@ const PenjualanPage = memo(function PenjualanPage() {
 
   const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
-      await createPenjualan.mutateAsync(data as CreatePenjualanData);
+      // Set default status to 'Negotiation' for new transactions
+      const submitData: CreatePenjualanData = {
+        konsumen_id: data.konsumen_id!,
+        properti_id: data.properti_id!,
+        blok_id: data.blok_id!,
+        tipe_id: data.tipe_id!,
+        unit_id: data.unit_id!,
+        diskon: data.diskon,
+        status: 'Negotiation'
+      };
+
+      await createPenjualan.mutateAsync(submitData);
       toast.success('Data transaksi berhasil ditambahkan');
       handleCloseForm();
     } catch (error: any) {

@@ -282,7 +282,8 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
       blok_id: data.blok_id ? parseInt(data.blok_id) : 1, // From user input
       tipe_id: parseInt(safeInitialData.tipe_id), // Use from safeInitialData
       unit_id: data.unit_id ? parseInt(data.unit_id) : 1, // From user input
-      diskon: validatedDiscount ? parseFloat(validatedDiscount) : null // Store as percentage only if valid
+      diskon: validatedDiscount ? parseFloat(validatedDiscount) : null, // Store as percentage only if valid
+      status: 'Negotiation' as const // Set default status
     };
 
     await onSubmit(submitData);
