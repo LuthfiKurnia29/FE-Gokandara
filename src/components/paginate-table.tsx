@@ -263,111 +263,111 @@ const PaginateTable = memo(
               </div>
             </div>
             <div className='rounded-md border'>
-              {/* <ScrollArea className='w-full max-w-full overflow-x-auto'> */}
-              <Table>
-                <TableHeader className='bg-muted'>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead
-                          key={header.id}
-                          className='py-4 font-medium'
-                          style={(header.column.columnDef.meta as any)?.style}>
-                          {header.column.columnDef.header === 'check' && Boolean(data?.data?.length) ? (
-                            <div className='flex h-4 w-4 items-center'>
-                              <Checkbox
-                                className='h-5 w-5 cursor-pointer'
-                                checked={massSelect?.length === data?.data?.length}
-                                onCheckedChange={(checked) => handleMassSelect(checked as boolean)}
-                              />
-                            </div>
-                          ) : header.isPlaceholder ? null : (
-                            flexRender(header.column.columnDef.header, header.getContext())
-                          )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row, idx) => (
-                      <TableRow
-                        key={
-                          grouped
-                            ? `row.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`
-                            : `row.${row.original.uuid ?? row.original.id ?? idx}`
-                        }>
-                        {row.original.type === 'group' ? (
-                          <TableCell
-                            key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? row.original.data?.id ?? idx)}`}
-                            className={`py-4 ${
-                              row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
-                            }`}
-                            colSpan={row.original.type === 'group' ? columns.length : 1}>
-                            <div className='flex flex-col gap-2'>
-                              {/* Patch: Client-only date formatting to prevent hydration mismatch */}
-                              {(() => {
-                                const [formattedDate, setFormattedDate] = useState('');
-                                useEffect(() => {
-                                  setFormattedDate(format(new Date(row.original.date), 'EEEE, dd MMMM yyyy'));
-                                }, [row.original.date]);
-                                return <p className='text-sm font-medium'>{formattedDate}</p>;
-                              })()}
-                            </div>
-                          </TableCell>
-                        ) : (
-                          row.getVisibleCells().map((cell, indexCell) => {
-                            if (grouped) {
-                              return (
-                                <TableCell
-                                  key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
-                                  className={`py-4 ${cell.row.original.type === 'group' ? 'bg-muted' : ''}`}
-                                  colSpan={cell.row.original.type === 'group' ? columns.length : 1}
-                                  style={(cell.column.columnDef.meta as any)?.style}>
-                                  {cell.row.original.type === 'group' ? (
-                                    <div className='flex flex-col gap-2'>
-                                      {/* Patch: Client-only date formatting to prevent hydration mismatch */}
-                                      {(() => {
-                                        const [formattedDate, setFormattedDate] = useState('');
-                                        useEffect(() => {
-                                          setFormattedDate(
-                                            format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')
-                                          );
-                                        }, [cell.row.original.date]);
-                                        return <p className='text-sm font-medium'>{formattedDate}</p>;
-                                      })()}
-                                    </div>
-                                  ) : (
-                                    flexRender(cell.column.columnDef.cell, cell.getContext())
-                                  )}
-                                </TableCell>
-                              );
-                            } else {
-                              return (
-                                <TableCell
-                                  key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
-                                  className='py-4'
-                                  style={(cell.column.columnDef.meta as any)?.style}>
-                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </TableCell>
-                              );
-                            }
-                          })
-                        )}
+              <ScrollArea className='w-full max-w-full overflow-x-auto'>
+                <Table>
+                  <TableHeader className='bg-muted'>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            className='py-4 font-medium'
+                            style={(header.column.columnDef.meta as any)?.style}>
+                            {header.column.columnDef.header === 'check' && Boolean(data?.data?.length) ? (
+                              <div className='flex h-4 w-4 items-center'>
+                                <Checkbox
+                                  className='h-5 w-5 cursor-pointer'
+                                  checked={massSelect?.length === data?.data?.length}
+                                  onCheckedChange={(checked) => handleMassSelect(checked as boolean)}
+                                />
+                              </div>
+                            ) : header.isPlaceholder ? null : (
+                              flexRender(header.column.columnDef.header, header.getContext())
+                            )}
+                          </TableHead>
+                        ))}
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow key='no-data'>
-                      <TableCell colSpan={columns.length} className='h-24 text-center'>
-                        <p className='text-muted-foreground text-sm'>Data not found</p>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              {/* <ScrollBar orientation='horizontal' />
-                </ScrollArea> */}
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                      table.getRowModel().rows.map((row, idx) => (
+                        <TableRow
+                          key={
+                            grouped
+                              ? `row.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? idx)}`
+                              : `row.${row.original.uuid ?? row.original.id ?? idx}`
+                          }>
+                          {row.original.type === 'group' ? (
+                            <TableCell
+                              key={`cell.${row.id}.${row.original.type === 'group' ? row.original.date : (row.original.data?.uuid ?? row.original.data?.id ?? idx)}`}
+                              className={`py-4 ${
+                                row.original.type === 'group' ? 'bg-blue-600/10 dark:bg-blue-300/10' : ''
+                              }`}
+                              colSpan={row.original.type === 'group' ? columns.length : 1}>
+                              <div className='flex flex-col gap-2'>
+                                {/* Patch: Client-only date formatting to prevent hydration mismatch */}
+                                {(() => {
+                                  const [formattedDate, setFormattedDate] = useState('');
+                                  useEffect(() => {
+                                    setFormattedDate(format(new Date(row.original.date), 'EEEE, dd MMMM yyyy'));
+                                  }, [row.original.date]);
+                                  return <p className='text-sm font-medium'>{formattedDate}</p>;
+                                })()}
+                              </div>
+                            </TableCell>
+                          ) : (
+                            row.getVisibleCells().map((cell, indexCell) => {
+                              if (grouped) {
+                                return (
+                                  <TableCell
+                                    key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
+                                    className={`py-4 ${cell.row.original.type === 'group' ? 'bg-muted' : ''}`}
+                                    colSpan={cell.row.original.type === 'group' ? columns.length : 1}
+                                    style={(cell.column.columnDef.meta as any)?.style}>
+                                    {cell.row.original.type === 'group' ? (
+                                      <div className='flex flex-col gap-2'>
+                                        {/* Patch: Client-only date formatting to prevent hydration mismatch */}
+                                        {(() => {
+                                          const [formattedDate, setFormattedDate] = useState('');
+                                          useEffect(() => {
+                                            setFormattedDate(
+                                              format(new Date(cell.row.original.date), 'EEEE, dd MMMM yyyy')
+                                            );
+                                          }, [cell.row.original.date]);
+                                          return <p className='text-sm font-medium'>{formattedDate}</p>;
+                                        })()}
+                                      </div>
+                                    ) : (
+                                      flexRender(cell.column.columnDef.cell, cell.getContext())
+                                    )}
+                                  </TableCell>
+                                );
+                              } else {
+                                return (
+                                  <TableCell
+                                    key={`cell.${cell.id}.${cell.row.original.uuid ?? cell.row.original.id ?? indexCell}`}
+                                    className='py-4'
+                                    style={(cell.column.columnDef.meta as any)?.style}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </TableCell>
+                                );
+                              }
+                            })
+                          )}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow key='no-data'>
+                        <TableCell colSpan={columns.length} className='h-24 text-center'>
+                          <p className='text-muted-foreground text-sm'>Data not found</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <ScrollBar orientation='horizontal' />
+              </ScrollArea>
             </div>
             <div className='mt-4 flex items-center justify-end gap-2'>
               <div className='flex flex-1 flex-shrink-0 items-center gap-2'>

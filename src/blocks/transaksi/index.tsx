@@ -4,6 +4,7 @@ import { memo, useState } from 'react';
 
 import BookingForm from '@/blocks/transaksi/booking-form';
 import PropertyTypeModal from '@/blocks/transaksi/form';
+import { MemberFilterModal } from '@/blocks/transaksi/member-filter-modal';
 import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import MetricsSection from './metric-section';
-import { CheckCircle, Clock, MessageSquare, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
+import { CheckCircle, Clock, Filter, MessageSquare, MoreHorizontal, Pencil, Plus, Trash, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<PenjualanWithRelations>();
@@ -420,6 +421,9 @@ const PenjualanPage = memo(function PenjualanPage() {
   const [showBookingForm, setShowBookingForm] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [formData, setFormData] = useState<any>(null);
+  const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const { getUserData } = usePermissions();
 
   // Get current user data for role checking
@@ -428,8 +432,19 @@ const PenjualanPage = memo(function PenjualanPage() {
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
   const userId = userData?.user?.id || 0;
 
-  // Role-based status update permissions - only Admin and Supervisor can change status
+  // Role-based permissions
   const canChangeStatus = () => {
+    return (
+      userRole === 'Administrator' ||
+      userRole === 'Admin' ||
+      userRole === 'Supervisor' ||
+      userRoleId === 1 ||
+      userRoleId === 2
+    );
+  };
+
+  // Check if user can see filter button (Admin and Supervisor only)
+  const canSeeFilterButton = () => {
     return (
       userRole === 'Administrator' ||
       userRole === 'Admin' ||
@@ -497,6 +512,18 @@ const PenjualanPage = memo(function PenjualanPage() {
     }
   };
 
+  // Handle member filter selection
+  const handleSelectMember = (userId: number, userName: string) => {
+    setSelectedMemberId(userId);
+    setSelectedMemberName(userName);
+  };
+
+  // Handle clear filter
+  const handleClearFilter = () => {
+    setSelectedMemberId(null);
+    setSelectedMemberName('');
+  };
+
   const isFormLoading = createPenjualan.isPending;
 
   return (
@@ -511,13 +538,39 @@ const PenjualanPage = memo(function PenjualanPage() {
         url='/list-transaksi'
         id='transaksi'
         perPage={10}
-        queryKey={['/list-transaksi']}
-        payload={{ include: 'konsumen,properti,blok,tipe,unit' }}
+        queryKey={['/list-transaksi', selectedMemberId?.toString() || 'all']}
+        payload={{
+          include: 'konsumen,properti,blok,tipe,unit',
+          ...(selectedMemberId && { created_id: selectedMemberId })
+        }}
         Plugin={() => (
-          <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
-            <Plus />
-            Tambah Transaksi
-          </Button>
+          <div className='flex items-center gap-2'>
+            {/* Member Filter Button - Only show for Admin and Supervisor */}
+            {canSeeFilterButton() && (
+              <div className='flex items-center gap-2'>
+                {selectedMemberId && (
+                  <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
+                    <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={handleClearFilter}
+                      className='hover:bg-primary/20 h-6 w-6 p-0'>
+                      <X className='h-3 w-3' />
+                    </Button>
+                  </div>
+                )}
+                <Button variant='outline' onClick={() => setShowMemberFilter(true)} className='flex items-center gap-2'>
+                  <Filter className='h-4 w-4' />
+                  Filter Berdasarkan Member
+                </Button>
+              </div>
+            )}
+            <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+              <Plus />
+              Tambah Transaksi
+            </Button>
+          </div>
         )}
       />
 
@@ -555,6 +608,13 @@ const PenjualanPage = memo(function PenjualanPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Member Filter Modal */}
+      <MemberFilterModal
+        open={showMemberFilter}
+        onOpenChange={setShowMemberFilter}
+        onSelectMember={handleSelectMember}
+      />
     </section>
   );
 });

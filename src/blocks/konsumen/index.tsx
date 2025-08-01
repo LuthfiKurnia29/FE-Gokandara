@@ -4,6 +4,7 @@ import { memo, useState } from 'react';
 
 import { KonsumenForm } from '@/blocks/konsumen/form';
 import { HistoryFollowUp } from '@/blocks/konsumen/history_follow_up';
+import { MemberFilterModal } from '@/blocks/transaksi/member-filter-modal';
 import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,12 +17,13 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
+import { usePermissions } from '@/services/auth';
 import { useCreateKonsumen, useDeleteKonsumen, useUpdateKonsumen } from '@/services/konsumen';
 import { KonsumenData } from '@/types/konsumen';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
-import { History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video } from 'lucide-react';
+import { Filter, History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
 import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
 
@@ -47,11 +49,31 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedKonsumen, setSelectedKonsumen] = useState<KonsumenData | null>(null);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
+  const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  const [selectedMemberName, setSelectedMemberName] = useState<string>('');
+  const { getUserData } = usePermissions();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/konsumen'] });
     }
   });
+
+  // Get current user data for role checking
+  const userData = getUserData();
+  const userRole = userData?.roles?.[0]?.role?.name || '';
+  const userRoleId = userData?.roles?.[0]?.role_id || 0;
+
+  // Check if user can see filter button (Admin and Supervisor only)
+  const canSeeFilterButton = () => {
+    return (
+      userRole === 'Administrator' ||
+      userRole === 'Admin' ||
+      userRole === 'Supervisor' ||
+      userRoleId === 1 ||
+      userRoleId === 2
+    );
+  };
 
   // API hooks
   const createKonsumen = useCreateKonsumen();
@@ -101,6 +123,18 @@ const KonsumenPage = memo(function KonsumenPage() {
 
   const handleDeleteKonsumen = async (konsumen: KonsumenData) => {
     handleDelete(`/konsumen/${konsumen.id}`, 'delete');
+  };
+
+  // Handle member filter selection
+  const handleSelectMember = (userId: number, userName: string) => {
+    setSelectedMemberId(userId);
+    setSelectedMemberName(userName);
+  };
+
+  // Handle clear filter
+  const handleClearFilter = () => {
+    setSelectedMemberId(null);
+    setSelectedMemberName('');
   };
 
   const renderItem = (item: KonsumenData, index: number) => {
@@ -187,13 +221,40 @@ const KonsumenPage = memo(function KonsumenPage() {
         url='/konsumen'
         id='konsumen'
         perPage={12}
+        queryKey={['/konsumen', selectedMemberId?.toString() || 'all']}
+        payload={{
+          ...(selectedMemberId && { created_id: selectedMemberId })
+        }}
         containerClassName='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
         renderItem={renderItem}
         Plugin={() => (
-          <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
-            <Plus />
-            Tambah Konsumen
-          </Button>
+          <div className='flex items-center gap-2'>
+            {/* Member Filter Button - Only show for Admin and Supervisor */}
+            {canSeeFilterButton() && (
+              <div className='flex items-center gap-2'>
+                {selectedMemberId && (
+                  <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
+                    <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={handleClearFilter}
+                      className='hover:bg-primary/20 h-6 w-6 p-0'>
+                      <X className='h-3 w-3' />
+                    </Button>
+                  </div>
+                )}
+                <Button variant='outline' onClick={() => setShowMemberFilter(true)} className='flex items-center gap-2'>
+                  <Filter className='h-4 w-4' />
+                  Filter Berdasarkan Member
+                </Button>
+              </div>
+            )}
+            <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+              <Plus />
+              Tambah Konsumen
+            </Button>
+          </div>
         )}
       />
 
@@ -242,6 +303,13 @@ const KonsumenPage = memo(function KonsumenPage() {
           <HistoryFollowUp konsumen={selectedKonsumen} onClose={handleCloseHistory} />
         </DialogContent>
       </Dialog>
+
+      {/* Member Filter Modal */}
+      <MemberFilterModal
+        open={showMemberFilter}
+        onOpenChange={setShowMemberFilter}
+        onSelectMember={handleSelectMember}
+      />
 
       <DeleteConfirmDialog />
     </section>
