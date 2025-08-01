@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllKonsumen } from '@/services/konsumen';
-import { useAllTipe } from '@/services/penjualan';
+import { useAllTipe, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti } from '@/services/properti';
 import { KonsumenData } from '@/types/konsumen';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
@@ -19,7 +19,6 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
-// Form validation schema sesuai dengan Laravel controller validation
 const transaksiSchema = z.object({
   konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
   properti_id: z.string().min(1, 'Properti harus dipilih'),
@@ -41,10 +40,17 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
 
-  // Fetch master data from APIs
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
+
+  const { data: transactionData, isLoading: isLoadingTransaction } = usePenjualanById(selectedId || null, [
+    'konsumen',
+    'properti',
+    'blok',
+    'tipe',
+    'unit'
+  ]);
 
   const {
     register,
@@ -56,19 +62,18 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   } = useForm<TransaksiFormData>({
     resolver: zodResolver(transaksiSchema),
     defaultValues: {
-      konsumen_id: '',
-      properti_id: '',
-      tipe_id: ''
+      konsumen_id: transactionData?.konsumen_id?.toString() || '',
+      properti_id: transactionData?.properti_id?.toString() || '',
+      tipe_id: transactionData?.tipe_id?.toString() || '',
+      diskon: transactionData?.diskon?.toString() || ''
     },
     mode: 'onChange'
   });
 
-  // Watch form values
   const konsumenId = watch('konsumen_id');
   const propertiId = watch('properti_id');
   const tipeId = watch('tipe_id');
 
-  // Safe option mapping
   const safeKonsumenOptions = konsumenOptions.map((konsumen: KonsumenData) => ({
     value: konsumen.id.toString(),
     label: `#${konsumen.id} ${konsumen.name}`
@@ -79,16 +84,27 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     label: `#${properti.id} ${properti.projek?.name} - ${properti.lokasi ?? 'Lokasi'}`
   }));
 
-  // Update selected properti when properti_id changes
   useEffect(() => {
     if (propertiId && propertiOptions.length > 0) {
       const properti = propertiOptions.find((p) => p.id?.toString() === propertiId);
       setSelectedProperti(properti);
-
-      // Note: blok_id, tipe_id, unit_id are not available in API response
-      // These fields need to be selected manually by user
     }
   }, [propertiId, propertiOptions]);
+
+  useEffect(() => {
+    if (transactionData && selectedId) {
+      reset({
+        konsumen_id: transactionData.konsumen_id?.toString() || '',
+        properti_id: transactionData.properti_id?.toString() || '',
+        tipe_id: transactionData.tipe_id?.toString() || '',
+        diskon: transactionData.diskon?.toString() || ''
+      });
+
+      if (transactionData.tipe_id) {
+        setSelectedType(transactionData.tipe_id.toString());
+      }
+    }
+  }, [transactionData, selectedId, reset]);
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(typeId);
@@ -102,7 +118,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   };
 
   const handleChoose = (typeId: string) => {
-    // Validate all required fields
     if (!konsumenId) {
       toast.error('Silakan pilih konsumen');
       return;
@@ -111,26 +126,17 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
       toast.error('Silakan pilih properti');
       return;
     }
-    // if (!blokId) {
-    //   toast.error('Silakan pilih blok');
-    //   return;
-    // }
     if (!selectedType && !typeId) {
       toast.error('Silakan pilih tipe terlebih dahulu');
       return;
     }
-    // if (!unitId) {
-    //   toast.error('Silakan pilih unit');
-    //   return;
-    // }
 
-    // Get current form data
     const formData = {
       konsumen_id: konsumenId,
       properti_id: propertiId,
       tipe_id: typeId || tipeId,
-      diskon: '', // Empty string for diskon, will be handled in booking form
-      status: 'Negotiation' as const // Set default status
+      diskon: '',
+      status: 'Negotiation' as const
     };
 
     if (onProceedToBooking) {
@@ -138,7 +144,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     }
   };
 
-  // Dynamic property types based on actual tipe data
   const propertyTypes = tipeOptions.map((tipe) => ({
     id: tipe.id.toString(),
     name: tipe.name,
@@ -146,18 +151,51 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     selected: selectedType === tipe.id.toString()
   }));
 
+  if (selectedId && isLoadingTransaction) {
+    return (
+      <div className='flex h-full w-full items-center justify-center p-2'>
+        <div className='max-h-[80vh] w-full max-w-2xl overflow-auto'>
+          <div className='p-4 pb-3'>
+            <div className='text-center'>
+              <h2 className='mb-2 text-2xl font-bold text-gray-900'>Loading Transaction Data...</h2>
+              <p className='text-sm text-gray-600'>Please wait while we fetch the transaction details</p>
+            </div>
+          </div>
+          <div className='px-4 pb-4'>
+            <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+              <div className='space-y-1'>
+                <Skeleton className='h-4 w-20' />
+                <Skeleton className='h-10 w-full' />
+              </div>
+              <div className='space-y-1'>
+                <Skeleton className='h-4 w-20' />
+                <Skeleton className='h-10 w-full' />
+              </div>
+              <div className='space-y-1'>
+                <Skeleton className='h-4 w-20' />
+                <Skeleton className='h-10 w-full' />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='flex h-full w-full items-center justify-center p-2'>
       <div className='max-h-[80vh] w-full max-w-2xl overflow-auto'>
-        {/* Header */}
         <div className='p-4 pb-3'>
           <div className='text-center'>
-            <h2 className='mb-2 text-2xl font-bold text-gray-900'>Lorem Ipsum</h2>
-            <p className='text-sm text-gray-600'>Lorem ipsum dolor sit amet, consectetur adipiscing elit</p>
+            <h2 className='mb-2 text-2xl font-bold text-gray-900'>
+              {selectedId ? 'Edit Transaction' : 'Create Transaction'}
+            </h2>
+            <p className='text-sm text-gray-600'>
+              {selectedId ? 'Edit transaction details below' : 'Create a new transaction below'}
+            </p>
           </div>
         </div>
 
-        {/* Transaction Form Fields */}
         <div className='px-4 pb-4'>
           <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
             <div className='space-y-1'>
@@ -188,38 +226,9 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
               />
               {errors.properti_id && <p className='text-xs text-red-500'>{errors.properti_id.message}</p>}
             </div>
-            {/* <div className='space-y-1'>
-              <Label htmlFor='blok' className='text-sm'>
-                Blok
-              </Label>
-              <Select
-                options={safeBlokOptions}
-                value={blokId}
-                onChange={(value) => setValue('blok_id', value as string)}
-                placeholder={isLoadingBlok ? 'Loading...' : 'Pilih Blok'}
-                disabled={isLoadingBlok}
-                className='h-10'
-              />
-              {errors.blok_id && <p className='text-xs text-red-500'>{errors.blok_id.message}</p>}
-            </div>
-            <div className='space-y-1'>
-              <Label htmlFor='unit' className='text-sm'>
-                Unit
-              </Label>
-              <Select
-                options={safeUnitOptions}
-                value={unitId}
-                onChange={(value) => setValue('unit_id', value as string)}
-                placeholder={isLoadingUnit ? 'Loading...' : 'Pilih Unit'}
-                disabled={isLoadingUnit}
-                className='h-10'
-              />
-              {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
-            </div> */}
           </div>
         </div>
 
-        {/* Property Type Cards */}
         <div className='px-4 pb-4'>
           {isLoadingTipe ? (
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -248,7 +257,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                       : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                   }`}
                   onClick={() => handleTypeSelect(type.id)}>
-                  {/* House Icon */}
                   <div className='mb-4 flex justify-center'>
                     <div
                       className={`flex h-12 w-12 items-center justify-center rounded-lg ${
@@ -258,10 +266,8 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                     </div>
                   </div>
 
-                  {/* Type Name */}
                   <h3 className='mb-4 text-center text-lg font-bold text-teal-700'>{type.name}</h3>
 
-                  {/* Features */}
                   <div className='mb-4 space-y-2'>
                     {type.features.map((feature, index) => (
                       <div key={index} className='flex items-center gap-2'>
@@ -273,7 +279,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                     ))}
                   </div>
 
-                  {/* Select Button */}
                   <Button
                     className={`w-full rounded-lg py-2 text-sm font-semibold transition-all duration-300 ${
                       type.selected
@@ -288,7 +293,6 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                     Pilih
                   </Button>
 
-                  {/* Selection Indicator */}
                   {type.selected && (
                     <div className='absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500'>
                       <Check className='h-3 w-3 text-white' />

@@ -3,15 +3,16 @@
 import { memo, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ButtonGroup, ButtonGroupItem } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { useAllBlok, useAllKonsumen, useAllUnit } from '@/services/penjualan';
+import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti } from '@/services/properti';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, DollarSign, Percent } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
@@ -30,15 +31,16 @@ const bookingSchema = z.object({
       (value) => {
         if (!value || value.trim() === '') return true; // Allow empty
         const numValue = parseFloat(value);
-        return !isNaN(numValue) && numValue >= 0 && numValue <= 100;
+        return !isNaN(numValue) && numValue >= 0;
       },
-      { message: 'Diskon harus antara 0-100%' }
+      { message: 'Diskon harus berupa angka positif' }
     )
     .transform((value) => {
       // Transform empty string to undefined
       if (!value || value.trim() === '') return undefined;
       return value;
-    })
+    }),
+  tipe_diskon: z.enum(['percent', 'fixed']).optional()
 });
 
 type BookingFormData = z.infer<typeof bookingSchema>;
@@ -55,11 +57,12 @@ interface BookingDetails {
 
 interface BookingFormProps {
   initialData?: BookingFormData | null;
+  selectedId?: number | null;
   onBack: () => void;
   onSubmit: (data: CreatePenjualanData | UpdatePenjualanData) => Promise<void>;
 }
 
-const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
+const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormProps) => {
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
   const [discountError, setDiscountError] = useState<string>('');
 
@@ -68,15 +71,51 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
   const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
   const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
+  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
 
-  // Ensure initialData is not null
+  // Fetch transaction data by ID for editing
+  const { data: transactionData, isLoading: isLoadingTransaction } = usePenjualanById(selectedId || null, [
+    'konsumen',
+    'properti',
+    'blok',
+    'tipe',
+    'unit'
+  ]);
+
+  // Ensure initialData is not null, prioritize user input over API data
   const safeInitialData = initialData || {
     konsumen_id: '',
     properti_id: '',
     blok_id: '',
     tipe_id: '',
     unit_id: '',
-    diskon: ''
+    diskon: '',
+    tipe_diskon: 'percent' as const
+  };
+
+  // Helper function to format display value
+  const getDisplayValue = (value: string) => {
+    if (!value || value.trim() === '') return '';
+
+    if (tipeDiskon === 'fixed') {
+      const numValue = parseFloat(value.replace(/\./g, ''));
+      if (!isNaN(numValue) && numValue > 0) {
+        return numValue.toLocaleString('id-ID');
+      }
+    }
+
+    return value;
+  };
+
+  // Helper function to get raw value for calculations
+  const getRawValue = (value: string) => {
+    if (!value || value.trim() === '') return '';
+
+    if (tipeDiskon === 'fixed') {
+      return value.replace(/\./g, '');
+    }
+
+    return value;
   };
 
   // Calculate final price with discount
@@ -91,18 +130,28 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     }
 
     const basePrice = selectedProperti.harga;
-    // Ensure discount is between 0-100% with strict validation
-    let rawDiscount = 0;
+    let discountAmount = 0;
+    let discountPercent = 0;
+
     if (diskon && diskon.trim() !== '') {
-      const parsedDiscount = parseFloat(diskon);
-      if (!isNaN(parsedDiscount) && parsedDiscount >= 0 && parsedDiscount <= 100) {
-        rawDiscount = parsedDiscount;
+      const rawDiscountValue = getRawValue(diskon);
+      const parsedDiscount = parseFloat(rawDiscountValue);
+      if (!isNaN(parsedDiscount) && parsedDiscount >= 0) {
+        if (tipeDiskon === 'percent') {
+          // Percentage discount
+          const maxPercent = Math.min(parsedDiscount, 100);
+          discountPercent = maxPercent;
+          discountAmount = (basePrice * maxPercent) / 100;
+        } else if (tipeDiskon === 'fixed') {
+          // Fixed amount discount - use the nominal value directly
+          const maxFixed = Math.min(parsedDiscount, basePrice);
+          discountAmount = maxFixed;
+          discountPercent = (maxFixed / basePrice) * 100;
+        }
       }
     }
 
-    const discountPercent = Math.max(0, Math.min(100, rawDiscount));
-    const discountAmount = (basePrice * discountPercent) / 100;
-    const finalPrice = Math.max(basePrice - discountAmount, 0); // Ensure price doesn't go negative
+    const finalPrice = Math.max(basePrice - discountAmount, 0);
 
     return {
       basePrice,
@@ -117,10 +166,14 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors }
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
-    defaultValues: safeInitialData
+    defaultValues: {
+      ...safeInitialData,
+      tipe_diskon: safeInitialData.tipe_diskon || 'percent' // Ensure default is set
+    }
   });
 
   // Watch form values
@@ -130,19 +183,25 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
   const tipeId = watch('tipe_id');
   const unitId = watch('unit_id');
   const diskon = watch('diskon');
+  const tipeDiskon = watch('tipe_diskon') || 'percent';
 
   // Monitor discount value and ensure it's within bounds
   useEffect(() => {
     if (diskon && diskon.trim() !== '') {
-      const numValue = parseFloat(diskon);
+      const value = getRawValue(diskon);
+      const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
-        if (numValue > 100) {
+        if (tipeDiskon === 'percent' && numValue > 100) {
           setValue('diskon', '100');
           setDiscountError('Diskon maksimal 100%');
           toast.warning('Diskon telah dibatasi maksimal 100%');
         } else if (numValue < 0) {
           setValue('diskon', '0');
           setDiscountError('Diskon tidak boleh negatif');
+        } else if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
+          setValue('diskon', selectedProperti.harga.toString());
+          setDiscountError('Diskon tidak boleh melebihi harga properti');
+          toast.warning('Diskon telah dibatasi maksimal harga properti');
         } else {
           setDiscountError(''); // Clear error if value is valid
         }
@@ -153,13 +212,14 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     } else {
       setDiscountError(''); // Clear error if empty
     }
-  }, [diskon, setValue]);
+  }, [diskon, tipeDiskon, selectedProperti?.harga, setValue]);
 
   // Initialize discount validation on mount
   useEffect(() => {
     if (diskon && diskon.trim() !== '') {
-      const numValue = parseFloat(diskon);
-      if (isNaN(numValue) || numValue < 0 || numValue > 100) {
+      const value = getRawValue(diskon);
+      const numValue = parseFloat(value);
+      if (isNaN(numValue) || numValue < 0) {
         setValue('diskon', '');
         setDiscountError('');
       } else {
@@ -185,13 +245,19 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
       return;
     }
 
+    // For fixed amount, remove formatting first
+    let rawValue = value;
+    if (tipeDiskon === 'fixed') {
+      rawValue = value.replace(/\./g, ''); // Remove thousand separators
+    }
+
     // Check if value contains only numbers and decimal point
-    if (!/^\d*\.?\d*$/.test(value)) {
+    if (!/^\d*\.?\d*$/.test(rawValue)) {
       setDiscountError('Hanya angka dan titik desimal yang diperbolehkan');
       return;
     }
 
-    const numValue = parseFloat(value);
+    const numValue = parseFloat(rawValue);
 
     // If not a valid number, don't update
     if (isNaN(numValue)) {
@@ -207,8 +273,8 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
       return;
     }
 
-    // Strict cap at 100%
-    if (numValue > 100) {
+    // Apply limits based on discount type
+    if (tipeDiskon === 'percent' && numValue > 100) {
       e.target.value = '100';
       setValue('diskon', '100');
       setDiscountError('Diskon maksimal 100%');
@@ -216,8 +282,22 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
       return;
     }
 
+    if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
+      e.target.value = selectedProperti.harga.toString();
+      setValue('diskon', selectedProperti.harga.toString());
+      setDiscountError('Diskon tidak boleh melebihi harga properti');
+      toast.warning('Diskon telah dibatasi maksimal harga properti');
+      return;
+    }
+
+    // Format value for display
+    let displayValue = rawValue;
+    if (tipeDiskon === 'fixed' && numValue > 0) {
+      displayValue = numValue.toLocaleString('id-ID');
+    }
+
     // Valid value, update form
-    setValue('diskon', value);
+    setValue('diskon', displayValue);
     setDiscountError(''); // Clear any existing errors
   };
 
@@ -253,13 +333,65 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     }
   }, [propertiId, propertiOptions]);
 
+  // Populate form with user input data when available, fallback to API data for editing
+  useEffect(() => {
+    if (selectedId && transactionData && !initialData) {
+      // Only use API data if no user input is available (fallback for direct edit)
+      reset({
+        konsumen_id: transactionData.konsumen_id?.toString() || '',
+        properti_id: transactionData.properti_id?.toString() || '',
+        blok_id: transactionData.blok_id?.toString() || '',
+        tipe_id: transactionData.tipe_id?.toString() || '',
+        unit_id: transactionData.unit_id?.toString() || '',
+        diskon: transactionData.diskon?.toString() || '',
+        tipe_diskon: transactionData.tipe_diskon || 'percent'
+      });
+
+      // Update selected properti
+      if (transactionData.properti_id && propertiOptions.length > 0) {
+        const properti = propertiOptions.find((p) => p.id?.toString() === transactionData.properti_id?.toString());
+        setSelectedProperti(properti);
+      }
+    } else if (initialData) {
+      // Use user input data from previous form
+      reset({
+        konsumen_id: initialData.konsumen_id || '',
+        properti_id: initialData.properti_id || '',
+        blok_id: initialData.blok_id || '',
+        tipe_id: initialData.tipe_id || '',
+        unit_id: initialData.unit_id || '',
+        diskon: initialData.diskon || '',
+        tipe_diskon: initialData.tipe_diskon || 'percent'
+      });
+
+      // Update selected properti based on user input
+      if (initialData.properti_id && propertiOptions.length > 0) {
+        const properti = propertiOptions.find((p) => p.id?.toString() === initialData.properti_id);
+        setSelectedProperti(properti);
+      }
+    }
+  }, [transactionData, selectedId, initialData, reset, propertiOptions]);
+
   const handleFormSubmit = async (data: BookingFormData) => {
     // Validate discount with strict checking
     if (data.diskon && data.diskon.trim() !== '') {
-      const discountValue = parseFloat(data.diskon);
-      if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
-        setDiscountError('Diskon harus antara 0-100%');
-        toast.error('Diskon harus antara 0-100%');
+      const rawDiscountValue = getRawValue(data.diskon);
+      const discountValue = parseFloat(rawDiscountValue);
+      if (isNaN(discountValue) || discountValue < 0) {
+        setDiscountError('Diskon harus berupa angka positif');
+        toast.error('Diskon harus berupa angka positif');
+        return;
+      }
+
+      if (data.tipe_diskon === 'percent' && discountValue > 100) {
+        setDiscountError('Diskon maksimal 100%');
+        toast.error('Diskon maksimal 100%');
+        return;
+      }
+
+      if (data.tipe_diskon === 'fixed' && discountValue > selectedProperti?.harga) {
+        setDiscountError('Diskon tidak boleh melebihi harga properti');
+        toast.error('Diskon tidak boleh melebihi harga properti');
         return;
       }
     }
@@ -271,19 +403,24 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     const validatedDiscount =
       data.diskon && data.diskon.trim() !== ''
         ? (() => {
-            const discountValue = parseFloat(data.diskon);
-            return !isNaN(discountValue) && discountValue >= 0 && discountValue <= 100 ? data.diskon : '';
+            const rawValue = getRawValue(data.diskon);
+            const discountValue = parseFloat(rawValue);
+            return !isNaN(discountValue) && discountValue >= 0 ? rawValue : '';
           })()
         : '';
 
     const submitData = {
-      konsumen_id: parseInt(safeInitialData.konsumen_id), // Use from safeInitialData
-      properti_id: parseInt(safeInitialData.properti_id), // Use from safeInitialData
-      blok_id: data.blok_id ? parseInt(data.blok_id) : 1, // From user input
-      tipe_id: parseInt(safeInitialData.tipe_id), // Use from safeInitialData
-      unit_id: data.unit_id ? parseInt(data.unit_id) : 1, // From user input
-      diskon: validatedDiscount ? parseFloat(validatedDiscount) : null, // Store as percentage only if valid
-      status: 'Negotiation' as const // Set default status
+      // Use data from previous form (initialData) for fields not in this form
+      konsumen_id: parseInt(safeInitialData.konsumen_id),
+      properti_id: parseInt(safeInitialData.properti_id),
+      tipe_id: parseInt(safeInitialData.tipe_id),
+      // Use data from current form for fields that can be changed
+      blok_id: data.blok_id ? parseInt(data.blok_id) : 1,
+      unit_id: data.unit_id ? parseInt(data.unit_id) : 1,
+      diskon: validatedDiscount ? parseFloat(validatedDiscount) : null,
+      tipe_diskon: data.tipe_diskon || 'percent',
+      // Keep existing status when editing, use default for new transactions
+      status: selectedId && transactionData ? transactionData.status : 'Negotiation'
     };
 
     await onSubmit(submitData);
@@ -298,6 +435,20 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
     lokasi: selectedProperti?.lokasi || 'Lorem Ipsum',
     harga: selectedProperti?.harga || 0
   };
+
+  // Show loading skeleton when fetching transaction data for editing
+  if (selectedId && isLoadingTransaction) {
+    return (
+      <div className='flex h-full w-full items-center justify-center p-2'>
+        <div className='w-full max-w-6xl'>
+          <div className='text-center'>
+            <h2 className='mb-2 text-2xl font-bold text-gray-900'>Loading Transaction Data...</h2>
+            <p className='text-sm text-gray-600'>Please wait while we fetch the transaction details</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='flex h-full w-full items-center justify-center p-2'>
@@ -320,7 +471,7 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
           {/* Booking Details */}
           <div className='space-y-4'>
             {/* Form Fields - Blok, Unit, and Discount */}
-            <div className='grid grid-cols-3 gap-3'>
+            <div className='grid grid-cols-2 gap-3'>
               <div>
                 <Label className='mb-1 block text-sm font-medium text-gray-700'>Blok</Label>
                 <Select
@@ -345,21 +496,49 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                 />
                 {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
               </div>
-              <div>
-                <Label htmlFor='diskon' className='mb-1 block text-sm font-medium text-gray-700'>
-                  Diskon (Opsional)
-                </Label>
-                <div className='relative'>
+            </div>
+
+            {/* Discount Section - Full Width Below */}
+            <div>
+              <Label className='mb-1 block text-sm font-medium text-gray-700'>Diskon (Opsional)</Label>
+              <div className='space-y-3'>
+                {/* Discount Type Button Group */}
+                <ButtonGroup
+                  value={tipeDiskon}
+                  onValueChange={(value) => {
+                    if (value === 'fixed') {
+                      setValue('tipe_diskon', 'fixed');
+                    } else if (value === 'percent') {
+                      setValue('tipe_diskon', 'percent');
+                    } else {
+                      setValue('tipe_diskon', 'percent'); // fallback
+                    }
+
+                    // Clear discount value when switching types to avoid confusion
+                    setValue('diskon', '');
+                    setDiscountError('');
+                  }}
+                  className='w-auto'>
+                  <ButtonGroupItem value='percent' className='px-6'>
+                    <Percent className='h-4 w-4' />
+                    Persen
+                  </ButtonGroupItem>
+                  <ButtonGroupItem value='fixed' className='px-6'>
+                    <DollarSign className='h-4 w-4' />
+                    Nominal
+                  </ButtonGroupItem>
+                </ButtonGroup>
+
+                {/* Discount Input */}
+                <div className='relative w-full max-w-xs'>
                   <Input
                     id='diskon'
                     type='text'
                     inputMode='decimal'
-                    placeholder='0'
-                    value={diskon || ''}
+                    placeholder={tipeDiskon === 'percent' ? '0' : '0'}
+                    value={getDisplayValue(diskon || '')}
                     className={`h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500 ${
-                      (diskon && parseFloat(diskon) > 100) || discountError
-                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                        : ''
+                      discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
                     }`}
                     onKeyDown={(e) => {
                       // Prevent invalid characters
@@ -397,7 +576,14 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                         return;
                       }
 
-                      // Prevent typing values over 100
+                      // For fixed amount, prevent decimal points
+                      if (tipeDiskon === 'fixed' && e.key === '.') {
+                        e.preventDefault();
+                        setDiscountError('Nominal tidak boleh menggunakan desimal');
+                        return;
+                      }
+
+                      // Prevent typing values over limits
                       const currentValue = e.currentTarget.value;
                       const selectionStart = e.currentTarget.selectionStart || 0;
                       const selectionEnd = e.currentTarget.selectionEnd || 0;
@@ -405,12 +591,21 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                         currentValue.substring(0, selectionStart) + e.key + currentValue.substring(selectionEnd);
 
                       if (newValue && newValue !== '.') {
-                        const numValue = parseFloat(newValue);
-                        if (!isNaN(numValue) && numValue > 100) {
-                          e.preventDefault();
-                          setDiscountError('Diskon tidak boleh lebih dari 100%');
-                          toast.warning('Diskon tidak boleh lebih dari 100%');
-                          return;
+                        const rawNewValue = tipeDiskon === 'fixed' ? newValue.replace(/\./g, '') : newValue;
+                        const numValue = parseFloat(rawNewValue);
+                        if (!isNaN(numValue)) {
+                          if (tipeDiskon === 'percent' && numValue > 100) {
+                            e.preventDefault();
+                            setDiscountError('Diskon tidak boleh lebih dari 100%');
+                            toast.warning('Diskon tidak boleh lebih dari 100%');
+                            return;
+                          }
+                          if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
+                            e.preventDefault();
+                            setDiscountError('Diskon tidak boleh melebihi harga properti');
+                            toast.warning('Diskon tidak boleh melebihi harga properti');
+                            return;
+                          }
                         }
                       }
                     }}
@@ -419,16 +614,23 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                       // Validate on blur
                       const value = e.target.value;
                       if (value && value.trim() !== '') {
-                        const numValue = parseFloat(value);
+                        const rawValue = getRawValue(value);
+                        const numValue = parseFloat(rawValue);
                         if (isNaN(numValue) || numValue < 0) {
                           e.target.value = '0';
                           setValue('diskon', '0');
                           setDiscountError('Diskon tidak boleh negatif');
-                        } else if (numValue > 100) {
+                        } else if (tipeDiskon === 'percent' && numValue > 100) {
                           e.target.value = '100';
                           setValue('diskon', '100');
                           setDiscountError('Diskon maksimal 100%');
                           toast.warning('Diskon telah dibatasi maksimal 100%');
+                        } else if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
+                          const formattedValue = selectedProperti.harga.toLocaleString('id-ID');
+                          e.target.value = formattedValue;
+                          setValue('diskon', formattedValue);
+                          setDiscountError('Diskon maksimal harga properti');
+                          toast.warning('Diskon telah dibatasi maksimal harga properti');
                         } else {
                           setDiscountError(''); // Clear error if valid
                         }
@@ -440,25 +642,68 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                       // Prevent pasting invalid values
                       e.preventDefault();
                       const pastedText = e.clipboardData.getData('text');
-                      const numValue = parseFloat(pastedText);
+                      const rawPastedText = tipeDiskon === 'fixed' ? pastedText.replace(/\./g, '') : pastedText;
+                      const numValue = parseFloat(rawPastedText);
 
-                      if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-                        setValue('diskon', pastedText);
-                        setDiscountError(''); // Clear error
+                      if (!isNaN(numValue) && numValue >= 0) {
+                        if (tipeDiskon === 'percent' && numValue <= 100) {
+                          setValue('diskon', pastedText);
+                          setDiscountError(''); // Clear error
+                        } else if (tipeDiskon === 'fixed' && numValue <= selectedProperti?.harga) {
+                          const formattedValue = numValue.toLocaleString('id-ID');
+                          setValue('diskon', formattedValue);
+                          setDiscountError(''); // Clear error
+                        } else {
+                          setDiscountError(
+                            `Nilai yang di-paste tidak valid (${tipeDiskon === 'percent' ? '0-100%' : '0-harga properti'})`
+                          );
+                          toast.warning(
+                            `Nilai yang di-paste tidak valid (${tipeDiskon === 'percent' ? '0-100%' : '0-harga properti'})`
+                          );
+                        }
                       } else {
-                        setDiscountError('Nilai yang di-paste tidak valid (0-100%)');
-                        toast.warning('Nilai yang di-paste tidak valid (0-100%)');
+                        setDiscountError('Nilai yang di-paste tidak valid');
+                        toast.warning('Nilai yang di-paste tidak valid');
                       }
                     }}
                   />
-                  <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>%</span>
+                  <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>
+                    {tipeDiskon === 'percent' ? '%' : 'Rp'}
+                  </span>
                 </div>
                 {errors.diskon && <p className='text-xs text-red-500'>{errors.diskon.message}</p>}
                 {discountError && <p className='text-xs text-red-500'>{discountError}</p>}
-                {diskon && parseFloat(diskon) > 100 && !discountError && (
-                  <p className='text-xs text-red-500'>Nilai maksimal diskon adalah 100%</p>
-                )}
-                <p className='text-xs text-gray-500'>Maksimal: 100%</p>
+                <p className='text-xs text-gray-500'>
+                  Maksimal:{' '}
+                  {tipeDiskon === 'percent' ? '100%' : `Rp ${selectedProperti?.harga?.toLocaleString('id-ID') || '0'}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Transaction Details - Read Only */}
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                <span className='text-sm text-gray-600'>Konsumen</span>
+                <span className='text-right text-sm font-medium text-gray-900'>
+                  {konsumenOptions.find(
+                    (k) => k.id.toString() === (initialData?.konsumen_id || safeInitialData.konsumen_id)
+                  )?.name || '-'}
+                </span>
+              </div>
+              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                <span className='text-sm text-gray-600'>Properti</span>
+                <span className='text-right text-sm font-medium text-gray-900'>
+                  {propertiOptions.find(
+                    (p) => p.id?.toString() === (initialData?.properti_id || safeInitialData.properti_id)
+                  )?.lokasi || '-'}
+                </span>
+              </div>
+              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                <span className='text-sm text-gray-600'>Tipe</span>
+                <span className='text-right text-sm font-medium text-gray-900'>
+                  {tipeOptions?.find((t: any) => t.id.toString() === (initialData?.tipe_id || safeInitialData.tipe_id))
+                    ?.name || '-'}
+                </span>
               </div>
             </div>
 
@@ -486,9 +731,11 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                   Rp {priceCalculation.basePrice.toLocaleString('id-ID')}
                 </span>
               </div>
-              {priceCalculation.discountPercent > 0 && (
+              {priceCalculation.discountAmount > 0 && (
                 <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                  <span className='text-sm text-gray-600'>Diskon ({priceCalculation.discountPercent}%)</span>
+                  <span className='text-sm text-gray-600'>
+                    Diskon ({tipeDiskon === 'percent' ? `${priceCalculation.discountPercent.toFixed(1)}%` : 'Nominal'})
+                  </span>
                   <span className='text-right text-sm font-medium text-red-600'>
                     -Rp {priceCalculation.discountAmount.toLocaleString('id-ID')}
                   </span>
@@ -500,11 +747,13 @@ const BookingForm = ({ initialData, onBack, onSubmit }: BookingFormProps) => {
                   Rp {priceCalculation.finalPrice.toLocaleString('id-ID')}
                 </span>
               </div>
-              {priceCalculation.discountPercent === 0 && diskon && diskon.trim() !== '' && discountError && (
-                <div className='mt-2 text-xs text-orange-500'>* Nilai diskon tidak valid, menggunakan 0%</div>
+              {priceCalculation.discountAmount === 0 && diskon && diskon.trim() !== '' && discountError && (
+                <div className='mt-2 text-xs text-orange-500'>* Nilai diskon tidak valid, menggunakan 0</div>
               )}
-              {priceCalculation.discountPercent === 0 && (!diskon || diskon.trim() === '') && (
-                <div className='mt-2 text-xs text-gray-500'>* Maksimal diskon 100%</div>
+              {priceCalculation.discountAmount === 0 && (!diskon || diskon.trim() === '') && (
+                <div className='mt-2 text-xs text-gray-500'>
+                  * Maksimal diskon {tipeDiskon === 'percent' ? '100%' : 'harga properti'}
+                </div>
               )}
             </div>
 

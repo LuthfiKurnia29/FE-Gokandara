@@ -75,9 +75,18 @@ export const penjualanService = {
       params.append('include', include.join(','));
     }
 
-    const url = `/list-transaksi/${id}${params.toString() ? `?${params}` : ''}`;
-    const response = await axios.get<PenjualanApiResponse>(url);
-    return response.data.data;
+    // Use the correct endpoint for getting transaction by ID
+    const url = `/get-transaksi/${id}${params.toString() ? `?${params}` : ''}`;
+    const response = await axios.get(url);
+
+    // Handle different response formats from backend
+    if (response.data.data) {
+      return response.data.data; // Format: { data: {...} }
+    } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+      return response.data; // Format: { ... } (direct data)
+    } else {
+      throw new Error('Invalid response format from API');
+    }
   },
 
   // Create new penjualan
@@ -182,7 +191,7 @@ export const usePenjualanList = ({
 
 export const usePenjualanById = (id: number | null, include?: string[]) => {
   return useQuery({
-    queryKey: ['/list-transaksi', id, { include }],
+    queryKey: ['/get-transaksi', id, { include }],
     queryFn: (): Promise<PenjualanWithRelations> => {
       if (!id) throw new Error('ID is required');
       return penjualanService.getById(id, include);
@@ -284,7 +293,7 @@ export const useUpdatePenjualan = () => {
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
-      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/get-transaksi', id] });
       queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
@@ -300,7 +309,7 @@ export const usePartialUpdatePenjualan = () => {
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
-      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/get-transaksi', id] });
       queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });
@@ -316,7 +325,7 @@ export const useUpdatePenjualanStatus = () => {
     onSuccess: (_, { id }) => {
       // Invalidate and refetch penjualan list and specific penjualan
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
-      queryClient.invalidateQueries({ queryKey: ['/list-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/get-transaksi', id] });
       queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
     }
   });

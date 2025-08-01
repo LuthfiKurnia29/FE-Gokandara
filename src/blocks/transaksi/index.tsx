@@ -102,13 +102,11 @@ const columns = [
     header: 'Harga (Sebelum Diskon)',
     cell: ({ row }) => {
       const properti = row.original.properti;
-      const diskon = row.original.diskon;
       const hargaSebelumDiskon = properti?.harga || 0;
 
       return (
         <div className='flex flex-col'>
           <span className='font-medium text-green-600'>Rp {hargaSebelumDiskon.toLocaleString('id-ID')}</span>
-          {diskon && <span className='text-muted-foreground text-xs'>Diskon: {diskon}%</span>}
         </div>
       );
     },
@@ -120,11 +118,37 @@ const columns = [
     cell: ({ row }) => {
       const properti = row.original.properti;
       const diskon = row.original.diskon;
+      const tipeDiskon = row.original.tipe_diskon;
+      const grandTotal = row.original.grand_total;
       const hargaSebelumDiskon = properti?.harga || 0;
-      const diskonAmount = (hargaSebelumDiskon * (diskon || 0)) / 100;
-      const hargaSesudahDiskon = hargaSebelumDiskon - diskonAmount;
 
-      return <span className='font-bold text-green-600'>Rp {hargaSesudahDiskon.toLocaleString('id-ID')}</span>;
+      let actualTipeDiskon: string | null = null;
+      let actualDiscountAmount = 0;
+
+      if (diskon && diskon > 0) {
+        actualTipeDiskon = tipeDiskon;
+
+        if (!actualTipeDiskon) {
+          if (diskon <= 100) {
+            actualTipeDiskon = 'percent';
+          } else {
+            actualTipeDiskon = 'fixed';
+          }
+        }
+
+        if (actualTipeDiskon === 'percent') {
+          const maxPercent = Math.min(diskon, 100);
+          actualDiscountAmount = (hargaSebelumDiskon * maxPercent) / 100;
+        } else if (actualTipeDiskon === 'fixed') {
+          actualDiscountAmount = Math.min(diskon, hargaSebelumDiskon);
+        }
+      }
+
+      return (
+        <div className='flex flex-col'>
+          <span className='font-bold text-green-600'>Rp {grandTotal.toLocaleString('id-ID')}</span>
+        </div>
+      );
     },
     meta: { style: { width: '150px' } }
   }),
@@ -140,7 +164,6 @@ const columns = [
     id: 'sales',
     header: 'Sales',
     cell: ({ row }) => {
-      // TODO: Backend belum ada data sales, tampilkan placeholder
       return <span className='text-muted-foreground'>-</span>;
     },
     meta: { style: { width: '100px' } }
@@ -173,6 +196,8 @@ const columns = [
             return 'bg-orange-500 text-white hover:bg-orange-600';
           case 'Negotiation':
             return 'bg-blue-500 text-white hover:bg-blue-600';
+          case 'Rejected':
+            return 'bg-red-500 text-white hover:bg-red-600';
           default:
             return 'bg-gray-500 text-white hover:bg-gray-600';
         }
@@ -186,6 +211,8 @@ const columns = [
             return <Clock className='h-3 w-3' />;
           case 'Negotiation':
             return <MessageSquare className='h-3 w-3' />;
+          case 'Rejected':
+            return <X className='h-3 w-3' />;
           default:
             return null;
         }
@@ -222,13 +249,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const updatePenjualanStatus = useUpdatePenjualanStatus();
   const { getUserData } = usePermissions();
 
-  // Get current user data for role checking
   const userData = getUserData();
   const userRole = userData?.roles?.[0]?.role?.name || '';
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
   const userId = userData?.user?.id || 0;
 
-  // Role-based status update permissions - only Admin and Supervisor can change status
   const canChangeStatus = () => {
     return (
       userRole === 'Administrator' ||
@@ -239,16 +264,20 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     );
   };
 
-  const canUpdateToPending = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Negotiation';
+  const canUpdateToNegotiation = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Pending';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
     return canChangeStatus() && currentStatus === 'Negotiation';
   };
 
-  const canUpdateToNegotiation = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Pending';
+  const canUpdateToRejected = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Negotiation';
+  };
+
+  const canUpdateToPending = (currentStatus: string) => {
+    return false;
   };
 
   const [openForm, setOpenForm] = useState<boolean>(false);
@@ -265,23 +294,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     handleDelete(`/delete-transaksi/${penjualan.id}`, 'delete');
   };
 
-  const handleUpdateToPending = async (penjualan: PenjualanWithRelations) => {
-    try {
-      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Pending' } });
-      toast.success('Status transaksi berhasil diubah menjadi Pending');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
-      console.error('Error updating status:', error);
-    }
-  };
-
   const handleUpdateToNegotiation = async (penjualan: PenjualanWithRelations) => {
     try {
       await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Negotiation' } });
       toast.success('Status transaksi berhasil diubah menjadi Negotiation');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
-      console.error('Error updating status:', error);
     }
   };
 
@@ -291,7 +309,24 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       toast.success('Status transaksi berhasil diubah menjadi Approved');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
-      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleUpdateToRejected = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Rejected' } });
+      toast.success('Status transaksi berhasil diubah menjadi Rejected');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+    }
+  };
+
+  const handleUpdateToPending = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Pending' } });
+      toast.success('Status transaksi berhasil diubah menjadi Pending');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
     }
   };
 
@@ -322,7 +357,6 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       handleCloseForm();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi kesalahan saat memperbarui data');
-      console.error('Error updating transaksi:', error);
     }
   };
 
@@ -342,13 +376,13 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
-          {canUpdateToPending(row.original.status) && (
+          {canUpdateToNegotiation(row.original.status) && (
             <DropdownMenuItem
-              onClick={() => handleUpdateToPending(row.original)}
+              onClick={() => handleUpdateToNegotiation(row.original)}
               disabled={updatePenjualanStatus.isPending}
-              className='text-orange-600'>
-              <Clock className='mr-2 h-4 w-4' />
-              Move to Pending
+              className='text-blue-600'>
+              <MessageSquare className='mr-2 h-4 w-4' />
+              Move to Negotiation
             </DropdownMenuItem>
           )}
           {canUpdateToApproved(row.original.status) && (
@@ -360,15 +394,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               Approve
             </DropdownMenuItem>
           )}
-          {canUpdateToNegotiation(row.original.status) && (
+          {canUpdateToRejected(row.original.status) && (
             <DropdownMenuItem
-              onClick={() => handleUpdateToNegotiation(row.original)}
+              onClick={() => handleUpdateToRejected(row.original)}
               disabled={updatePenjualanStatus.isPending}
-              className='text-blue-600'>
-              <MessageSquare className='mr-2 h-4 w-4' />
-              Move to Negotiation
+              className='text-red-600'>
+              <X className='mr-2 h-4 w-4' />
+              Reject
             </DropdownMenuItem>
           )}
+          {/* Removed "Move to Pending" option - Rejected status is final */}
           <DropdownMenuItem
             onClick={() => handleDeletePenjualan(row.original)}
             disabled={deletePenjualan.isPending}
@@ -405,7 +440,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           </DialogHeader>
 
           {formData && (
-            <BookingForm initialData={formData} onBack={handleBackToTypeSelection} onSubmit={handleFormSubmit} />
+            <BookingForm
+              initialData={formData}
+              selectedId={selectedId}
+              onBack={handleBackToTypeSelection}
+              onSubmit={handleFormSubmit}
+            />
           )}
         </DialogContent>
       </Dialog>
@@ -426,13 +466,11 @@ const PenjualanPage = memo(function PenjualanPage() {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const { getUserData } = usePermissions();
 
-  // Get current user data for role checking
   const userData = getUserData();
   const userRole = userData?.roles?.[0]?.role?.name || '';
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
   const userId = userData?.user?.id || 0;
 
-  // Role-based permissions
   const canChangeStatus = () => {
     return (
       userRole === 'Administrator' ||
@@ -443,7 +481,6 @@ const PenjualanPage = memo(function PenjualanPage() {
     );
   };
 
-  // Check if user can see filter button (Admin and Supervisor only)
   const canSeeFilterButton = () => {
     return (
       userRole === 'Administrator' ||
@@ -454,19 +491,22 @@ const PenjualanPage = memo(function PenjualanPage() {
     );
   };
 
-  const canUpdateToPending = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Negotiation';
+  const canUpdateToNegotiation = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Pending';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
     return canChangeStatus() && currentStatus === 'Negotiation';
   };
 
-  const canUpdateToNegotiation = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Pending';
+  const canUpdateToRejected = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Negotiation';
   };
 
-  // API hooks
+  const canUpdateToPending = (currentStatus: string) => {
+    return false;
+  };
+
   const createPenjualan = useCreatePenjualan();
 
   const handleCreate = () => {
@@ -492,7 +532,6 @@ const PenjualanPage = memo(function PenjualanPage() {
 
   const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
-      // Set default status to 'Negotiation' for new transactions
       const submitData: CreatePenjualanData = {
         konsumen_id: data.konsumen_id!,
         properti_id: data.properti_id!,
@@ -500,7 +539,8 @@ const PenjualanPage = memo(function PenjualanPage() {
         tipe_id: data.tipe_id!,
         unit_id: data.unit_id!,
         diskon: data.diskon,
-        status: 'Negotiation'
+        tipe_diskon: data.tipe_diskon || 'percent',
+        status: 'Pending'
       };
 
       await createPenjualan.mutateAsync(submitData);
@@ -508,7 +548,6 @@ const PenjualanPage = memo(function PenjualanPage() {
       handleCloseForm();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi kesalahan saat menambahkan data');
-      console.error('Error creating transaksi:', error);
     }
   };
 
@@ -545,7 +584,6 @@ const PenjualanPage = memo(function PenjualanPage() {
         }}
         Plugin={() => (
           <div className='flex items-center gap-2'>
-            {/* Member Filter Button - Only show for Admin and Supervisor */}
             {canSeeFilterButton() && (
               <div className='flex items-center gap-2'>
                 {selectedMemberId && (

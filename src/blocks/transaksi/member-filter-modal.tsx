@@ -26,7 +26,6 @@ export const MemberFilterModal = memo(function MemberFilterModal({
     onOpenChange(false);
   };
 
-  // Select Button Component
   const SelectButton = memo(({ user }: { user: UserWithRelations }) => {
     return (
       <Button
@@ -42,7 +41,6 @@ export const MemberFilterModal = memo(function MemberFilterModal({
 
   SelectButton.displayName = 'SelectButton';
 
-  // Column definitions
   const columnHelper = createColumnHelper<UserWithRelations>();
 
   const columns = [
@@ -100,10 +98,10 @@ export const MemberFilterModal = memo(function MemberFilterModal({
             perPage={10}
             queryKey={['/user', 'member-filter']}
             payload={{
-              role_id: 3, // Role ID untuk Sales
+              role_id: 3,
               include: 'role'
             }}
-            Plugin={() => null} // No additional plugins needed
+            Plugin={() => null}
           />
         </div>
       </DialogContent>

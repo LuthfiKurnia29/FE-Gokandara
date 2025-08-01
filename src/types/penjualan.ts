@@ -1,4 +1,4 @@
-export type PenjualanStatus = 'Negotiation' | 'Pending' | 'Approved';
+export type PenjualanStatus = 'Pending' | 'Negotiation' | 'Approved' | 'Rejected';
 
 // PropertyData interface matching the seeder structure
 export interface PropertyData {
@@ -24,6 +24,7 @@ export interface PenjualanData {
   tipe_id: number;
   unit_id: number;
   diskon: number | null;
+  tipe_diskon: 'percent' | 'fixed' | null;
   grand_total: number;
   status: PenjualanStatus;
   created_at: string;
@@ -71,6 +72,7 @@ export interface CreatePenjualanData {
   tipe_id: number;
   unit_id: number;
   diskon?: number | null;
+  tipe_diskon?: 'percent' | 'fixed' | null;
   status?: PenjualanStatus;
 }
 
@@ -81,6 +83,7 @@ export interface UpdatePenjualanData {
   tipe_id?: number;
   unit_id?: number;
   diskon?: number | null;
+  tipe_diskon?: 'percent' | 'fixed' | null;
 }
 
 export interface UpdatePenjualanStatusData {
