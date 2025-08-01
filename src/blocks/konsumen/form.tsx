@@ -41,8 +41,8 @@ const konsumenSchema = z.object({
       { message: 'Kesiapan dana harus berupa angka positif' }
     ),
   pengalaman: z.string().optional(),
-  materi_fu: z.string().min(1, 'Materi follow up harus diisi'),
-  tgl_fu: z.string().min(1, 'Tanggal & waktu follow up harus diisi'),
+  materi_fu_1: z.string().min(1, 'Materi follow up 1 harus diisi'),
+  tgl_fu_1: z.string().min(1, 'Tanggal & waktu follow up 1 harus diisi'),
   materi_fu_2: z.string().min(1, 'Materi follow up 2 harus diisi'),
   tgl_fu_2: z.string().min(1, 'Tanggal & waktu follow up 2 harus diisi'),
 
@@ -167,8 +167,8 @@ export const KonsumenForm = memo(function KonsumenForm({
       prospek_id: '',
       project_id: '',
       pengalaman: '',
-      materi_fu: '',
-      tgl_fu: '',
+      materi_fu_1: '',
+      tgl_fu_1: '',
       materi_fu_2: '',
       tgl_fu_2: ''
     }
@@ -178,7 +178,7 @@ export const KonsumenForm = memo(function KonsumenForm({
   const referensiId = watch('refrensi_id');
   const prospekId = watch('prospek_id');
   const projectId = watch('project_id');
-  const tglFu = watch('tgl_fu');
+  const tglFu = watch('tgl_fu_1');
   const tglFu2 = watch('tgl_fu_2');
 
   // Populate form with existing data in edit mode
@@ -196,8 +196,8 @@ export const KonsumenForm = memo(function KonsumenForm({
         prospek_id: existingData.prospek_id?.toString() || '',
         project_id: existingData.project_id?.toString() || '',
         pengalaman: existingData.pengalaman || '',
-        materi_fu: existingData.materi_fu || '',
-        tgl_fu: existingData.tgl_fu || '',
+        materi_fu_1: existingData.materi_fu_1 || '',
+        tgl_fu_1: existingData.tgl_fu_1 || '',
         materi_fu_2: existingData.materi_fu_2 || '',
         tgl_fu_2: existingData.tgl_fu_2 || ''
       });
@@ -218,8 +218,8 @@ export const KonsumenForm = memo(function KonsumenForm({
       project_id: parseInt(data.project_id),
       kesiapan_dana: data.kesiapan_dana ? parseFloat(data.kesiapan_dana.replace(/,/g, '')) : null,
       pengalaman: data.pengalaman || null,
-      materi_fu: data.materi_fu || null,
-      tgl_fu: data.tgl_fu || null,
+      materi_fu_1: data.materi_fu_1 || null,
+      tgl_fu_1: data.tgl_fu_1 || null,
       materi_fu_2: data.materi_fu_2 || null,
       tgl_fu_2: data.tgl_fu_2 || null
     };
@@ -486,24 +486,24 @@ export const KonsumenForm = memo(function KonsumenForm({
                       <div className='space-y-2'>
                         <Label className='font-medium text-gray-900'>Materi Follow Up *</Label>
                         <Input
-                          {...register('materi_fu')}
+                          {...register('materi_fu_1')}
                           placeholder='Masukkan materi follow up...'
                           className='h-12 w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                         />
-                        {errors.materi_fu && <p className='text-sm text-red-500'>{errors.materi_fu.message}</p>}
+                        {errors.materi_fu_1 && <p className='text-sm text-red-500'>{errors.materi_fu_1.message}</p>}
                       </div>
 
                       <div className='space-y-2'>
                         <Label className='font-medium text-gray-900'>Tanggal & Waktu Follow Up *</Label>
                         <DateTimePicker
                           value={tglFu ? new Date(tglFu) : undefined}
-                          onChange={(date: Date | undefined) => setValue('tgl_fu', date ? date.toISOString() : '')}
+                          onChange={(date: Date | undefined) => setValue('tgl_fu_1', date ? date.toISOString() : '')}
                           placeholder='Pilih tanggal & waktu follow up...'
                           format='dd/MM/yyyy HH:mm'
                           className='h-12'
                           withInput={false}
                         />
-                        {errors.tgl_fu && <p className='text-sm text-red-500'>{errors.tgl_fu.message}</p>}
+                        {errors.tgl_fu_1 && <p className='text-sm text-red-500'>{errors.tgl_fu_1.message}</p>}
                       </div>
                     </div>
                   </div>

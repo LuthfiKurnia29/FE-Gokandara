@@ -131,10 +131,10 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
                     <span className='truncate'>{konsumen.address}</span>
                   </div>
                 </div>
-                {konsumen.tgl_fu && (
+                {konsumen.tgl_fu_1 && (
                   <div className='mt-2 flex items-center gap-2 text-sm text-gray-600'>
                     <Calendar className='h-4 w-4' />
-                    <span>Next Follow Up: {formatDateTime(konsumen.tgl_fu)}</span>
+                    <span>Next Follow Up: {formatDateTime(konsumen.tgl_fu_1)}</span>
                   </div>
                 )}
               </div>

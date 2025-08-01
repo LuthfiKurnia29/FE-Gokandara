@@ -168,6 +168,21 @@ export const useKonsumenById = (id: number | null) => {
   });
 };
 
+export const useAllKonsumen = () => {
+  return useQuery({
+    queryKey: ['all-konsumen'],
+    queryFn: async () => {
+      const res = await axios.get('/all-konsumen');
+      // Support both { data: [...] } and [...]
+      if (Array.isArray(res.data)) return res.data;
+      if (Array.isArray(res.data.data)) return res.data.data;
+      return [];
+    },
+    staleTime: 60 * 1000, // 1 minute
+    cacheTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
 // Konsumen Mutation Hooks
 export const useCreateKonsumen = () => {
   const queryClient = useQueryClient();

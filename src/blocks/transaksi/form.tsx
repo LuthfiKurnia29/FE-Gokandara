@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useKonsumenList } from '@/services/konsumen';
+import { useAllKonsumen } from '@/services/konsumen';
 import { useAllTipe } from '@/services/penjualan';
 import { useAllProperti } from '@/services/properti';
 import { KonsumenData } from '@/types/konsumen';
@@ -42,8 +42,7 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
 
   // Fetch master data from APIs
-  const { data: konsumenResponse, isLoading: isLoadingKonsumen } = useKonsumenList({ per_page: 1000 });
-  const konsumenOptions = konsumenResponse?.data || [];
+  const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
 

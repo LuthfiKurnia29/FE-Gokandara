@@ -4,7 +4,7 @@ import { memo, useState } from 'react';
 
 import { KonsumenForm } from '@/blocks/konsumen/form';
 import { HistoryFollowUp } from '@/blocks/konsumen/history_follow_up';
-import { MemberFilterModal } from '@/blocks/transaksi/member-filter-modal';
+import { MemberFilterModal } from '@/blocks/konsumen/member-filter-modal';
 import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -193,10 +193,10 @@ const KonsumenPage = memo(function KonsumenPage() {
             <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
-            {item.tgl_fu && (
+            {item.tgl_fu_1 && (
               <p className='text-sm'>
                 <span className='font-medium'>Tanggal Follow Up:</span>{' '}
-                {new Date(item.tgl_fu).toLocaleString('id-ID', {
+                {new Date(item.tgl_fu_1).toLocaleString('id-ID', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric',

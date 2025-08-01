@@ -115,12 +115,20 @@ export const penjualanService = {
   // Get metrics data
   getMetrics: async () => {
     const [konsumenResponse, transaksiResponse] = await Promise.all([
-      axios.get('/konsumen?per_page=1'), // Get first page to get total count
+      axios.get('/all-konsumen'), // Get all konsumen to get accurate count
       axios.get('/list-transaksi?per_page=1') // Get first page to get total count
     ]);
 
+    // Handle different response formats for konsumen
+    let totalKonsumen = 0;
+    if (Array.isArray(konsumenResponse.data)) {
+      totalKonsumen = konsumenResponse.data.length;
+    } else if (Array.isArray(konsumenResponse.data.data)) {
+      totalKonsumen = konsumenResponse.data.data.length;
+    }
+
     return {
-      totalKonsumen: konsumenResponse.data.total || 0,
+      totalKonsumen,
       totalTransaksi: transaksiResponse.data.total || 0
     };
   },

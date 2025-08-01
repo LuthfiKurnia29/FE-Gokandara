@@ -13,8 +13,8 @@ export interface KonsumenData {
   ktp_number: string;
   kesiapan_dana?: number | null;
   pengalaman?: string | null;
-  materi_fu?: string | null;
-  tgl_fu?: string | null;
+  materi_fu_1?: string | null;
+  tgl_fu_1?: string | null;
   materi_fu_2?: string | null;
   tgl_fu_2?: string | null;
   project_id: number;
@@ -60,8 +60,8 @@ export interface CreateKonsumenData {
   ktp_number: string;
   kesiapan_dana?: number | null;
   pengalaman?: string | null;
-  materi_fu?: string | null;
-  tgl_fu?: string | null;
+  materi_fu_1?: string | null;
+  tgl_fu_1?: string | null;
   materi_fu_2?: string | null;
   tgl_fu_2?: string | null;
   project_id: number;
