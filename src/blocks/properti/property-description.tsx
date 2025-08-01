@@ -1,6 +1,12 @@
 'use client';
 
-export const PropertyDescription = () => {
+import { PropertyData } from '@/types/properti';
+
+interface PropertyDescriptionProps {
+  property?: PropertyData;
+}
+
+export const PropertyDescription = ({ property }: PropertyDescriptionProps) => {
   return (
     <section className='mb-8'>
       <h2 className='mb-4 text-2xl font-bold text-gray-800'>Deskripsi</h2>

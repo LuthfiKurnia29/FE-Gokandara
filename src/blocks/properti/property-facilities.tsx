@@ -1,8 +1,14 @@
 'use client';
 
+import { PropertyData } from '@/types/properti';
+
 import { Check } from 'lucide-react';
 
-export const PropertyFacilities = () => {
+interface PropertyFacilitiesProps {
+  property?: PropertyData;
+}
+
+export const PropertyFacilities = ({ property }: PropertyFacilitiesProps) => {
   const facilities = [
     'Kamar Tidur',
     'Kamar Mandi',

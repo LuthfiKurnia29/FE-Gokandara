@@ -1,6 +1,7 @@
 'use client';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { PropertyData } from '@/types/properti';
 
 import { Star } from 'lucide-react';
 
@@ -37,8 +38,29 @@ const SalesHistoryItem = ({
   );
 };
 
-export const PropertySalesHistory = () => {
-  const salesData = [{ rating: 5 }, { rating: 4 }, { rating: 3 }];
+interface PropertySalesHistoryProps {
+  property?: PropertyData;
+}
+
+export const PropertySalesHistory = ({ property }: PropertySalesHistoryProps) => {
+  // Mock sales data - you can replace this with real API data later
+  const salesData = [
+    {
+      name: 'Konsumen A',
+      date: '2024-01-15',
+      rating: 5
+    },
+    {
+      name: 'Konsumen B',
+      date: '2024-01-10',
+      rating: 4
+    },
+    {
+      name: 'Konsumen C',
+      date: '2024-01-05',
+      rating: 5
+    }
+  ];
 
   return (
     <div className='mt-8 px-4'>
@@ -46,7 +68,7 @@ export const PropertySalesHistory = () => {
 
       <div className='space-y-6'>
         {salesData.map((sale, index) => (
-          <SalesHistoryItem key={index} rating={sale.rating} />
+          <SalesHistoryItem key={index} name={sale.name} date={sale.date} rating={sale.rating} />
         ))}
       </div>
     </div>

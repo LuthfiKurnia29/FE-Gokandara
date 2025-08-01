@@ -163,7 +163,7 @@ export const propertyService = {
 
   // Get all properties for dropdown (used in transaksi)
   getAllProperti: async (): Promise<PropertyData[]> => {
-    const response = await axios.get('/all-properti');
+    const response = await axios.get('/all-properti?include=projek');
     return response.data.data || response.data || [];
   }
 };

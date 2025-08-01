@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 
+import { PropertyData } from '@/types/properti';
 import { Splide, SplideSlide, SplideTrack } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import type { Options } from '@splidejs/splide';
@@ -9,9 +10,10 @@ import { Bath, Bed, Expand, Share2, Wifi } from 'lucide-react';
 
 interface PropertySliderProps {
   images: string[];
+  property?: PropertyData;
 }
 
-export function PropertySlider({ images }: PropertySliderProps) {
+export function PropertySlider({ images, property }: PropertySliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const splideRef = useRef<any>(null);
 
@@ -42,6 +44,10 @@ export function PropertySlider({ images }: PropertySliderProps) {
     }
   };
 
+  // Get property information
+  const propertyName = property?.projek?.name || 'Properti';
+  const propertyStatus = 'Tersedia'; // You can add status field to property data later
+
   return (
     <div className='relative h-full w-full'>
       <Splide
@@ -70,7 +76,7 @@ export function PropertySlider({ images }: PropertySliderProps) {
           {/* Status Button */}
           <div className='absolute top-6 right-6'>
             <Button className='rounded-full bg-[#09bd3c] px-6 text-sm font-medium text-white hover:bg-[#09bd3c]/90'>
-              Tersedia
+              {propertyStatus}
             </Button>
           </div>
 
@@ -85,7 +91,7 @@ export function PropertySlider({ images }: PropertySliderProps) {
           {/* Property Info Overlay */}
           <div className='absolute bottom-10 left-[340px] z-10'>
             <div className='flex flex-col gap-4'>
-              <h2 className='text-2xl font-semibold text-white'>HOONIAN Sigura-Gura</h2>
+              <h2 className='text-2xl font-semibold text-white'>{propertyName}</h2>
               <div className='flex items-center gap-6'>
                 <div className='flex items-center gap-2'>
                   <Bed className='h-5 w-5 text-white' />

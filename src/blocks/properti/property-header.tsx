@@ -1,14 +1,21 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { PropertyData } from '@/types/properti';
 
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 
-export const PropertyHeader = () => {
+interface PropertyHeaderProps {
+  property?: PropertyData;
+}
+
+export const PropertyHeader = ({ property }: PropertyHeaderProps) => {
+  // Format display name like in sidebar: "Project Name"
+  const displayName = property?.projek?.name || `Properti ${property?.id || ''}`;
+
   return (
     <div className='px-4'>
-      <h1 className='mb-1 text-center text-[24px] font-bold text-[#0C0C0C]'>HOONIAN</h1>
-      <p className='text-center text-base font-medium text-[#09BD3C]'>Sigura-Gura</p>
+      <h1 className='mb-1 text-center text-[24px] font-bold text-[#0C0C0C]'>{displayName}</h1>
 
       <p className='mt-4 text-center text-sm leading-[1.5] text-[#737B8B]'>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit.
