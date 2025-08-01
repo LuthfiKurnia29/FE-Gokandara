@@ -22,11 +22,12 @@ import {
 import { cn } from '@/lib/utils';
 import { authService, useCurrentUser } from '@/services/auth';
 import { useTransaksiTotalCount } from '@/services/penjualan';
+import { useAllProperti } from '@/services/properti';
 import { type MenuItem, permissionUtils } from '@/stores/menu-item';
 
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Building2, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Sidebar Menu Item Component
 const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
@@ -157,7 +158,7 @@ const SidebarMenuDropdown = React.memo(
                     {SubIconComponent && (
                       <SubIconComponent className={cn('h-4 w-4', isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3]')} />
                     )}
-                    <span className='leading-tight tracking-tight'>{item.title}</span>
+                    <span className='line-clamp-2 leading-tight tracking-tight'>{item.title}</span>
                   </Link>
                 </SidebarMenuItem>
               );
@@ -170,6 +171,106 @@ const SidebarMenuDropdown = React.memo(
 );
 
 SidebarMenuDropdown.displayName = 'SidebarMenuDropdown';
+
+// Dynamic Property Dropdown Component
+const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.ElementType; title: string }) => {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const { state, toggleSidebar } = useSidebar();
+  const { data: properties = [], isLoading } = useAllProperti();
+
+  // Check if any property is active - use exact path matching
+  const isChildActive = properties.some((property) => pathname === `/properti/${property.id}`);
+
+  // Parent is active when child is active, but dropdown visibility is controlled by isOpen
+  const isActive = isChildActive;
+
+  const IconComponent = icon;
+
+  // Effect to open dropdown when child becomes active
+  React.useEffect(() => {
+    if (isChildActive) {
+      setIsOpen(true);
+    }
+  }, [isChildActive]); // Run when isChildActive changes
+
+  const handleToggleDropdown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+
+    // Only expand sidebar if it's collapsed
+    if (state === 'collapsed') {
+      toggleSidebar();
+    }
+  };
+
+  return (
+    <SidebarMenuItem>
+      {/* Parent Menu Button */}
+      <SidebarMenuButton
+        tooltip={title}
+        onClick={handleToggleDropdown}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-200',
+          isActive ? 'bg-[#FF9900] text-white shadow-md' : 'text-[#a3a3a3] hover:bg-[#23272f] hover:text-white',
+          'min-h-[44px] w-full justify-between'
+        )}>
+        <div className='flex items-center gap-3'>
+          {IconComponent && <IconComponent className={cn('h-4 w-4', isActive ? 'text-white' : 'text-[#a3a3a3]')} />}
+          <span className='font-medium'>{title}</span>
+        </div>
+        {isOpen ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
+      </SidebarMenuButton>
+
+      {/* Dynamic Property Items */}
+      {isOpen && state === 'expanded' && (
+        <ul className='mt-1 space-y-1 pl-8'>
+          {isLoading ? (
+            <SidebarMenuItem>
+              <div className='flex w-full items-center gap-2 rounded-lg px-2 py-2'>
+                <div className='h-4 w-4 animate-pulse rounded bg-[#a3a3a3]'></div>
+                <span className='text-sm text-[#a3a3a3]'>Loading...</span>
+              </div>
+            </SidebarMenuItem>
+          ) : properties.length > 0 ? (
+            properties.map((property) => {
+              // Use exact path matching instead of startsWith to avoid conflicts
+              const isItemActive = pathname === `/properti/${property.id}`;
+              const displayName = property.projek?.name
+                ? `${property.projek.name} – ${property.lokasi}`
+                : `Properti ${property.id} – ${property.lokasi}`;
+
+              return (
+                <SidebarMenuItem key={`property-${property.id}`}>
+                  <Link
+                    href={`/properti/${property.id}`}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-lg px-2 py-2 transition-colors',
+                      isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3] hover:text-[#FF9900]'
+                    )}>
+                    <Building2
+                      className={cn('h-4 w-4 flex-shrink-0', isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3]')}
+                    />
+                    <span className='line-clamp-2 text-sm leading-tight tracking-tight'>{displayName}</span>
+                  </Link>
+                </SidebarMenuItem>
+              );
+            })
+          ) : (
+            <SidebarMenuItem>
+              <div className='flex w-full items-center gap-2 rounded-lg px-2 py-2'>
+                <span className='text-sm text-[#a3a3a3]'>No properties found</span>
+              </div>
+            </SidebarMenuItem>
+          )}
+        </ul>
+      )}
+    </SidebarMenuItem>
+  );
+});
+
+DynamicPropertyDropdown.displayName = 'DynamicPropertyDropdown';
 
 export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const { state } = useSidebar();
@@ -199,18 +300,27 @@ export const AppSidebar = React.memo(({ ...props }: React.ComponentProps<typeof 
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {permittedMenuItems.map((item, index) =>
-                  item.url === 'divider' ? (
-                    <SidebarGroupLabel
-                      key={`divider-${index}-${item.title}`}
-                      className='mt-8 mb-2 px-4 text-xs tracking-widest text-[#a3a3a3] uppercase'
-                      style={{ fontFamily: 'Roboto, sans-serif', letterSpacing: '0.08em' }}>
-                      {item.title}
-                    </SidebarGroupLabel>
-                  ) : (
-                    <SidebarMenuItemComponent key={`menu-${item.title}-${item.url}`} item={item} />
-                  )
-                )}
+                {permittedMenuItems.map((item, index) => {
+                  if (item.url === 'divider') {
+                    return (
+                      <SidebarGroupLabel
+                        key={`divider-${index}-${item.title}`}
+                        className='mt-8 mb-2 px-4 text-xs tracking-widest text-[#a3a3a3] uppercase'
+                        style={{ fontFamily: 'Roboto, sans-serif', letterSpacing: '0.08em' }}>
+                        {item.title}
+                      </SidebarGroupLabel>
+                    );
+                  }
+
+                  // Special handling for Properti dropdown
+                  if (item.title === 'Properti' && item.children) {
+                    return (
+                      <DynamicPropertyDropdown key={`dynamic-${item.title}`} icon={item.icon} title={item.title} />
+                    );
+                  }
+
+                  return <SidebarMenuItemComponent key={`menu-${item.title}-${item.url}`} item={item} />;
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
