@@ -28,6 +28,7 @@ import {
   Soup,
   SquaresUnite,
   Tag,
+  Target,
   UserCheck,
   Users,
   Utensils,
@@ -161,6 +162,11 @@ const menuItems: MenuItem[] = [
     url: '/konsumen',
     icon: Users,
     code: 'Consument'
+  },
+  {
+    title: 'Target & Bonus',
+    url: '/target',
+    icon: Target
   },
   {
     title: 'Pesan',
