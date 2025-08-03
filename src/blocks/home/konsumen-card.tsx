@@ -79,7 +79,7 @@ export default function KonsumenCard() {
 
   return (
     <div className='w-full'>
-      <div className='grid grid-cols-1 items-center gap-6 lg:grid-cols-2'>
+      <div className='grid grid-cols-1 items-center gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2'>
         {/* Left side - Title and Legend */}
         <div className='space-y-4'>
           <div>

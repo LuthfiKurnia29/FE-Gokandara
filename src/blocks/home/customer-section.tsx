@@ -52,7 +52,7 @@ export default function CustomerSection() {
                   <AvatarFallback className='bg-gray-400'>{customer.name[0]}</AvatarFallback>
                 </Avatar>
                 <div className='flex-1'>
-                  <div className='flex items-center justify-between'>
+                  <div className='flex flex-wrap items-center justify-between'>
                     <div>
                       <h3 className='font-medium text-gray-900'>{customer.name}</h3>
                       <p className='text-sm text-gray-500'>{customer.timeAgo}</p>

@@ -57,7 +57,7 @@ function MetricCard({ title, value, target, percentage, color }: MetricCardProps
   return (
     <Card className='border-0 bg-white p-4 shadow-sm'>
       <CardContent className='p-0'>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-wrap items-center justify-between gap-4'>
           <div className='flex-1'>
             <div className='mb-1 text-2xl font-bold text-gray-900'>{value}</div>
             <div className='mb-2 text-base font-medium text-gray-700'>{title}</div>

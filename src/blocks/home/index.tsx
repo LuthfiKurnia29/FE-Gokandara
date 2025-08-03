@@ -15,48 +15,54 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const HomePage = React.memo(() => {
   return (
-    <div className='min-h-screen space-y-4 bg-gray-50 p-4'>
+    <div className='min-h-screen space-y-4 bg-gray-50 p-4 md:p-6 lg:p-8'>
       <PageTitle title='Dashboard' />
 
       <MetricCards />
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-        <Card className='border-gray-200 shadow-sm'>
+        <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>
           <CardContent className='pt-6'>
             <TotalOmzetCard />
           </CardContent>
         </Card>
 
-        <Card className='border-gray-200 shadow-sm'>
+        <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>
           <CardContent className='pt-6'>
             <KonsumenCard />
           </CardContent>
         </Card>
       </div>
 
-      <div className='grid grid-cols-12 gap-4'>
-        <div className='col-span-12 lg:col-span-3'>
-          <div className='max-w-[340px]'>
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-12'>
+        <div className='lg:col-span-4 xl:col-span-3'>
+          <div className='space-y-4'>
             <Card className='border-gray-200 shadow-sm'>
               <CardContent className='p-0'>
                 <RealisasiCard />
               </CardContent>
             </Card>
-            <div className='mt-4'>
-              <CustomerSection />
-            </div>
+            <Card className='border-gray-200 shadow-sm'>
+              <CardContent className='p-4'>
+                <CustomerSection />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <div className='col-span-12 lg:col-span-9'>
-          <div className='w-full'>
+        <div className='lg:col-span-8 xl:col-span-9'>
+          <div className='space-y-4'>
             <PropertiSection />
-            <div className='mt-4 grid grid-cols-12 gap-3'>
-              <div className='col-span-9'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-12'>
+              <div className='md:col-span-12 xl:col-span-9'>
                 <RingkasanCard />
               </div>
-              <div className='col-span-3'>
-                <UnitMetrics />
+              <div className='md:col-span-12 xl:col-span-3'>
+                <Card className='border-gray-200 shadow-sm'>
+                  <CardContent className='p-4'>
+                    <UnitMetrics />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
