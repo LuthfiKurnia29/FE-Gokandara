@@ -19,9 +19,10 @@ import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/pr
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
+import { PropertyDetailModal } from './detail';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<PropertyData>();
@@ -113,6 +114,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [openDetailModal, setOpenDetailModal] = useState<boolean>(false);
 
   const handleEdit = (property: PropertyData) => {
     console.log('Edit clicked for property:', property.id, property);
@@ -127,6 +129,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const handleCloseForm = () => {
     setOpenForm(false);
     setSelectedId(null);
+  };
+
+  const handleOpenDetail = (property: PropertyData) => {
+    setSelectedId(property.id);
+    setOpenDetailModal(true);
   };
 
   const handleFormSubmit = async (data: CreatePropertyData | UpdatePropertyData) => {
@@ -162,6 +169,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
+          <DropdownMenuItem onClick={() => handleOpenDetail(row.original)}>
+            <Eye className='mr-2 h-4 w-4' />
+            Detail
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleEdit(row.original)} disabled={updateProperty.isPending}>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
@@ -192,6 +203,18 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Detail Modal */}
+      <PropertyDetailModal
+        propertyId={selectedId}
+        isOpen={openDetailModal}
+        onOpenChange={(open) => {
+          setOpenDetailModal(open);
+          if (!open) {
+            setSelectedId(null);
+          }
+        }}
+      />
 
       <DeleteConfirmDialog />
     </>

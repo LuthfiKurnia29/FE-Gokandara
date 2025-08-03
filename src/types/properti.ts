@@ -26,6 +26,7 @@ export interface PropertyImage {
   id: number;
   properti_id: number;
   image: string;
+  image_url: string;
   created_at: string;
   updated_at: string;
 }
