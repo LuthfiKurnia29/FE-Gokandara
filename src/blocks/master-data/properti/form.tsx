@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAllBlok, useAllTipe, useAllUnit } from '@/services/penjualan';
 import { useAllProjects, usePropertyById } from '@/services/properti';
 import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/properti';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,7 +33,25 @@ const propertiSchema = z.object({
       },
       { message: 'Harga harus berupa angka positif' }
     ),
-  properti__gambars: z.array(z.instanceof(File)).optional()
+  properti__gambars: z.array(z.instanceof(File)).optional(),
+  daftar_harga: z
+    .array(
+      z.object({
+        tipe_id: z.string().min(1, 'Tipe harus dipilih'),
+        unit_id: z.string().min(1, 'Unit harus dipilih'),
+        harga: z
+          .string()
+          .min(1, 'Harga harus diisi')
+          .refine(
+            (value) => {
+              const numericValue = value.replace(/,/g, '');
+              return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
+            },
+            { message: 'Harga harus berupa angka positif' }
+          )
+      })
+    )
+    .optional()
 });
 
 // Debug validation function
@@ -68,6 +87,27 @@ export const PropertiForm = memo(function PropertiForm({
 
   // Fetch master data from APIs
   const { data: projectOptions = [], isLoading: isLoadingProjects } = useAllProjects();
+  const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
+  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
+  const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
+
+  // Safe option mapping
+  const safeProjectOptions = projectOptions.map((project) => ({
+    value: project.id.toString(),
+    label: project.name
+  }));
+  const safeBlokOptions = blokOptions.map((blok) => ({
+    value: blok.id.toString(),
+    label: blok.name
+  }));
+  const safeTipeOptions = tipeOptions.map((tipe) => ({
+    value: tipe.id.toString(),
+    label: tipe.name
+  }));
+  const safeUnitOptions = unitOptions.map((unit) => ({
+    value: unit.id.toString(),
+    label: unit.name
+  }));
 
   // Get existing data for edit mode
   const {
@@ -114,13 +154,34 @@ export const PropertiForm = memo(function PropertiForm({
       kelebihan: '',
       lokasi: '',
       harga: '',
-      properti__gambars: []
+      properti__gambars: [],
+      daftar_harga: []
     }
   });
 
   // Watch form values for Select components
   const projectId = watch('project_id');
   const harga = watch('harga');
+  const daftarHarga = watch('daftar_harga') || [];
+
+  // Currency formatting for daftar_harga
+  const formatCurrencyForDaftarHarga = (index: number, value: string) => {
+    const formatted = formatCurrency(value);
+    setValue(`daftar_harga.${index}.harga`, formatted);
+  };
+
+  // Add new daftar_harga entry
+  const handleAddDaftarHarga = () => {
+    const currentDaftarHarga = daftarHarga || [];
+    setValue('daftar_harga', [...currentDaftarHarga, { tipe_id: '', unit_id: '', harga: '' }]);
+  };
+
+  // Remove daftar_harga entry
+  const handleRemoveDaftarHarga = (index: number) => {
+    const currentDaftarHarga = daftarHarga || [];
+    const updatedDaftarHarga = currentDaftarHarga.filter((_, i) => i !== index);
+    setValue('daftar_harga', updatedDaftarHarga);
+  };
 
   // Debug: Watch all form values
   const allFormValues = watch();
@@ -129,12 +190,6 @@ export const PropertiForm = memo(function PropertiForm({
       console.log('🔍 Form Values Watch:', allFormValues);
     }
   }, [allFormValues, selectedId]);
-
-  // Safe option mapping
-  const safeProjectOptions = projectOptions.map((project) => ({
-    value: project.id.toString(),
-    label: project.name
-  }));
 
   const formatCurrency = (value: string) => {
     const number = value.replace(/\D/g, '');
@@ -162,7 +217,14 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: existingData.kelebihan || '',
         lokasi: existingData.lokasi || '',
         harga: existingData.harga ? formatCurrency(existingData.harga.toString()) : '',
-        properti__gambars: []
+        properti__gambars: [],
+        daftar_harga: existingData.daftar_harga
+          ? existingData.daftar_harga.map((item) => ({
+              tipe_id: item.tipe_id.toString(),
+              unit_id: item.unit_id.toString(),
+              harga: formatCurrency(item.harga.toString())
+            }))
+          : []
       };
 
       console.log('📝 Populating form with values:', formValues);
@@ -194,7 +256,8 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: '',
         lokasi: '',
         harga: '',
-        properti__gambars: []
+        properti__gambars: [],
+        daftar_harga: []
       });
       setExistingImages([]);
       setNewImagePreviews([]);
@@ -257,7 +320,9 @@ export const PropertiForm = memo(function PropertiForm({
         luas_tanah: data.luas_tanah,
         kelebihan: data.kelebihan,
         lokasi: data.lokasi,
-        harga: data.harga
+        harga: data.harga,
+        properti__gambars: data.properti__gambars,
+        daftar_harga: data.daftar_harga
       }
     });
 
@@ -297,6 +362,15 @@ export const PropertiForm = memo(function PropertiForm({
       return;
     }
 
+    // Validate daftar_harga if present
+    if (data.daftar_harga && data.daftar_harga.length > 0) {
+      const invalidDaftarHarga = data.daftar_harga.some((item) => !item.tipe_id || !item.unit_id || !item.harga);
+      if (invalidDaftarHarga) {
+        alert('Semua field di Daftar Harga harus diisi');
+        return;
+      }
+    }
+
     if (selectedId) {
       // Edit mode - use UpdatePropertyData
       const submitData: UpdatePropertyData = {
@@ -306,7 +380,14 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
-        properti__gambars: selectedFiles.length > 0 ? selectedFiles : []
+        properti__gambars: selectedFiles.length > 0 ? selectedFiles : [],
+        daftar_harga: data.daftar_harga
+          ? data.daftar_harga.map((item) => ({
+              tipe_id: parseInt(item.tipe_id),
+              unit_id: parseInt(item.unit_id),
+              harga: parseFloat(item.harga.replace(/,/g, ''))
+            }))
+          : []
       };
       console.log('📤 Update Data:', submitData);
       console.log('📤 Update Data - Detailed:', {
@@ -316,7 +397,8 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: submitData.kelebihan,
         lokasi: submitData.lokasi,
         harga: submitData.harga,
-        properti__gambars: submitData.properti__gambars?.length || 0
+        properti__gambars: submitData.properti__gambars?.length || 0,
+        daftar_harga: submitData.daftar_harga?.length || 0
       });
       onSubmit(submitData as CreatePropertyData); // Type assertion for compatibility
     } else {
@@ -328,7 +410,14 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
-        properti__gambars: selectedFiles.length > 0 ? selectedFiles : []
+        properti__gambars: selectedFiles.length > 0 ? selectedFiles : [],
+        daftar_harga: data.daftar_harga
+          ? data.daftar_harga.map((item) => ({
+              tipe_id: parseInt(item.tipe_id),
+              unit_id: parseInt(item.unit_id),
+              harga: parseFloat(item.harga.replace(/,/g, ''))
+            }))
+          : []
       };
       console.log('📤 Create Data:', submitData);
       onSubmit(submitData);
@@ -343,7 +432,8 @@ export const PropertiForm = memo(function PropertiForm({
       kelebihan: '',
       lokasi: '',
       harga: '',
-      properti__gambars: []
+      properti__gambars: [],
+      daftar_harga: []
     });
     setSelectedFiles([]);
     setNewImagePreviews([]);
@@ -459,6 +549,86 @@ export const PropertiForm = memo(function PropertiForm({
           />
           {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
         </div>
+      </div>
+
+      {/* Daftar Harga Section */}
+      <div className='space-y-4'>
+        <div className='flex items-center justify-between'>
+          <Label>Daftar Harga</Label>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={handleAddDaftarHarga}
+            disabled={isLoading || isLoadingTipe || isLoadingUnit}>
+            + Tambah Harga
+          </Button>
+        </div>
+
+        {daftarHarga && daftarHarga.length > 0 ? (
+          <div className='space-y-4'>
+            {daftarHarga.map((_, index) => (
+              <div key={`daftar_harga_${index}`} className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                <div className='space-y-2'>
+                  <Label>Tipe *</Label>
+                  <Select
+                    options={safeTipeOptions}
+                    value={watch(`daftar_harga.${index}.tipe_id`)}
+                    onChange={(value) => setValue(`daftar_harga.${index}.tipe_id`, value as string)}
+                    placeholder='Pilih Tipe'
+                    disabled={isLoading || isLoadingTipe}
+                  />
+                  {errors.daftar_harga?.[index]?.tipe_id && (
+                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.tipe_id?.message}</p>
+                  )}
+                </div>
+
+                <div className='space-y-2'>
+                  <Label>Unit *</Label>
+                  <Select
+                    options={safeUnitOptions}
+                    value={watch(`daftar_harga.${index}.unit_id`)}
+                    onChange={(value) => setValue(`daftar_harga.${index}.unit_id`, value as string)}
+                    placeholder='Pilih Unit'
+                    disabled={isLoading || isLoadingUnit}
+                  />
+                  {errors.daftar_harga?.[index]?.unit_id && (
+                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.unit_id?.message}</p>
+                  )}
+                </div>
+
+                <div className='space-y-2'>
+                  <Label>Harga *</Label>
+                  <div className='relative'>
+                    <Input
+                      type='text'
+                      placeholder='0,000,000'
+                      value={watch(`daftar_harga.${index}.harga`)}
+                      onChange={(e) => formatCurrencyForDaftarHarga(index, e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type='button'
+                      variant='destructive'
+                      size='icon'
+                      className='absolute top-1/2 right-1 -translate-y-1/2'
+                      onClick={() => handleRemoveDaftarHarga(index)}
+                      disabled={isLoading}>
+                      <X className='h-4 w-4' />
+                    </Button>
+                  </div>
+                  {errors.daftar_harga?.[index]?.harga && (
+                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.harga?.message}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
+            <p className='text-sm text-gray-500'>Belum ada daftar harga</p>
+          </div>
+        )}
       </div>
 
       {/* Image Upload */}

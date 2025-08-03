@@ -15,6 +15,11 @@ export interface PropertyData {
     name: string;
   };
   properti_gambar?: PropertyImage[]; // ← Sesuaikan dengan response API (1 underscore)
+  daftar_harga?: {
+    tipe_id: number;
+    unit_id: number;
+    harga: number;
+  }[];
 }
 
 export interface PropertyImage {
@@ -50,6 +55,12 @@ export interface PropertyApiResponse {
   data: PropertyData;
 }
 
+export interface PricingOption {
+  tipe_id: number;
+  unit_id: number;
+  harga: number;
+}
+
 export interface CreatePropertyData {
   project_id: number;
   luas_bangunan: string;
@@ -58,6 +69,7 @@ export interface CreatePropertyData {
   lokasi: string;
   harga: number;
   properti__gambars: File[];
+  daftar_harga?: PricingOption[]; // New optional field for multiple pricing options
 }
 
 export interface UpdatePropertyData {
@@ -68,6 +80,7 @@ export interface UpdatePropertyData {
   lokasi?: string;
   harga?: number;
   properti__gambars?: File[];
+  daftar_harga?: PricingOption[]; // New optional field for multiple pricing options
 }
 
 export interface UsePropertyListParams {

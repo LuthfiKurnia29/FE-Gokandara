@@ -80,6 +80,15 @@ export const propertyService = {
     formData.append('lokasi', data.lokasi);
     formData.append('harga', data.harga.toString());
 
+    // Add daftar_harga if provided
+    if (data.daftar_harga && data.daftar_harga.length > 0) {
+      data.daftar_harga.forEach((harga, index) => {
+        formData.append(`daftar_harga[${index}][tipe_id]`, harga.tipe_id.toString());
+        formData.append(`daftar_harga[${index}][unit_id]`, harga.unit_id.toString());
+        formData.append(`daftar_harga[${index}][harga]`, harga.harga.toString());
+      });
+    }
+
     // Add images
     data.properti__gambars.forEach((file, index) => {
       formData.append(`properti__gambars[${index}]`, file);
@@ -108,38 +117,21 @@ export const propertyService = {
     formData.append('lokasi', data.lokasi || '');
     formData.append('harga', data.harga?.toString() || '');
 
+    // Add daftar_harga if provided
+    if (data.daftar_harga && data.daftar_harga.length > 0) {
+      data.daftar_harga.forEach((harga, index) => {
+        formData.append(`daftar_harga[${index}][tipe_id]`, harga.tipe_id.toString());
+        formData.append(`daftar_harga[${index}][unit_id]`, harga.unit_id.toString());
+        formData.append(`daftar_harga[${index}][harga]`, harga.harga.toString());
+      });
+    }
+
     // Add images if provided
     if (data.properti__gambars && data.properti__gambars.length > 0) {
       data.properti__gambars.forEach((file, index) => {
         formData.append(`properti__gambars[${index}]`, file);
       });
     }
-
-    console.log('📤 Properti Update - FormData entries:');
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      console.log(`${key}:`, value);
-    });
-
-    console.log('📤 Properti Update - Request details:', {
-      url: `/properti/${id}`,
-      method: 'POST',
-      hasFormData: !!formData,
-      formDataEntries: Array.from(formData.entries()).length,
-      data: data
-    });
-
-    // Debug: Check if FormData is properly constructed
-    const formDataCheck = {
-      _method: formData.get('_method'),
-      project_id: formData.get('project_id'),
-      luas_bangunan: formData.get('luas_bangunan'),
-      luas_tanah: formData.get('luas_tanah'),
-      kelebihan: formData.get('kelebihan'),
-      lokasi: formData.get('lokasi'),
-      harga: formData.get('harga'),
-      hasImages: formData.getAll('properti__gambars').length > 0
-    };
-    console.log('📤 Properti Update - FormData Check:', formDataCheck);
 
     const response = await axios.post<PropertyApiResponse>(`/properti/${id}`, formData, {
       headers: {
