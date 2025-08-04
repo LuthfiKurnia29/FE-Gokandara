@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit, usePenjualanById } from '@/services/penjualan';
-import { useAllProperti } from '@/services/properti';
+import { useAllProperti, usePropertyById } from '@/services/properti';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -65,6 +65,7 @@ interface BookingFormProps {
 const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormProps) => {
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
   const [discountError, setDiscountError] = useState<string>('');
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
 
   // Fetch master data from APIs
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
@@ -81,6 +82,24 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     'tipe',
     'unit'
   ]);
+
+  // Fetch property details when properti_id changes
+  const { data: propertyDetails } = usePropertyById(selectedProperti?.id || null, [
+    'projek',
+    'properti_gambar',
+    'daftar_harga'
+  ]);
+
+  // Function to find price from daftar_harga based on tipe_id and unit_id
+  const findPriceFromDaftarHarga = (tipeId: string, unitId: string) => {
+    if (!propertyDetails?.daftar_harga || !tipeId || !unitId) return null;
+
+    const matchingPrice = propertyDetails.daftar_harga.find(
+      (harga) => harga.tipe_id.toString() === tipeId && harga.unit_id.toString() === unitId
+    );
+
+    return matchingPrice?.harga || null;
+  };
 
   // Ensure initialData is not null, prioritize user input over API data
   const safeInitialData = initialData || {
@@ -100,7 +119,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     if (tipeDiskon === 'fixed') {
       const numValue = parseFloat(value.replace(/\./g, ''));
       if (!isNaN(numValue) && numValue > 0) {
-        return numValue.toLocaleString('id-ID');
+        return formatRupiah(numValue).replace('Rp ', '');
       }
     }
 
@@ -120,7 +139,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
   // Calculate final price with discount
   const calculateFinalPrice = () => {
-    if (!selectedProperti?.harga) {
+    if (!selectedPrice) {
       return {
         basePrice: 0,
         discountAmount: 0,
@@ -129,7 +148,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
       };
     }
 
-    const basePrice = selectedProperti.harga;
+    const basePrice = selectedPrice;
     let discountAmount = 0;
     let discountPercent = 0;
 
@@ -185,6 +204,25 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   const diskon = watch('diskon');
   const tipeDiskon = watch('tipe_diskon') || 'percent';
 
+  // Update selectedProperti when properti_id changes
+  useEffect(() => {
+    if (propertiId && propertiOptions.length > 0) {
+      const properti = propertiOptions.find((p) => p.id?.toString() === propertiId);
+      setSelectedProperti(properti);
+      setSelectedPrice(null); // Reset price when property changes
+    }
+  }, [propertiId, propertiOptions]);
+
+  // Update selectedPrice when tipe_id and unit_id change
+  useEffect(() => {
+    if (tipeId && unitId && propertyDetails) {
+      const price = findPriceFromDaftarHarga(tipeId, unitId);
+      setSelectedPrice(price);
+    } else {
+      setSelectedPrice(null);
+    }
+  }, [tipeId, unitId, propertyDetails]);
+
   // Monitor discount value and ensure it's within bounds
   useEffect(() => {
     if (diskon && diskon.trim() !== '') {
@@ -198,8 +236,8 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         } else if (numValue < 0) {
           setValue('diskon', '0');
           setDiscountError('Diskon tidak boleh negatif');
-        } else if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
-          setValue('diskon', selectedProperti.harga.toString());
+        } else if (tipeDiskon === 'fixed' && selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
+          setValue('diskon', selectedPrice.toString());
           setDiscountError('Diskon tidak boleh melebihi harga properti');
           toast.warning('Diskon telah dibatasi maksimal harga properti');
         } else {
@@ -212,7 +250,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     } else {
       setDiscountError(''); // Clear error if empty
     }
-  }, [diskon, tipeDiskon, selectedProperti?.harga, setValue]);
+  }, [diskon, tipeDiskon, selectedPrice, setValue]);
 
   // Initialize discount validation on mount
   useEffect(() => {
@@ -282,9 +320,9 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
       return;
     }
 
-    if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
-      e.target.value = selectedProperti.harga.toString();
-      setValue('diskon', selectedProperti.harga.toString());
+    if (tipeDiskon === 'fixed' && selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
+      e.target.value = selectedPrice.toString();
+      setValue('diskon', selectedPrice.toString());
       setDiscountError('Diskon tidak boleh melebihi harga properti');
       toast.warning('Diskon telah dibatasi maksimal harga properti');
       return;
@@ -293,7 +331,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     // Format value for display
     let displayValue = rawValue;
     if (tipeDiskon === 'fixed' && numValue > 0) {
-      displayValue = numValue.toLocaleString('id-ID');
+      displayValue = formatRupiah(numValue).replace('Rp ', '');
     }
 
     // Valid value, update form
@@ -322,18 +360,17 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     label: unit.name
   }));
 
-  // Update selected properti when properti_id changes
-  useEffect(() => {
-    if (propertiId && propertiOptions.length > 0) {
-      const properti = propertiOptions.find((p) => p.id?.toString() === propertiId);
-      setSelectedProperti(properti);
+  // Helper function to format currency consistently
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
-      // Note: blok_id, tipe_id, unit_id are not available in API response
-      // These fields need to be selected manually by user
-    }
-  }, [propertiId, propertiOptions]);
-
-  // Populate form with user input data when available, fallback to API data for editing
+  // Update selectedProperti when properti_id changes
   useEffect(() => {
     if (selectedId && transactionData && !initialData) {
       // Only use API data if no user input is available (fallback for direct edit)
@@ -389,7 +426,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         return;
       }
 
-      if (data.tipe_diskon === 'fixed' && discountValue > selectedProperti?.harga) {
+      if (data.tipe_diskon === 'fixed' && selectedPrice && selectedPrice > 0 && discountValue > selectedPrice) {
         setDiscountError('Diskon tidak boleh melebihi harga properti');
         toast.error('Diskon tidak boleh melebihi harga properti');
         return;
@@ -600,10 +637,16 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                             toast.warning('Diskon tidak boleh lebih dari 100%');
                             return;
                           }
-                          if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
+                          // Only prevent if selectedPrice exists and is greater than 0
+                          if (
+                            tipeDiskon === 'fixed' &&
+                            selectedPrice &&
+                            selectedPrice > 0 &&
+                            numValue > selectedPrice
+                          ) {
                             e.preventDefault();
                             setDiscountError('Diskon tidak boleh melebihi harga properti');
-                            toast.warning('Diskon tidak boleh melebihi harga properti');
+                            toast.warning('Diskon telah dibatasi maksimal harga properti');
                             return;
                           }
                         }
@@ -625,8 +668,13 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                           setValue('diskon', '100');
                           setDiscountError('Diskon maksimal 100%');
                           toast.warning('Diskon telah dibatasi maksimal 100%');
-                        } else if (tipeDiskon === 'fixed' && numValue > selectedProperti?.harga) {
-                          const formattedValue = selectedProperti.harga.toLocaleString('id-ID');
+                        } else if (
+                          tipeDiskon === 'fixed' &&
+                          selectedPrice &&
+                          selectedPrice > 0 &&
+                          numValue > selectedPrice
+                        ) {
+                          const formattedValue = formatRupiah(selectedPrice).replace('Rp ', '');
                           e.target.value = formattedValue;
                           setValue('diskon', formattedValue);
                           setDiscountError('Diskon maksimal harga properti');
@@ -649,8 +697,13 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                         if (tipeDiskon === 'percent' && numValue <= 100) {
                           setValue('diskon', pastedText);
                           setDiscountError(''); // Clear error
-                        } else if (tipeDiskon === 'fixed' && numValue <= selectedProperti?.harga) {
-                          const formattedValue = numValue.toLocaleString('id-ID');
+                        } else if (
+                          tipeDiskon === 'fixed' &&
+                          selectedPrice &&
+                          selectedPrice > 0 &&
+                          numValue <= selectedPrice
+                        ) {
+                          const formattedValue = formatRupiah(numValue).replace('Rp ', '');
                           setValue('diskon', formattedValue);
                           setDiscountError(''); // Clear error
                         } else {
@@ -674,8 +727,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                 {errors.diskon && <p className='text-xs text-red-500'>{errors.diskon.message}</p>}
                 {discountError && <p className='text-xs text-red-500'>{discountError}</p>}
                 <p className='text-xs text-gray-500'>
-                  Maksimal:{' '}
-                  {tipeDiskon === 'percent' ? '100%' : `Rp ${selectedProperti?.harga?.toLocaleString('id-ID') || '0'}`}
+                  Maksimal: {tipeDiskon === 'percent' ? '100%' : selectedPrice ? formatRupiah(selectedPrice) : 'Rp 0'}
                 </p>
               </div>
             </div>
@@ -725,10 +777,42 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
             {/* Price */}
             <div className='space-y-3'>
+              {/* Price Availability Message */}
+              {!selectedProperti ? (
+                <div className='rounded-lg border border-gray-200 bg-gray-50 p-3'>
+                  <p className='text-sm font-medium text-gray-600'>
+                    ℹ️ Pilih properti terlebih dahulu untuk melihat harga
+                  </p>
+                </div>
+              ) : !blokId || !unitId ? (
+                <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
+                  <p className='text-sm font-medium text-blue-600'>
+                    ℹ️ Silakan pilih blok dan unit untuk melihat harga
+                  </p>
+                </div>
+              ) : !selectedPrice && tipeId && unitId ? (
+                <div className='rounded-lg border border-red-200 bg-red-50 p-3'>
+                  <p className='text-sm font-medium text-red-600'>
+                    ⚠️ Harga tidak tersedia atau belum diatur untuk kombinasi Tipe dan Unit yang dipilih
+                  </p>
+                  <p className='mt-1 text-xs text-red-500'>
+                    Silakan pilih kombinasi Tipe dan Unit lain, atau hubungi admin untuk mengatur harga
+                  </p>
+                </div>
+              ) : null}
+
               <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
                 <span className='text-sm text-gray-600'>Harga Dasar</span>
                 <span className='text-right text-sm font-medium text-gray-900'>
-                  Rp {priceCalculation.basePrice.toLocaleString('id-ID')}
+                  {!selectedProperti ? (
+                    <span className='text-gray-500'>Pilih properti terlebih dahulu</span>
+                  ) : !blokId || !unitId ? (
+                    <span className='text-blue-600'>Silakan pilih blok dan unit</span>
+                  ) : selectedPrice ? (
+                    formatRupiah(priceCalculation.basePrice)
+                  ) : (
+                    <span className='text-red-500'>Harga tidak tersedia</span>
+                  )}
                 </span>
               </div>
               {priceCalculation.discountAmount > 0 && (
@@ -737,20 +821,28 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                     Diskon ({tipeDiskon === 'percent' ? `${priceCalculation.discountPercent.toFixed(1)}%` : 'Nominal'})
                   </span>
                   <span className='text-right text-sm font-medium text-red-600'>
-                    -Rp {priceCalculation.discountAmount.toLocaleString('id-ID')}
+                    -{formatRupiah(priceCalculation.discountAmount)}
                   </span>
                 </div>
               )}
               <div className='flex items-center justify-between pt-2'>
                 <span className='text-lg font-semibold text-gray-700'>Harga Akhir</span>
                 <span className='text-2xl font-bold text-green-600'>
-                  Rp {priceCalculation.finalPrice.toLocaleString('id-ID')}
+                  {!selectedProperti ? (
+                    <span className='text-lg text-gray-500'>Pilih properti terlebih dahulu</span>
+                  ) : !blokId || !unitId ? (
+                    <span className='text-lg text-blue-600'>Silakan pilih blok dan unit</span>
+                  ) : selectedPrice ? (
+                    formatRupiah(priceCalculation.finalPrice)
+                  ) : (
+                    <span className='text-lg text-red-500'>Harga tidak tersedia</span>
+                  )}
                 </span>
               </div>
               {priceCalculation.discountAmount === 0 && diskon && diskon.trim() !== '' && discountError && (
                 <div className='mt-2 text-xs text-orange-500'>* Nilai diskon tidak valid, menggunakan 0</div>
               )}
-              {priceCalculation.discountAmount === 0 && (!diskon || diskon.trim() === '') && (
+              {priceCalculation.discountAmount === 0 && (!diskon || diskon.trim() === '') && selectedPrice && (
                 <div className='mt-2 text-xs text-gray-500'>
                   * Maksimal diskon {tipeDiskon === 'percent' ? '100%' : 'harga properti'}
                 </div>
@@ -760,8 +852,15 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
             {/* Booking Button */}
             <Button
               onClick={handleSubmit(handleFormSubmit)}
-              className='mt-6 h-12 w-full rounded-lg bg-green-500 text-base font-semibold text-white hover:bg-green-600'>
-              Pesan
+              disabled={!selectedProperti || !blokId || !unitId || !selectedPrice}
+              className='mt-6 h-12 w-full rounded-lg bg-green-500 text-base font-semibold text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500'>
+              {!selectedProperti
+                ? 'Pilih Properti Dulu'
+                : !blokId || !unitId
+                  ? 'Pilih Blok & Unit Dulu'
+                  : selectedPrice
+                    ? 'Pesan'
+                    : 'Harga Tidak Tersedia'}
             </Button>
           </div>
         </div>

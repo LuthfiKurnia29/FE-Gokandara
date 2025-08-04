@@ -9,14 +9,12 @@ import {
 } from '@/types/properti';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-// Master Data Interfaces for form dropdowns
 interface MasterDataItem {
   id: number;
   name: string;
 }
 
 export const propertyService = {
-  // Get paginated list of properties
   getList: async ({
     page = 1,
     perPage = 10,
@@ -36,7 +34,6 @@ export const propertyService = {
     return response.data;
   },
 
-  // Get property by ID
   getById: async (id: number, include?: string[]): Promise<PropertyData> => {
     const params = new URLSearchParams();
     if (include && include.length > 0) {
@@ -44,35 +41,21 @@ export const propertyService = {
     }
 
     const url = `/properti/${id}${params.toString() ? `?${params}` : ''}`;
-    console.log('🔍 Fetching property by ID:', { id, url, include });
 
     const response = await axios.get<PropertyApiResponse>(url);
-    console.log('📡 API Response for property:', {
-      status: response.status,
-      data: response.data,
-      hasData: !!response.data,
-      hasDataData: !!response.data?.data,
-      dataKeys: response.data ? Object.keys(response.data) : []
-    });
 
-    // Handle different response formats
     if (response.data.data) {
-      console.log('✅ Using response.data.data format');
-      return response.data.data; // Format: { message: "...", data: {...} }
+      return response.data.data;
     } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
-      console.log('✅ Using direct response.data format');
-      return response.data as unknown as PropertyData; // Format: { ... } (direct data)
+      return response.data as unknown as PropertyData;
     } else {
-      console.error('❌ Invalid response format:', response.data);
       throw new Error('Invalid response format from API');
     }
   },
 
-  // Create new property
   create: async (data: CreatePropertyData): Promise<PropertyData> => {
     const formData = new FormData();
 
-    // Add basic fields
     formData.append('project_id', data.project_id.toString());
     formData.append('luas_bangunan', data.luas_bangunan);
     formData.append('luas_tanah', data.luas_tanah);
@@ -80,7 +63,6 @@ export const propertyService = {
     formData.append('lokasi', data.lokasi);
     formData.append('harga', data.harga.toString());
 
-    // Add daftar_harga if provided
     if (data.daftar_harga && data.daftar_harga.length > 0) {
       data.daftar_harga.forEach((harga, index) => {
         formData.append(`daftar_harga[${index}][tipe_id]`, harga.tipe_id.toString());
@@ -89,7 +71,6 @@ export const propertyService = {
       });
     }
 
-    // Add images
     data.properti__gambars.forEach((file, index) => {
       formData.append(`properti__gambars[${index}]`, file);
     });
@@ -102,14 +83,11 @@ export const propertyService = {
     return response.data.data;
   },
 
-  // Update property by ID
   update: async (id: number, data: UpdatePropertyData): Promise<PropertyData> => {
     const formData = new FormData();
 
-    // Add _method for Laravel to handle PUT request via POST
     formData.append('_method', 'PUT');
 
-    // Always add all required fields (don't use conditional checks)
     formData.append('project_id', data.project_id?.toString() || '');
     formData.append('luas_bangunan', data.luas_bangunan || '');
     formData.append('luas_tanah', data.luas_tanah || '');
@@ -117,7 +95,6 @@ export const propertyService = {
     formData.append('lokasi', data.lokasi || '');
     formData.append('harga', data.harga?.toString() || '');
 
-    // Add daftar_harga if provided
     if (data.daftar_harga && data.daftar_harga.length > 0) {
       data.daftar_harga.forEach((harga, index) => {
         formData.append(`daftar_harga[${index}][tipe_id]`, harga.tipe_id.toString());
@@ -126,7 +103,7 @@ export const propertyService = {
       });
     }
 
-    // Add images if provided
+    // FIXED: Always send properti__gambars as array of files
     if (data.properti__gambars && data.properti__gambars.length > 0) {
       data.properti__gambars.forEach((file, index) => {
         formData.append(`properti__gambars[${index}]`, file);
@@ -141,26 +118,22 @@ export const propertyService = {
     return response.data.data;
   },
 
-  // Delete property by ID
   delete: async (id: number): Promise<PropertyData> => {
     const response = await axios.delete<PropertyApiResponse>(`/properti/${id}`);
     return response.data.data;
   },
 
-  // Master Data Services for form dropdowns
   getAllProjects: async (): Promise<MasterDataItem[]> => {
     const response = await axios.get('/all-projek');
     return response.data.data || response.data || [];
   },
 
-  // Get all properties for dropdown (used in transaksi)
   getAllProperti: async (): Promise<PropertyData[]> => {
     const response = await axios.get('/all-properti?include=projek');
     return response.data.data || response.data || [];
   }
 };
 
-// Query hooks
 export const usePropertyList = ({
   page = 1,
   perPage = 10,
@@ -191,20 +164,19 @@ export const usePropertyById = (id: number | null, include?: string[]) => {
       }
     },
     enabled: id !== null && id !== undefined,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2, // Retry 2 times on failure
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000) // Exponential backoff
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 };
 
-// Master Data Hooks for form dropdowns
 export const useAllProjects = () => {
   return useQuery({
     queryKey: ['/all-projek'],
     queryFn: propertyService.getAllProjects,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000
   });
 };
 
@@ -212,12 +184,11 @@ export const useAllProperti = () => {
   return useQuery({
     queryKey: ['/all-properti'],
     queryFn: propertyService.getAllProperti,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000
   });
 };
 
-// Mutation hooks
 export const useCreateProperty = () => {
   const queryClient = useQueryClient();
 
@@ -226,7 +197,6 @@ export const useCreateProperty = () => {
       return propertyService.create(data);
     },
     onSuccess: () => {
-      // Invalidate and refetch property list
       queryClient.invalidateQueries({ queryKey: ['/properti'] });
     }
   });
@@ -240,7 +210,6 @@ export const useUpdateProperty = () => {
       return propertyService.update(id, data);
     },
     onSuccess: (_, { id }) => {
-      // Invalidate and refetch property list and specific property
       queryClient.invalidateQueries({ queryKey: ['/properti'] });
       queryClient.invalidateQueries({ queryKey: ['/properti', 'by-id', id] });
     }
@@ -255,7 +224,6 @@ export const useDeleteProperty = () => {
       return propertyService.delete(id);
     },
     onSuccess: () => {
-      // Invalidate and refetch property list
       queryClient.invalidateQueries({ queryKey: ['/properti'] });
     }
   });

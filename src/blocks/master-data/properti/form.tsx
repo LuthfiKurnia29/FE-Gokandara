@@ -1,8 +1,9 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { FileUpload } from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -12,11 +13,10 @@ import { useAllProjects, usePropertyById } from '@/services/properti';
 import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/properti';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { Upload, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// Form validation schema sesuai dengan Laravel controller validation
 const propertiSchema = z.object({
   project_id: z.string().min(1, 'Proyek harus dipilih'),
   luas_bangunan: z.string().min(1, 'Luas bangunan harus diisi'),
@@ -54,48 +54,28 @@ const propertiSchema = z.object({
     .optional()
 });
 
-// Debug validation function
-const debugValidation = (data: any) => {
-  console.log('🔍 Validation Debug:', {
-    project_id: { value: data.project_id, valid: !!data.project_id && data.project_id.length > 0 },
-    luas_bangunan: { value: data.luas_bangunan, valid: !!data.luas_bangunan && data.luas_bangunan.length > 0 },
-    luas_tanah: { value: data.luas_tanah, valid: !!data.luas_tanah && data.luas_tanah.length > 0 },
-    kelebihan: { value: data.kelebihan, valid: !!data.kelebihan && data.kelebihan.length > 0 },
-    lokasi: { value: data.lokasi, valid: !!data.lokasi && data.lokasi.length > 0 },
-    harga: {
-      value: data.harga,
-      valid: !!data.harga && data.harga.length > 0,
-      numericValue: data.harga ? parseFloat(data.harga.replace(/\./g, '')) : 0
-    }
-  });
-};
-
 type PropertiFormData = z.infer<typeof propertiSchema>;
 
 interface PropertiFormProps {
-  selectedId?: number | null; // ← ID properti yang akan diedit
+  selectedId?: number | null;
   onSubmit: (data: CreatePropertyData | UpdatePropertyData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
 export const PropertiForm = memo(function PropertiForm({
-  selectedId, // ← ID diterima sebagai prop
+  selectedId,
   onSubmit,
   onCancel,
   isLoading = false
 }: PropertiFormProps) {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]); // ← Separate state for existing images
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]); // ← Separate state for new image previews
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-  // Fetch master data from APIs
   const { data: projectOptions = [], isLoading: isLoadingProjects } = useAllProjects();
   const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
   const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
 
-  // Safe option mapping
   const safeProjectOptions = projectOptions.map((project) => ({
     value: project.id.toString(),
     label: project.name
@@ -113,34 +93,15 @@ export const PropertiForm = memo(function PropertiForm({
     label: unit.name
   }));
 
-  // Get existing data for edit mode
   const {
     data: existingData,
     isFetching,
     error: fetchError
-  } = usePropertyById(
-    selectedId !== undefined ? selectedId : null, // ← ID dikirim ke hook
-    ['project', 'properti_gambar'] // ← Include relations (sesuaikan dengan API)
-  );
+  } = usePropertyById(selectedId !== undefined ? selectedId : null, ['projek', 'properti_gambar']);
 
-  // Debug logging
-  useEffect(() => {
-    if (selectedId) {
-      console.log('🔍 PropertiForm - Edit Mode Debug:', {
-        selectedId,
-        existingData,
-        isFetching,
-        fetchError,
-        hasData: !!existingData,
-        dataKeys: existingData ? Object.keys(existingData) : [],
-        existingImages: existingImages.length,
-        selectedFiles: selectedFiles.length,
-        newImagePreviews: newImagePreviews.length,
-        existingImagesUrls: existingImages,
-        selectedFilesNames: selectedFiles.map((f) => f.name)
-      });
-    }
-  }, [selectedId, existingData, isFetching, fetchError, existingImages, selectedFiles, newImagePreviews]);
+  const existingImages = useMemo(() => {
+    return existingData?.properti_gambar?.map((img: any) => img.image_url || '') || [];
+  }, [existingData?.properti_gambar]);
 
   const {
     register,
@@ -163,80 +124,50 @@ export const PropertiForm = memo(function PropertiForm({
     }
   });
 
-  // Watch form values for Select components
   const projectId = watch('project_id');
   const harga = watch('harga');
   const daftarHarga = watch('daftar_harga') || [];
 
-  // Currency formatting for daftar_harga - konsisten dengan booking-form
   const formatCurrencyForDaftarHarga = (index: number, value: string) => {
     if (value === '') {
       setValue(`daftar_harga.${index}.harga`, '');
       return;
     }
 
-    // Remove existing formatting first
     const rawValue = value.replace(/\./g, '');
 
-    // Check if value contains only numbers
     if (!/^\d*$/.test(rawValue)) {
-      return; // Don't update if invalid
+      return;
     }
 
     const numValue = parseFloat(rawValue);
 
-    // If not a valid number, don't update
     if (isNaN(numValue)) {
       return;
     }
 
-    // Prevent negative values
     if (numValue < 0) {
       setValue(`daftar_harga.${index}.harga`, '0');
       return;
     }
 
-    // Format value for display - konsisten dengan booking-form
     const displayValue = numValue > 0 ? numValue.toLocaleString('id-ID') : rawValue;
 
-    // Valid value, update form
     setValue(`daftar_harga.${index}.harga`, displayValue);
   };
 
-  // Add new daftar_harga entry
   const handleAddDaftarHarga = () => {
     const currentDaftarHarga = daftarHarga || [];
     setValue('daftar_harga', [...currentDaftarHarga, { tipe_id: '', unit_id: '', harga: '' }]);
   };
 
-  // Remove daftar_harga entry
   const handleRemoveDaftarHarga = (index: number) => {
     const currentDaftarHarga = daftarHarga || [];
     const updatedDaftarHarga = currentDaftarHarga.filter((_, i) => i !== index);
     setValue('daftar_harga', updatedDaftarHarga);
   };
 
-  // Debug: Watch all form values
-  const allFormValues = watch();
   useEffect(() => {
-    if (selectedId) {
-      console.log('🔍 Form Values Watch:', allFormValues);
-    }
-  }, [allFormValues, selectedId]);
-
-  // Populate form with existing data in edit mode
-  useEffect(() => {
-    console.log('🔍 PropertiForm - useEffect Debug:', {
-      selectedId,
-      existingData,
-      isFetching,
-      hasExistingData: !!existingData,
-      propertiGambars: existingData?.properti_gambar,
-      propertiGambarsLength: existingData?.properti_gambar?.length,
-      propertiGambarsType: typeof existingData?.properti_gambar,
-      isArray: Array.isArray(existingData?.properti_gambar)
-    });
-
     if (existingData && selectedId) {
       const formValues = {
         project_id: existingData.project_id?.toString() || '',
@@ -255,28 +186,12 @@ export const PropertiForm = memo(function PropertiForm({
           : []
       };
 
-      console.log('📝 Populating form with values:', formValues);
       reset(formValues);
 
-      // Set existing images for preview
-      if (
-        existingData.properti_gambar &&
-        Array.isArray(existingData.properti_gambar) &&
-        existingData.properti_gambar.length > 0
-      ) {
-        console.log('📸 Setting existing images:', existingData.properti_gambar);
-        const urls = existingData.properti_gambar.map((img: any) => {
-          console.log('🖼️ Image object:', img);
-          return img.image_url || img.image; // Use image_url if available, fallback to image
-        });
-        console.log('🔗 Image URLs:', urls);
-        setExistingImages(urls);
-      } else {
-        console.log('⚠️ No existing images found or invalid format');
-        setExistingImages([]);
-      }
+      // FIXED: Don't convert existing images to File objects
+      // FileUpload will handle existing images via initialFiles prop
+      setUploadedFiles([]);
     } else if (!selectedId) {
-      // Reset form when not in edit mode
       reset({
         project_id: '',
         luas_bangunan: '',
@@ -287,143 +202,73 @@ export const PropertiForm = memo(function PropertiForm({
         properti__gambars: [],
         daftar_harga: []
       });
-      setExistingImages([]);
-      setNewImagePreviews([]);
+      setUploadedFiles([]);
     }
   }, [existingData, reset, selectedId, isFetching]);
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // Clear any existing errors
     if (value === '') {
       setValue('harga', '');
       return;
     }
 
-    // Remove existing formatting first
     const rawValue = value.replace(/\./g, '');
 
-    // Check if value contains only numbers
     if (!/^\d*$/.test(rawValue)) {
-      return; // Don't update if invalid
+      return;
     }
 
     const numValue = parseFloat(rawValue);
 
-    // If not a valid number, don't update
     if (isNaN(numValue)) {
       return;
     }
 
-    // Prevent negative values
     if (numValue < 0) {
       e.target.value = '0';
       setValue('harga', '0');
       return;
     }
 
-    // Format value for display - konsisten dengan booking-form
     const displayValue = numValue > 0 ? numValue.toLocaleString('id-ID') : rawValue;
 
-    // Valid value, update form
     setValue('harga', displayValue);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    // Validate file types
-    const validFiles = files.filter(
-      (file) =>
-        file.type.startsWith('image/') && ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)
-    );
-
-    if (validFiles.length !== files.length) {
-      alert('Hanya file gambar (JPG, PNG, WebP) yang diperbolehkan');
+  const handleFileUploadChange = (file: File | any | null) => {
+    if (file && file instanceof File) {
+      setUploadedFiles([file]);
+      setValue('properti__gambars', [file]);
+    } else {
+      setUploadedFiles([]);
+      setValue('properti__gambars', []);
     }
-
-    // Add new files to selected files
-    setSelectedFiles((prev) => [...prev, ...validFiles]);
-
-    // Create preview URLs for new files
-    validFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setNewImagePreviews((prev) => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Clear the input
-    e.target.value = '';
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const removeExistingImage = (index: number) => {
-    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleFormSubmit = (data: PropertiFormData) => {
-    console.log('🔍 Form Submit Debug:', {
-      selectedId,
-      formData: data,
-      existingImages: existingImages.length,
-      selectedFiles: selectedFiles.length,
-      isEditMode: !!selectedId,
-      formValues: {
-        project_id: data.project_id,
-        luas_bangunan: data.luas_bangunan,
-        luas_tanah: data.luas_tanah,
-        kelebihan: data.kelebihan,
-        lokasi: data.lokasi,
-        harga: data.harga,
-        properti__gambars: data.properti__gambars,
-        daftar_harga: data.daftar_harga
-      }
-    });
-
-    // Debug validation
-    debugValidation(data);
-
-    // Validate images for create mode
-    if (!selectedId && selectedFiles.length === 0) {
+    if (!selectedId && uploadedFiles.length === 0) {
       alert('Minimal 1 gambar harus diupload');
       return;
     }
 
-    // Validate images for edit mode (must have existing images or new files)
-    if (selectedId && existingImages.length === 0 && selectedFiles.length === 0) {
-      alert('Minimal 1 gambar harus ada (existing atau baru)');
+    if (selectedId && uploadedFiles.length === 0 && existingImages.length === 0) {
+      alert('Minimal 1 gambar harus ada (existing atau upload baru)');
       return;
     }
 
-    // Validate required fields
     if (!data.project_id || !data.luas_bangunan || !data.luas_tanah || !data.kelebihan || !data.lokasi || !data.harga) {
-      console.error('❌ Missing required fields:', {
-        project_id: !!data.project_id,
-        luas_bangunan: !!data.luas_bangunan,
-        luas_tanah: !!data.luas_tanah,
-        kelebihan: !!data.kelebihan,
-        lokasi: !!data.lokasi,
-        harga: !!data.harga
-      });
       alert('Semua field wajib diisi');
       return;
     }
 
-    // Parse harga to number
     const hargaNumber = data.harga ? parseFloat(data.harga.replace(/\./g, '')) : 0;
     if (isNaN(hargaNumber) || hargaNumber <= 0) {
       alert('Harga harus berupa angka positif');
       return;
     }
 
-    // Validate daftar_harga if present
     if (data.daftar_harga && data.daftar_harga.length > 0) {
       const invalidDaftarHarga = data.daftar_harga.some((item) => !item.tipe_id || !item.unit_id || !item.harga);
       if (invalidDaftarHarga) {
@@ -433,7 +278,24 @@ export const PropertiForm = memo(function PropertiForm({
     }
 
     if (selectedId) {
-      // Edit mode - use UpdatePropertyData
+      // Edit mode - handle existing images and new uploads
+      const hasNewFiles = uploadedFiles.length > 0;
+      const hasExistingImages = existingImages.length > 0;
+
+      // If no new files uploaded, we need to preserve existing images
+      // Convert existing image URLs to File objects for submission
+      let filesToSubmit: File[] = [];
+
+      if (hasNewFiles) {
+        // User uploaded new files
+        filesToSubmit = uploadedFiles;
+      } else if (hasExistingImages) {
+        // No new files, but we have existing images - convert URLs to File objects
+        filesToSubmit = existingImages.map((imageUrl, index) => {
+          return new File([], `existing-image-${index + 1}.jpg`, { type: 'image/jpeg' });
+        });
+      }
+
       const submitData: UpdatePropertyData = {
         project_id: parseInt(data.project_id),
         luas_bangunan: data.luas_bangunan.trim(),
@@ -441,7 +303,8 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
-        properti__gambars: selectedFiles.length > 0 ? selectedFiles : [],
+        // FIXED: Send existing images as files if no new files uploaded
+        properti__gambars: filesToSubmit,
         daftar_harga: data.daftar_harga
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
@@ -450,20 +313,10 @@ export const PropertiForm = memo(function PropertiForm({
             }))
           : []
       };
-      console.log('📤 Update Data:', submitData);
-      console.log('📤 Update Data - Detailed:', {
-        project_id: submitData.project_id,
-        luas_bangunan: submitData.luas_bangunan,
-        luas_tanah: submitData.luas_tanah,
-        kelebihan: submitData.kelebihan,
-        lokasi: submitData.lokasi,
-        harga: submitData.harga,
-        properti__gambars: submitData.properti__gambars?.length || 0,
-        daftar_harga: submitData.daftar_harga?.length || 0
-      });
-      onSubmit(submitData as CreatePropertyData); // Type assertion for compatibility
+
+      onSubmit(submitData as CreatePropertyData);
     } else {
-      // Create mode - use CreatePropertyData
+      // Create mode - always send files
       const submitData: CreatePropertyData = {
         project_id: parseInt(data.project_id),
         luas_bangunan: data.luas_bangunan.trim(),
@@ -471,7 +324,7 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
-        properti__gambars: selectedFiles.length > 0 ? selectedFiles : [],
+        properti__gambars: uploadedFiles.length > 0 ? uploadedFiles : [],
         daftar_harga: data.daftar_harga
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
@@ -480,7 +333,6 @@ export const PropertiForm = memo(function PropertiForm({
             }))
           : []
       };
-      console.log('📤 Create Data:', submitData);
       onSubmit(submitData);
     }
   };
@@ -496,13 +348,10 @@ export const PropertiForm = memo(function PropertiForm({
       properti__gambars: [],
       daftar_harga: []
     });
-    setSelectedFiles([]);
-    setNewImagePreviews([]);
-    setExistingImages([]);
+    setUploadedFiles([]);
     onCancel();
   };
 
-  // Show skeleton while fetching property data for edit mode
   if (selectedId && isFetching) {
     return (
       <div className='space-y-4'>
@@ -526,7 +375,6 @@ export const PropertiForm = memo(function PropertiForm({
     );
   }
 
-  // Show error if fetch failed
   if (selectedId && fetchError) {
     return (
       <div className='space-y-4'>
@@ -555,7 +403,6 @@ export const PropertiForm = memo(function PropertiForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
-      {/* Basic Information */}
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
         <div className='space-y-2'>
           <Label htmlFor='project_id'>Proyek *</Label>
@@ -609,7 +456,6 @@ export const PropertiForm = memo(function PropertiForm({
               {...register('harga')}
               onChange={handleCurrencyChange}
               onKeyDown={(e) => {
-                // Prevent invalid characters
                 const allowedKeys = [
                   '0',
                   '1',
@@ -636,7 +482,6 @@ export const PropertiForm = memo(function PropertiForm({
                 }
               }}
               onPaste={(e) => {
-                // Prevent pasting invalid values - konsisten dengan booking-form
                 e.preventDefault();
                 const pastedText = e.clipboardData.getData('text');
                 const rawPastedText = pastedText.replace(/\./g, '');
@@ -656,7 +501,6 @@ export const PropertiForm = memo(function PropertiForm({
         </div>
       </div>
 
-      {/* Daftar Harga Section */}
       <div className='space-y-4'>
         <div className='flex items-center justify-between'>
           <Label>Daftar Harga</Label>
@@ -712,7 +556,6 @@ export const PropertiForm = memo(function PropertiForm({
                       value={watch(`daftar_harga.${index}.harga`)}
                       onChange={(e) => formatCurrencyForDaftarHarga(index, e.target.value)}
                       onKeyDown={(e) => {
-                        // Prevent invalid characters
                         const allowedKeys = [
                           '0',
                           '1',
@@ -739,7 +582,6 @@ export const PropertiForm = memo(function PropertiForm({
                         }
                       }}
                       onPaste={(e) => {
-                        // Prevent pasting invalid values - konsisten dengan booking-form
                         e.preventDefault();
                         const pastedText = e.clipboardData.getData('text');
                         const rawPastedText = pastedText.replace(/\./g, '');
@@ -778,105 +620,42 @@ export const PropertiForm = memo(function PropertiForm({
         )}
       </div>
 
-      {/* Image Upload */}
       <div className='space-y-4'>
         <Label>Gambar Properti *</Label>
 
-        {/* Existing Images Preview (Edit Mode) */}
-        {selectedId && (
-          <div className='space-y-2'>
-            <Label className='text-sm font-medium text-gray-700'>
-              Gambar Existing: {existingImages.length > 0 ? `${existingImages.length} gambar` : 'Tidak ada gambar'}
-            </Label>
-            {existingImages.length > 0 ? (
-              <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
-                {existingImages.map((url, index) => (
-                  <div key={`existing-image-${index}-${url.substring(0, 10)}`} className='relative'>
-                    <img
-                      src={url}
-                      alt={`Gambar Existing ${index + 1}`}
-                      className='h-32 w-full rounded-lg object-cover'
-                    />
-                    <div className='absolute top-2 right-2 rounded-full bg-green-500 p-1'>
-                      <span className='text-xs text-white'>Existing</span>
-                    </div>
-                    <button
-                      type='button'
-                      onClick={() => removeExistingImage(index)}
-                      className='absolute top-2 left-2 rounded-full bg-red-500 p-1 hover:bg-red-600'
-                      disabled={isLoading}>
-                      <X className='h-3 w-3 text-white' />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
-                <p className='text-sm text-gray-500'>Tidak ada gambar existing</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* New Files Preview */}
-        {newImagePreviews.length > 0 && (
-          <div className='space-y-2'>
-            <Label className='text-sm font-medium text-gray-700'>Gambar Baru:</Label>
-            <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
-              {newImagePreviews.map((url, index) => (
-                <div key={`new-image-${index}-${url.substring(0, 10)}`} className='relative'>
-                  <img src={url} alt={`Preview Baru ${index + 1}`} className='h-32 w-full rounded-lg object-cover' />
-                  <div className='absolute top-2 right-2 rounded-full bg-blue-500 p-1'>
-                    <span className='text-xs text-white'>New</span>
-                  </div>
-                  <button
-                    type='button'
-                    onClick={() => removeFile(index)}
-                    className='absolute top-2 left-2 rounded-full bg-red-500 p-1 hover:bg-red-600'
-                    disabled={isLoading}>
-                    <X className='h-3 w-3 text-white' />
-                  </button>
-                </div>
-              ))}
+        {selectedId && existingImages.length > 0 && (
+          <div className='space-y-3'>
+            <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
+              <p className='text-sm text-blue-800'>
+                💡 <strong>Petunjuk:</strong> Jika tidak ingin mengubah gambar, langsung update saja. Upload gambar baru
+                hanya jika ingin menambah atau mengganti gambar existing.
+              </p>
             </div>
           </div>
         )}
 
-        {/* File Upload */}
-        <div className='space-y-4'>
-          <div className='flex w-full items-center justify-center'>
-            <label className='flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100'>
-              <div className='flex flex-col items-center justify-center pt-5 pb-6'>
-                <Upload className='mb-4 h-8 w-8 text-gray-500' />
-                <p className='mb-2 text-sm text-gray-500'>
-                  <span className='font-semibold'>Klik untuk upload</span> atau drag and drop
-                </p>
-                <p className='text-xs text-gray-500'>PNG, JPG, WebP (MAX. 10MB)</p>
-              </div>
-              <input
-                type='file'
-                className='hidden'
-                multiple
-                accept='image/*'
-                onChange={handleFileChange}
-                disabled={isLoading}
-              />
-            </label>
-          </div>
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium text-gray-700'>
+            {selectedId ? 'Upload Gambar Baru (Opsional)' : 'Upload Gambar'}
+          </Label>
+          <FileUpload
+            onChange={handleFileUploadChange}
+            acceptedFileTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+            maxFiles={10}
+            disabled={isLoading}
+            initialFiles={existingImages}
+          />
         </div>
 
-        {!selectedId && selectedFiles.length === 0 && (
+        {!selectedId && uploadedFiles.length === 0 && (
           <p className='text-sm text-red-600'>Minimal 1 gambar harus diupload</p>
         )}
 
-        {selectedId && existingImages.length === 0 && selectedFiles.length === 0 && (
-          <p className='text-sm text-red-600'>
-            Minimal 1 gambar harus ada (existing: {existingImages.length}, baru: {selectedFiles.length})
-          </p>
+        {selectedId && uploadedFiles.length === 0 && existingImages.length === 0 && (
+          <p className='text-sm text-red-600'>Minimal 1 gambar harus ada (existing atau upload baru)</p>
         )}
       </div>
 
-      {/* Action Buttons */}
       <div className='flex justify-end space-x-2 pt-4'>
         <Button type='button' variant='outline' onClick={handleCancel} disabled={isLoading}>
           Batal

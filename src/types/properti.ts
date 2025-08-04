@@ -81,7 +81,7 @@ export interface UpdatePropertyData {
   lokasi?: string;
   harga?: number;
   properti__gambars?: File[];
-  daftar_harga?: PricingOption[]; // New optional field for multiple pricing options
+  daftar_harga?: PricingOption[];
 }
 
 export interface UsePropertyListParams {

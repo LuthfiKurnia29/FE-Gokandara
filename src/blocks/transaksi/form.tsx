@@ -9,7 +9,7 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllKonsumen } from '@/services/konsumen';
 import { useAllTipe, usePenjualanById } from '@/services/penjualan';
-import { useAllProperti } from '@/services/properti';
+import { useAllProperti, usePropertyById } from '@/services/properti';
 import { KonsumenData } from '@/types/konsumen';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,7 @@ interface PropertyTypeModalProps {
 const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }: PropertyTypeModalProps) => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
 
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
@@ -50,6 +51,13 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     'blok',
     'tipe',
     'unit'
+  ]);
+
+  // Fetch property details when properti_id changes
+  const { data: propertyDetails } = usePropertyById(selectedProperti?.id || null, [
+    'projek',
+    'properti_gambar',
+    'daftar_harga'
   ]);
 
   const {
@@ -84,10 +92,32 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     label: `#${properti.id} ${properti.projek?.name} - ${properti.lokasi ?? 'Lokasi'}`
   }));
 
+  // Helper function to format currency consistently
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Function to find price from daftar_harga based on tipe_id and unit_id
+  const findPriceFromDaftarHarga = (tipeId: string, unitId?: string) => {
+    if (!propertyDetails?.daftar_harga || !tipeId) return null;
+
+    const matchingPrice = propertyDetails.daftar_harga.find(
+      (harga) => harga.tipe_id.toString() === tipeId && (!unitId || harga.unit_id.toString() === unitId)
+    );
+
+    return matchingPrice?.harga || null;
+  };
+
   useEffect(() => {
     if (propertiId && propertiOptions.length > 0) {
       const properti = propertiOptions.find((p) => p.id?.toString() === propertiId);
       setSelectedProperti(properti);
+      setSelectedPrice(null); // Reset price when property changes
     }
   }, [propertiId, propertiOptions]);
 
@@ -105,6 +135,16 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
       }
     }
   }, [transactionData, selectedId, reset]);
+
+  // Update price when tipe_id changes
+  useEffect(() => {
+    if (tipeId && propertyDetails) {
+      const price = findPriceFromDaftarHarga(tipeId);
+      setSelectedPrice(price);
+    } else {
+      setSelectedPrice(null);
+    }
+  }, [tipeId, propertyDetails]);
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(typeId);
@@ -144,12 +184,16 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
     }
   };
 
-  const propertyTypes = tipeOptions.map((tipe) => ({
-    id: tipe.id.toString(),
-    name: tipe.name,
-    features: ['Lorem ipsum dolor sit amet', 'Lorem ipsum dolor sit amet'],
-    selected: selectedType === tipe.id.toString()
-  }));
+  const propertyTypes = tipeOptions.map((tipe) => {
+    const price = findPriceFromDaftarHarga(tipe.id.toString());
+    return {
+      id: tipe.id.toString(),
+      name: tipe.name,
+      price: price,
+      features: ['Lorem ipsum dolor sit amet', 'Lorem ipsum dolor sit amet'],
+      selected: selectedType === tipe.id.toString()
+    };
+  });
 
   if (selectedId && isLoadingTransaction) {
     return (
@@ -266,7 +310,27 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                     </div>
                   </div>
 
-                  <h3 className='mb-4 text-center text-lg font-bold text-teal-700'>{type.name}</h3>
+                  <h3 className='mb-2 text-center text-lg font-bold text-teal-700'>{type.name}</h3>
+
+                  {/* Price Display */}
+                  <div className='mb-4 text-center'>
+                    {!selectedProperti ? (
+                      <div className='space-y-1'>
+                        <p className='text-xs text-gray-500'>Harga</p>
+                        <p className='text-sm font-medium text-gray-500'>Pilih properti terlebih dahulu</p>
+                      </div>
+                    ) : type.price ? (
+                      <div className='space-y-1'>
+                        <p className='text-xs text-gray-500'>Harga</p>
+                        <p className='text-lg font-bold text-green-600'>{formatRupiah(type.price)}</p>
+                      </div>
+                    ) : (
+                      <div className='space-y-1'>
+                        <p className='text-xs text-gray-500'>Harga</p>
+                        <p className='text-sm font-medium text-red-500'>Harga tidak tersedia atau belum diatur</p>
+                      </div>
+                    )}
+                  </div>
 
                   <div className='mb-4 space-y-2'>
                     {type.features.map((feature, index) => (
@@ -283,14 +347,21 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
                     className={`w-full rounded-lg py-2 text-sm font-semibold transition-all duration-300 ${
                       type.selected
                         ? 'bg-green-500 text-white shadow-lg hover:bg-green-600'
-                        : 'bg-gray-300 text-gray-500 hover:bg-gray-400'
+                        : !selectedProperti
+                          ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                          : type.price
+                            ? 'bg-gray-300 text-gray-500 hover:bg-gray-400'
+                            : 'cursor-not-allowed bg-gray-200 text-gray-400'
                     } hover:bg-green-600 hover:text-white hover:shadow-lg`}
+                    disabled={!selectedProperti || !type.price}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleTypeSelect(type.id);
-                      handleChoose(type.id);
+                      if (selectedProperti && type.price) {
+                        handleTypeSelect(type.id);
+                        handleChoose(type.id);
+                      }
                     }}>
-                    Pilih
+                    {!selectedProperti ? 'Pilih Properti Dulu' : type.price ? 'Pilih' : 'Harga Tidak Tersedia'}
                   </Button>
 
                   {type.selected && (
