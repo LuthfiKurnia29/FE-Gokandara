@@ -28,7 +28,7 @@ const propertiSchema = z.object({
     .min(1, 'Harga harus diisi')
     .refine(
       (value) => {
-        const numericValue = value.replace(/\./g, '');
+        const numericValue = value.replace(/[^\d]/g, '');
         return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
       },
       { message: 'Harga harus berupa angka positif' }
@@ -44,7 +44,7 @@ const propertiSchema = z.object({
           .min(1, 'Harga harus diisi')
           .refine(
             (value) => {
-              const numericValue = value.replace(/\./g, '');
+              const numericValue = value.replace(/[^\d]/g, '');
               return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
             },
             { message: 'Harga harus berupa angka positif' }
@@ -128,34 +128,6 @@ export const PropertiForm = memo(function PropertiForm({
   const harga = watch('harga');
   const daftarHarga = watch('daftar_harga') || [];
 
-  const formatCurrencyForDaftarHarga = (index: number, value: string) => {
-    if (value === '') {
-      setValue(`daftar_harga.${index}.harga`, '');
-      return;
-    }
-
-    const rawValue = value.replace(/\./g, '');
-
-    if (!/^\d*$/.test(rawValue)) {
-      return;
-    }
-
-    const numValue = parseFloat(rawValue);
-
-    if (isNaN(numValue)) {
-      return;
-    }
-
-    if (numValue < 0) {
-      setValue(`daftar_harga.${index}.harga`, '0');
-      return;
-    }
-
-    const displayValue = numValue > 0 ? numValue.toLocaleString('id-ID') : rawValue;
-
-    setValue(`daftar_harga.${index}.harga`, displayValue);
-  };
-
   const handleAddDaftarHarga = () => {
     const currentDaftarHarga = daftarHarga || [];
     setValue('daftar_harga', [...currentDaftarHarga, { tipe_id: '', unit_id: '', harga: '' }]);
@@ -175,13 +147,13 @@ export const PropertiForm = memo(function PropertiForm({
         luas_tanah: existingData.luas_tanah || '',
         kelebihan: existingData.kelebihan || '',
         lokasi: existingData.lokasi || '',
-        harga: existingData.harga ? existingData.harga.toLocaleString('id-ID') : '',
+        harga: existingData.harga ? existingData.harga.toString() : '',
         properti__gambars: [],
         daftar_harga: existingData.daftar_harga
           ? existingData.daftar_harga.map((item) => ({
               tipe_id: item.tipe_id.toString(),
               unit_id: item.unit_id.toString(),
-              harga: item.harga.toLocaleString('id-ID')
+              harga: item.harga.toString()
             }))
           : []
       };
@@ -205,37 +177,6 @@ export const PropertiForm = memo(function PropertiForm({
       setUploadedFiles([]);
     }
   }, [existingData, reset, selectedId, isFetching]);
-
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    if (value === '') {
-      setValue('harga', '');
-      return;
-    }
-
-    const rawValue = value.replace(/\./g, '');
-
-    if (!/^\d*$/.test(rawValue)) {
-      return;
-    }
-
-    const numValue = parseFloat(rawValue);
-
-    if (isNaN(numValue)) {
-      return;
-    }
-
-    if (numValue < 0) {
-      e.target.value = '0';
-      setValue('harga', '0');
-      return;
-    }
-
-    const displayValue = numValue > 0 ? numValue.toLocaleString('id-ID') : rawValue;
-
-    setValue('harga', displayValue);
-  };
 
   const handleFileUploadChange = (file: File | any | null) => {
     if (file && file instanceof File) {
@@ -263,7 +204,7 @@ export const PropertiForm = memo(function PropertiForm({
       return;
     }
 
-    const hargaNumber = data.harga ? parseFloat(data.harga.replace(/\./g, '')) : 0;
+    const hargaNumber = data.harga ? parseFloat(data.harga.replace(/[^\d]/g, '')) : 0;
     if (isNaN(hargaNumber) || hargaNumber <= 0) {
       alert('Harga harus berupa angka positif');
       return;
@@ -309,7 +250,7 @@ export const PropertiForm = memo(function PropertiForm({
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
               unit_id: parseInt(item.unit_id),
-              harga: parseFloat(item.harga.replace(/\./g, ''))
+              harga: parseFloat(item.harga.replace(/[^\d]/g, ''))
             }))
           : []
       };
@@ -329,7 +270,7 @@ export const PropertiForm = memo(function PropertiForm({
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
               unit_id: parseInt(item.unit_id),
-              harga: parseFloat(item.harga.replace(/\./g, ''))
+              harga: parseFloat(item.harga.replace(/[^\d]/g, ''))
             }))
           : []
       };
@@ -447,56 +388,13 @@ export const PropertiForm = memo(function PropertiForm({
 
         <div className='space-y-2'>
           <Label htmlFor='harga'>Harga *</Label>
-          <div className='relative'>
-            <Input
-              id='harga'
-              type='text'
-              inputMode='decimal'
-              placeholder='Contoh: 100.000.000'
-              {...register('harga')}
-              onChange={handleCurrencyChange}
-              onKeyDown={(e) => {
-                const allowedKeys = [
-                  '0',
-                  '1',
-                  '2',
-                  '3',
-                  '4',
-                  '5',
-                  '6',
-                  '7',
-                  '8',
-                  '9',
-                  'Backspace',
-                  'Delete',
-                  'Tab',
-                  'Enter',
-                  'ArrowLeft',
-                  'ArrowRight',
-                  'ArrowUp',
-                  'ArrowDown'
-                ];
-                if (!allowedKeys.includes(e.key)) {
-                  e.preventDefault();
-                  return;
-                }
-              }}
-              onPaste={(e) => {
-                e.preventDefault();
-                const pastedText = e.clipboardData.getData('text');
-                const rawPastedText = pastedText.replace(/\./g, '');
-                const numValue = parseFloat(rawPastedText);
-
-                if (!isNaN(numValue) && numValue >= 0) {
-                  const formattedValue = numValue.toLocaleString('id-ID');
-                  setValue('harga', formattedValue);
-                }
-              }}
-              disabled={isLoading}
-              className='pr-8'
-            />
-            <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>Rp</span>
-          </div>
+          <Input
+            id='harga'
+            type='currency'
+            placeholder='Contoh: 100.000.000'
+            {...register('harga')}
+            disabled={isLoading}
+          />
           {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
         </div>
       </div>
@@ -550,52 +448,11 @@ export const PropertiForm = memo(function PropertiForm({
                   <Label>Harga *</Label>
                   <div className='relative'>
                     <Input
-                      type='text'
-                      inputMode='decimal'
+                      type='currency'
                       placeholder='Contoh: 100.000.000'
-                      value={watch(`daftar_harga.${index}.harga`)}
-                      onChange={(e) => formatCurrencyForDaftarHarga(index, e.target.value)}
-                      onKeyDown={(e) => {
-                        const allowedKeys = [
-                          '0',
-                          '1',
-                          '2',
-                          '3',
-                          '4',
-                          '5',
-                          '6',
-                          '7',
-                          '8',
-                          '9',
-                          'Backspace',
-                          'Delete',
-                          'Tab',
-                          'Enter',
-                          'ArrowLeft',
-                          'ArrowRight',
-                          'ArrowUp',
-                          'ArrowDown'
-                        ];
-                        if (!allowedKeys.includes(e.key)) {
-                          e.preventDefault();
-                          return;
-                        }
-                      }}
-                      onPaste={(e) => {
-                        e.preventDefault();
-                        const pastedText = e.clipboardData.getData('text');
-                        const rawPastedText = pastedText.replace(/\./g, '');
-                        const numValue = parseFloat(rawPastedText);
-
-                        if (!isNaN(numValue) && numValue >= 0) {
-                          const formattedValue = numValue.toLocaleString('id-ID');
-                          setValue(`daftar_harga.${index}.harga`, formattedValue);
-                        }
-                      }}
+                      {...register(`daftar_harga.${index}.harga`)}
                       disabled={isLoading}
-                      className='pr-16'
                     />
-                    <span className='absolute top-1/2 right-12 -translate-y-1/2 text-sm text-gray-500'>Rp</span>
                     <Button
                       type='button'
                       variant='destructive'

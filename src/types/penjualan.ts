@@ -73,6 +73,7 @@ export interface CreatePenjualanData {
   unit_id: number;
   diskon?: number | null;
   tipe_diskon?: 'percent' | 'fixed' | null;
+  grand_total?: number;
   status?: PenjualanStatus;
 }
 
@@ -84,6 +85,7 @@ export interface UpdatePenjualanData {
   unit_id?: number;
   diskon?: number | null;
   tipe_diskon?: 'percent' | 'fixed' | null;
+  grand_total?: number;
 }
 
 export interface UpdatePenjualanStatusData {

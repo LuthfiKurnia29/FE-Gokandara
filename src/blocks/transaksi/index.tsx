@@ -32,6 +32,16 @@ import MetricsSection from './metric-section';
 import { CheckCircle, Clock, Filter, MessageSquare, MoreHorizontal, Pencil, Plus, Trash, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+// Helper function to format currency consistently
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
 const columnHelper = createColumnHelper<PenjualanWithRelations>();
 
 const columns = [
@@ -102,11 +112,24 @@ const columns = [
     header: 'Harga (Sebelum Diskon)',
     cell: ({ row }) => {
       const properti = row.original.properti;
-      const hargaSebelumDiskon = properti?.harga || 0;
+      const diskon = row.original.diskon;
+      const tipeDiskon = row.original.tipe_diskon;
+      const grandTotal = row.original.grand_total;
+
+      // Calculate base price from grand_total and discount
+      let basePrice = grandTotal;
+      if (diskon && diskon > 0) {
+        if (tipeDiskon === 'percent') {
+          const discountPercent = Math.min(diskon, 100);
+          basePrice = grandTotal / (1 - discountPercent / 100);
+        } else if (tipeDiskon === 'fixed') {
+          basePrice = grandTotal + diskon;
+        }
+      }
 
       return (
         <div className='flex flex-col'>
-          <span className='font-medium text-green-600'>Rp {hargaSebelumDiskon.toLocaleString('id-ID')}</span>
+          <span className='font-medium text-green-600'>{formatRupiah(basePrice)}</span>
         </div>
       );
     },
@@ -116,37 +139,11 @@ const columns = [
     id: 'harga_sesudah_diskon',
     header: 'Harga (Sesudah Diskon)',
     cell: ({ row }) => {
-      const properti = row.original.properti;
-      const diskon = row.original.diskon;
-      const tipeDiskon = row.original.tipe_diskon;
       const grandTotal = row.original.grand_total;
-      const hargaSebelumDiskon = properti?.harga || 0;
-
-      let actualTipeDiskon: string | null = null;
-      let actualDiscountAmount = 0;
-
-      if (diskon && diskon > 0) {
-        actualTipeDiskon = tipeDiskon;
-
-        if (!actualTipeDiskon) {
-          if (diskon <= 100) {
-            actualTipeDiskon = 'percent';
-          } else {
-            actualTipeDiskon = 'fixed';
-          }
-        }
-
-        if (actualTipeDiskon === 'percent') {
-          const maxPercent = Math.min(diskon, 100);
-          actualDiscountAmount = (hargaSebelumDiskon * maxPercent) / 100;
-        } else if (actualTipeDiskon === 'fixed') {
-          actualDiscountAmount = Math.min(diskon, hargaSebelumDiskon);
-        }
-      }
 
       return (
         <div className='flex flex-col'>
-          <span className='font-bold text-green-600'>Rp {grandTotal.toLocaleString('id-ID')}</span>
+          <span className='font-bold text-green-600'>{formatRupiah(grandTotal)}</span>
         </div>
       );
     },

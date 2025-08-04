@@ -131,7 +131,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     if (!value || value.trim() === '') return '';
 
     if (tipeDiskon === 'fixed') {
-      return value.replace(/\./g, '');
+      return value.replace(/[^\d]/g, '');
     }
 
     return value;
@@ -155,6 +155,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     if (diskon && diskon.trim() !== '') {
       const rawDiscountValue = getRawValue(diskon);
       const parsedDiscount = parseFloat(rawDiscountValue);
+
       if (!isNaN(parsedDiscount) && parsedDiscount >= 0) {
         if (tipeDiskon === 'percent') {
           // Percentage discount
@@ -232,20 +233,14 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         if (tipeDiskon === 'percent' && numValue > 100) {
           setValue('diskon', '100');
           setDiscountError('Diskon maksimal 100%');
-          toast.warning('Diskon telah dibatasi maksimal 100%');
         } else if (numValue < 0) {
           setValue('diskon', '0');
           setDiscountError('Diskon tidak boleh negatif');
-        } else if (tipeDiskon === 'fixed' && selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
-          setValue('diskon', selectedPrice.toString());
-          setDiscountError('Diskon tidak boleh melebihi harga properti');
-          toast.warning('Diskon telah dibatasi maksimal harga properti');
         } else {
           setDiscountError(''); // Clear error if value is valid
         }
       } else {
         setDiscountError('Nilai tidak valid');
-        setValue('diskon', ''); // Clear invalid value
       }
     } else {
       setDiscountError(''); // Clear error if empty
@@ -273,70 +268,8 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   // Helper function to handle discount input with strict validation
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-
-    // Clear error state
+    setValue('diskon', value);
     setDiscountError('');
-
-    // Allow empty value
-    if (value === '') {
-      setValue('diskon', '');
-      return;
-    }
-
-    // For fixed amount, remove formatting first
-    let rawValue = value;
-    if (tipeDiskon === 'fixed') {
-      rawValue = value.replace(/\./g, ''); // Remove thousand separators
-    }
-
-    // Check if value contains only numbers and decimal point
-    if (!/^\d*\.?\d*$/.test(rawValue)) {
-      setDiscountError('Hanya angka dan titik desimal yang diperbolehkan');
-      return;
-    }
-
-    const numValue = parseFloat(rawValue);
-
-    // If not a valid number, don't update
-    if (isNaN(numValue)) {
-      setDiscountError('Nilai tidak valid');
-      return;
-    }
-
-    // Prevent negative values
-    if (numValue < 0) {
-      e.target.value = '0';
-      setValue('diskon', '0');
-      setDiscountError('Diskon tidak boleh negatif');
-      return;
-    }
-
-    // Apply limits based on discount type
-    if (tipeDiskon === 'percent' && numValue > 100) {
-      e.target.value = '100';
-      setValue('diskon', '100');
-      setDiscountError('Diskon maksimal 100%');
-      toast.warning('Diskon telah dibatasi maksimal 100%');
-      return;
-    }
-
-    if (tipeDiskon === 'fixed' && selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
-      e.target.value = selectedPrice.toString();
-      setValue('diskon', selectedPrice.toString());
-      setDiscountError('Diskon tidak boleh melebihi harga properti');
-      toast.warning('Diskon telah dibatasi maksimal harga properti');
-      return;
-    }
-
-    // Format value for display
-    let displayValue = rawValue;
-    if (tipeDiskon === 'fixed' && numValue > 0) {
-      displayValue = formatRupiah(numValue).replace('Rp ', '');
-    }
-
-    // Valid value, update form
-    setValue('diskon', displayValue);
-    setDiscountError(''); // Clear any existing errors
   };
 
   // Safe option mapping
@@ -410,25 +343,17 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   }, [transactionData, selectedId, initialData, reset, propertiOptions]);
 
   const handleFormSubmit = async (data: BookingFormData) => {
-    // Validate discount with strict checking
+    // Simple validation for discount
     if (data.diskon && data.diskon.trim() !== '') {
       const rawDiscountValue = getRawValue(data.diskon);
       const discountValue = parseFloat(rawDiscountValue);
       if (isNaN(discountValue) || discountValue < 0) {
         setDiscountError('Diskon harus berupa angka positif');
-        toast.error('Diskon harus berupa angka positif');
         return;
       }
 
       if (data.tipe_diskon === 'percent' && discountValue > 100) {
         setDiscountError('Diskon maksimal 100%');
-        toast.error('Diskon maksimal 100%');
-        return;
-      }
-
-      if (data.tipe_diskon === 'fixed' && selectedPrice && selectedPrice > 0 && discountValue > selectedPrice) {
-        setDiscountError('Diskon tidak boleh melebihi harga properti');
-        toast.error('Diskon tidak boleh melebihi harga properti');
         return;
       }
     }
@@ -456,6 +381,8 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
       unit_id: data.unit_id ? parseInt(data.unit_id) : 1,
       diskon: validatedDiscount ? parseFloat(validatedDiscount) : null,
       tipe_diskon: data.tipe_diskon || 'percent',
+      // Add grand_total calculation
+      grand_total: priceCalculation.finalPrice,
       // Keep existing status when editing, use default for new transactions
       status: selectedId && transactionData ? transactionData.status : 'Negotiation'
     };
@@ -568,161 +495,57 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
                 {/* Discount Input */}
                 <div className='relative w-full max-w-xs'>
-                  <Input
-                    id='diskon'
-                    type='text'
-                    inputMode='decimal'
-                    placeholder={tipeDiskon === 'percent' ? '0' : '0'}
-                    value={getDisplayValue(diskon || '')}
-                    className={`h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500 ${
-                      discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
-                    onKeyDown={(e) => {
-                      // Prevent invalid characters
-                      const allowedKeys = [
-                        '0',
-                        '1',
-                        '2',
-                        '3',
-                        '4',
-                        '5',
-                        '6',
-                        '7',
-                        '8',
-                        '9',
-                        '.',
-                        'Backspace',
-                        'Delete',
-                        'Tab',
-                        'Enter',
-                        'ArrowLeft',
-                        'ArrowRight',
-                        'ArrowUp',
-                        'ArrowDown'
-                      ];
-                      if (!allowedKeys.includes(e.key)) {
-                        e.preventDefault();
-                        setDiscountError('Hanya angka dan titik desimal yang diperbolehkan');
-                        return;
-                      }
+                  {tipeDiskon === 'fixed' ? (
+                    <Input
+                      id='diskon'
+                      type='currency'
+                      placeholder='0'
+                      value={diskon || ''}
+                      className={`h-10 border-gray-300 focus:border-teal-500 focus:ring-teal-500 ${
+                        discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
+                      onChange={(e) => {
+                        // Handle currency format validation
+                        const value = e.target.value;
+                        setValue('diskon', value);
 
-                      // Prevent multiple decimal points
-                      if (e.key === '.' && e.currentTarget.value.includes('.')) {
-                        e.preventDefault();
-                        setDiscountError('Tidak boleh ada lebih dari satu titik desimal');
-                        return;
-                      }
+                        if (value && value.trim() !== '') {
+                          const rawValue = value.replace(/[^\d]/g, '');
+                          const numValue = parseFloat(rawValue);
 
-                      // For fixed amount, prevent decimal points
-                      if (tipeDiskon === 'fixed' && e.key === '.') {
-                        e.preventDefault();
-                        setDiscountError('Nominal tidak boleh menggunakan desimal');
-                        return;
-                      }
-
-                      // Prevent typing values over limits
-                      const currentValue = e.currentTarget.value;
-                      const selectionStart = e.currentTarget.selectionStart || 0;
-                      const selectionEnd = e.currentTarget.selectionEnd || 0;
-                      const newValue =
-                        currentValue.substring(0, selectionStart) + e.key + currentValue.substring(selectionEnd);
-
-                      if (newValue && newValue !== '.') {
-                        const rawNewValue = tipeDiskon === 'fixed' ? newValue.replace(/\./g, '') : newValue;
-                        const numValue = parseFloat(rawNewValue);
-                        if (!isNaN(numValue)) {
-                          if (tipeDiskon === 'percent' && numValue > 100) {
-                            e.preventDefault();
-                            setDiscountError('Diskon tidak boleh lebih dari 100%');
-                            toast.warning('Diskon tidak boleh lebih dari 100%');
-                            return;
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            if (selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
+                              setDiscountError('Diskon tidak boleh melebihi harga properti');
+                              toast.warning('Diskon telah dibatasi maksimal harga properti');
+                            } else {
+                              setDiscountError('');
+                            }
+                          } else {
+                            setDiscountError('Nilai tidak valid');
                           }
-                          // Only prevent if selectedPrice exists and is greater than 0
-                          if (
-                            tipeDiskon === 'fixed' &&
-                            selectedPrice &&
-                            selectedPrice > 0 &&
-                            numValue > selectedPrice
-                          ) {
-                            e.preventDefault();
-                            setDiscountError('Diskon tidak boleh melebihi harga properti');
-                            toast.warning('Diskon telah dibatasi maksimal harga properti');
-                            return;
-                          }
-                        }
-                      }
-                    }}
-                    onChange={handleDiscountChange}
-                    onBlur={(e) => {
-                      // Validate on blur
-                      const value = e.target.value;
-                      if (value && value.trim() !== '') {
-                        const rawValue = getRawValue(value);
-                        const numValue = parseFloat(rawValue);
-                        if (isNaN(numValue) || numValue < 0) {
-                          e.target.value = '0';
-                          setValue('diskon', '0');
-                          setDiscountError('Diskon tidak boleh negatif');
-                        } else if (tipeDiskon === 'percent' && numValue > 100) {
-                          e.target.value = '100';
-                          setValue('diskon', '100');
-                          setDiscountError('Diskon maksimal 100%');
-                          toast.warning('Diskon telah dibatasi maksimal 100%');
-                        } else if (
-                          tipeDiskon === 'fixed' &&
-                          selectedPrice &&
-                          selectedPrice > 0 &&
-                          numValue > selectedPrice
-                        ) {
-                          const formattedValue = formatRupiah(selectedPrice).replace('Rp ', '');
-                          e.target.value = formattedValue;
-                          setValue('diskon', formattedValue);
-                          setDiscountError('Diskon maksimal harga properti');
-                          toast.warning('Diskon telah dibatasi maksimal harga properti');
                         } else {
-                          setDiscountError(''); // Clear error if valid
+                          setDiscountError('');
                         }
-                      } else {
-                        setDiscountError(''); // Clear error if empty
-                      }
-                    }}
-                    onPaste={(e) => {
-                      // Prevent pasting invalid values
-                      e.preventDefault();
-                      const pastedText = e.clipboardData.getData('text');
-                      const rawPastedText = tipeDiskon === 'fixed' ? pastedText.replace(/\./g, '') : pastedText;
-                      const numValue = parseFloat(rawPastedText);
-
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        if (tipeDiskon === 'percent' && numValue <= 100) {
-                          setValue('diskon', pastedText);
-                          setDiscountError(''); // Clear error
-                        } else if (
-                          tipeDiskon === 'fixed' &&
-                          selectedPrice &&
-                          selectedPrice > 0 &&
-                          numValue <= selectedPrice
-                        ) {
-                          const formattedValue = formatRupiah(numValue).replace('Rp ', '');
-                          setValue('diskon', formattedValue);
-                          setDiscountError(''); // Clear error
-                        } else {
-                          setDiscountError(
-                            `Nilai yang di-paste tidak valid (${tipeDiskon === 'percent' ? '0-100%' : '0-harga properti'})`
-                          );
-                          toast.warning(
-                            `Nilai yang di-paste tidak valid (${tipeDiskon === 'percent' ? '0-100%' : '0-harga properti'})`
-                          );
-                        }
-                      } else {
-                        setDiscountError('Nilai yang di-paste tidak valid');
-                        toast.warning('Nilai yang di-paste tidak valid');
-                      }
-                    }}
-                  />
-                  <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>
-                    {tipeDiskon === 'percent' ? '%' : 'Rp'}
-                  </span>
+                      }}
+                      disabled={isLoadingTransaction}
+                    />
+                  ) : (
+                    <Input
+                      id='diskon'
+                      type='text'
+                      inputMode='decimal'
+                      placeholder='0'
+                      value={getDisplayValue(diskon || '')}
+                      className={`h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500 ${
+                        discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                      }`}
+                      onChange={handleDiscountChange}
+                      disabled={isLoadingTransaction}
+                    />
+                  )}
+                  {tipeDiskon === 'percent' && (
+                    <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>%</span>
+                  )}
                 </div>
                 {errors.diskon && <p className='text-xs text-red-500'>{errors.diskon.message}</p>}
                 {discountError && <p className='text-xs text-red-500'>{discountError}</p>}
