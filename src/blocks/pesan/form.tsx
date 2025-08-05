@@ -25,7 +25,7 @@ const pesanSchema = z.object({
     message: 'Array must contain at least 1 number'
   }),
   pesan: z.string().min(1, 'Pesan wajib diisi'),
-  file: z.array(z.instanceof(Blob)).optional()
+  file: z.array(z.any()).optional()
 });
 
 type PesanFormData = z.infer<typeof pesanSchema>;
@@ -51,11 +51,14 @@ export const PesanForm = memo(function PesanForm({
     reset,
     formState: { errors },
     control,
-    setValue
+    setValue,
+    watch
   } = useForm<PesanFormData>({
     resolver: zodResolver(pesanSchema),
     defaultValues: { pesan: '' }
   });
+  console.log('watch', watch());
+  console.log('errors', errors);
 
   // Populate form with existing data in edit mode
   useEffect(() => {
@@ -65,7 +68,16 @@ export const PesanForm = memo(function PesanForm({
   }, [reset, selectedId]);
 
   const handleFormSubmit = (data: PesanFormData) => {
-    onSubmit({ pesan: data.pesan, user_penerima_id: data.user_penerima_id });
+    const formData = new FormData();
+    formData.append('pesan', data.pesan);
+    data.user_penerima_id.forEach((id) => {
+      formData.append('user_penerima_id[]', id.toString());
+    });
+    const file = watch('file');
+    if (file && file?.length > 0) {
+      formData.append('file', file[0].file as File);
+    }
+    onSubmit(formData as unknown as CreatePesanData);
   };
 
   const handleCancel = () => {
@@ -178,7 +190,7 @@ export const PesanForm = memo(function PesanForm({
               // console.log("logo", value);
               return (
                 <FileUpload
-                  initialFiles={value}
+                  initialFiles={value ? [value[0].file] : undefined}
                   onupdatefiles={onChange}
                   allowMultiple={false}
                   labelIdle="Drag & Drop your logo or <span class='filepond--label-action'>Browse</span>"

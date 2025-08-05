@@ -13,6 +13,7 @@ import { useAllProjects, usePropertyById } from '@/services/properti';
 import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/properti';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { FilePondFile } from 'filepond';
 import { X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -100,7 +101,7 @@ export const PropertiForm = memo(function PropertiForm({
   } = usePropertyById(selectedId !== undefined ? selectedId : null, ['projek', 'properti_gambar']);
 
   const existingImages = useMemo(() => {
-    return existingData?.properti_gambar?.map((img: any) => img.image_url || '') || [];
+    return existingData?.properti_gambar?.map((img: any) => `${img.image_url}?v=${Date.now()}` || '') || [];
   }, [existingData?.properti_gambar]);
 
   const {
@@ -178,10 +179,13 @@ export const PropertiForm = memo(function PropertiForm({
     }
   }, [existingData, reset, selectedId, isFetching]);
 
-  const handleFileUploadChange = (file: File | any | null) => {
-    if (file && file instanceof File) {
-      setUploadedFiles([file]);
-      setValue('properti__gambars', [file]);
+  const handleFileUploadChange = (file: FilePondFile[] | null) => {
+    if (file && file.length > 0) {
+      setUploadedFiles(file.map((f) => f.file as File));
+      setValue(
+        'properti__gambars',
+        file.map((f) => f.file as File)
+      );
     } else {
       setUploadedFiles([]);
       setValue('properti__gambars', []);
@@ -344,173 +348,180 @@ export const PropertiForm = memo(function PropertiForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='space-y-2'>
-          <Label htmlFor='project_id'>Proyek *</Label>
-          <Select
-            options={safeProjectOptions}
-            value={projectId}
-            onChange={(value) => setValue('project_id', value as string)}
-            placeholder={isLoadingProjects ? 'Loading...' : 'Pilih Proyek'}
-            disabled={isLoadingProjects || isLoading}
-          />
-          {errors.project_id && <p className='text-sm text-red-600'>{errors.project_id.message}</p>}
+      <div className='max-h-[680px] overflow-y-auto'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <div className='space-y-2'>
+            <Label htmlFor='project_id'>Proyek *</Label>
+            <Select
+              options={safeProjectOptions}
+              value={projectId}
+              onChange={(value) => setValue('project_id', value as string)}
+              placeholder={isLoadingProjects ? 'Loading...' : 'Pilih Proyek'}
+              disabled={isLoadingProjects || isLoading}
+            />
+            {errors.project_id && <p className='text-sm text-red-600'>{errors.project_id.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='luas_bangunan'>Luas Bangunan *</Label>
+            <Input id='luas_bangunan' {...register('luas_bangunan')} placeholder='Contoh: 7×8' disabled={isLoading} />
+            {errors.luas_bangunan && <p className='text-sm text-red-600'>{errors.luas_bangunan.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='luas_tanah'>Luas Tanah *</Label>
+            <Input id='luas_tanah' {...register('luas_tanah')} placeholder='Contoh: 8×14' disabled={isLoading} />
+            {errors.luas_tanah && <p className='text-sm text-red-600'>{errors.luas_tanah.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='kelebihan'>Kelebihan *</Label>
+            <Input
+              id='kelebihan'
+              {...register('kelebihan')}
+              placeholder='Contoh: Lingkungan Aman'
+              disabled={isLoading}
+            />
+            {errors.kelebihan && <p className='text-sm text-red-600'>{errors.kelebihan.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='lokasi'>Lokasi *</Label>
+            <Input
+              id='lokasi'
+              {...register('lokasi')}
+              placeholder='Contoh: Jalan Anggrek Biru No. 30, Surabaya'
+              disabled={isLoading}
+            />
+            {errors.lokasi && <p className='text-sm text-red-600'>{errors.lokasi.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='harga'>Harga *</Label>
+            <Input
+              id='harga'
+              type='currency'
+              placeholder='Contoh: 100.000.000'
+              {...register('harga')}
+              disabled={isLoading}
+            />
+            {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
+          </div>
         </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='luas_bangunan'>Luas Bangunan *</Label>
-          <Input id='luas_bangunan' {...register('luas_bangunan')} placeholder='Contoh: 7×8' disabled={isLoading} />
-          {errors.luas_bangunan && <p className='text-sm text-red-600'>{errors.luas_bangunan.message}</p>}
-        </div>
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <Label>Daftar Harga</Label>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={handleAddDaftarHarga}
+              disabled={isLoading || isLoadingTipe || isLoadingUnit}>
+              + Tambah Harga
+            </Button>
+          </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='luas_tanah'>Luas Tanah *</Label>
-          <Input id='luas_tanah' {...register('luas_tanah')} placeholder='Contoh: 8×14' disabled={isLoading} />
-          {errors.luas_tanah && <p className='text-sm text-red-600'>{errors.luas_tanah.message}</p>}
-        </div>
-
-        <div className='space-y-2'>
-          <Label htmlFor='kelebihan'>Kelebihan *</Label>
-          <Input id='kelebihan' {...register('kelebihan')} placeholder='Contoh: Lingkungan Aman' disabled={isLoading} />
-          {errors.kelebihan && <p className='text-sm text-red-600'>{errors.kelebihan.message}</p>}
-        </div>
-
-        <div className='space-y-2'>
-          <Label htmlFor='lokasi'>Lokasi *</Label>
-          <Input
-            id='lokasi'
-            {...register('lokasi')}
-            placeholder='Contoh: Jalan Anggrek Biru No. 30, Surabaya'
-            disabled={isLoading}
-          />
-          {errors.lokasi && <p className='text-sm text-red-600'>{errors.lokasi.message}</p>}
-        </div>
-
-        <div className='space-y-2'>
-          <Label htmlFor='harga'>Harga *</Label>
-          <Input
-            id='harga'
-            type='currency'
-            placeholder='Contoh: 100.000.000'
-            {...register('harga')}
-            disabled={isLoading}
-          />
-          {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
-        </div>
-      </div>
-
-      <div className='space-y-4'>
-        <div className='flex items-center justify-between'>
-          <Label>Daftar Harga</Label>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={handleAddDaftarHarga}
-            disabled={isLoading || isLoadingTipe || isLoadingUnit}>
-            + Tambah Harga
-          </Button>
-        </div>
-
-        {daftarHarga && daftarHarga.length > 0 ? (
-          <div className='space-y-4'>
-            {daftarHarga.map((_, index) => (
-              <div key={`daftar_harga_${index}`} className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-                <div className='space-y-2'>
-                  <Label>Tipe *</Label>
-                  <Select
-                    options={safeTipeOptions}
-                    value={watch(`daftar_harga.${index}.tipe_id`)}
-                    onChange={(value) => setValue(`daftar_harga.${index}.tipe_id`, value as string)}
-                    placeholder='Pilih Tipe'
-                    disabled={isLoading || isLoadingTipe}
-                  />
-                  {errors.daftar_harga?.[index]?.tipe_id && (
-                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.tipe_id?.message}</p>
-                  )}
-                </div>
-
-                <div className='space-y-2'>
-                  <Label>Unit *</Label>
-                  <Select
-                    options={safeUnitOptions}
-                    value={watch(`daftar_harga.${index}.unit_id`)}
-                    onChange={(value) => setValue(`daftar_harga.${index}.unit_id`, value as string)}
-                    placeholder='Pilih Unit'
-                    disabled={isLoading || isLoadingUnit}
-                  />
-                  {errors.daftar_harga?.[index]?.unit_id && (
-                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.unit_id?.message}</p>
-                  )}
-                </div>
-
-                <div className='space-y-2'>
-                  <Label>Harga *</Label>
-                  <div className='relative'>
-                    <Input
-                      type='currency'
-                      placeholder='Contoh: 100.000.000'
-                      {...register(`daftar_harga.${index}.harga`)}
-                      disabled={isLoading}
+          {daftarHarga && daftarHarga.length > 0 ? (
+            <div className='space-y-4'>
+              {daftarHarga.map((_, index) => (
+                <div key={`daftar_harga_${index}`} className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                  <div className='space-y-2'>
+                    <Label>Tipe *</Label>
+                    <Select
+                      options={safeTipeOptions}
+                      value={watch(`daftar_harga.${index}.tipe_id`)}
+                      onChange={(value) => setValue(`daftar_harga.${index}.tipe_id`, value as string)}
+                      placeholder='Pilih Tipe'
+                      disabled={isLoading || isLoadingTipe}
                     />
-                    <Button
-                      type='button'
-                      variant='destructive'
-                      size='icon'
-                      className='absolute top-1/2 right-1 -translate-y-1/2'
-                      onClick={() => handleRemoveDaftarHarga(index)}
-                      disabled={isLoading}>
-                      <X className='h-4 w-4' />
-                    </Button>
+                    {errors.daftar_harga?.[index]?.tipe_id && (
+                      <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.tipe_id?.message}</p>
+                    )}
                   </div>
-                  {errors.daftar_harga?.[index]?.harga && (
-                    <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.harga?.message}</p>
-                  )}
+
+                  <div className='space-y-2'>
+                    <Label>Unit *</Label>
+                    <Select
+                      options={safeUnitOptions}
+                      value={watch(`daftar_harga.${index}.unit_id`)}
+                      onChange={(value) => setValue(`daftar_harga.${index}.unit_id`, value as string)}
+                      placeholder='Pilih Unit'
+                      disabled={isLoading || isLoadingUnit}
+                    />
+                    {errors.daftar_harga?.[index]?.unit_id && (
+                      <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.unit_id?.message}</p>
+                    )}
+                  </div>
+
+                  <div className='space-y-2'>
+                    <Label>Harga *</Label>
+                    <div className='flex items-center gap-2'>
+                      <Input
+                        type='currency'
+                        placeholder='Contoh: 100.000.000'
+                        {...register(`daftar_harga.${index}.harga`)}
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type='button'
+                        variant='destructive'
+                        size='icon'
+                        onClick={() => handleRemoveDaftarHarga(index)}
+                        disabled={isLoading}>
+                        <X className='h-4 w-4' />
+                      </Button>
+                    </div>
+                    {errors.daftar_harga?.[index]?.harga && (
+                      <p className='text-sm text-red-600'>{errors.daftar_harga[index]?.harga?.message}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
-            <p className='text-sm text-gray-500'>Belum ada daftar harga</p>
-          </div>
-        )}
-      </div>
-
-      <div className='space-y-4'>
-        <Label>Gambar Properti *</Label>
-
-        {selectedId && existingImages.length > 0 && (
-          <div className='space-y-3'>
-            <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
-              <p className='text-sm text-blue-800'>
-                💡 <strong>Petunjuk:</strong> Jika tidak ingin mengubah gambar, langsung update saja. Upload gambar baru
-                hanya jika ingin menambah atau mengganti gambar existing.
-              </p>
+              ))}
             </div>
-          </div>
-        )}
-
-        <div className='space-y-2'>
-          <Label className='text-sm font-medium text-gray-700'>
-            {selectedId ? 'Upload Gambar Baru (Opsional)' : 'Upload Gambar'}
-          </Label>
-          <FileUpload
-            onChange={handleFileUploadChange}
-            acceptedFileTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
-            maxFiles={10}
-            disabled={isLoading}
-            initialFiles={existingImages}
-          />
+          ) : (
+            <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
+              <p className='text-sm text-gray-500'>Belum ada daftar harga</p>
+            </div>
+          )}
         </div>
 
-        {!selectedId && uploadedFiles.length === 0 && (
-          <p className='text-sm text-red-600'>Minimal 1 gambar harus diupload</p>
-        )}
+        <div className='space-y-4'>
+          <Label>Gambar Properti *</Label>
 
-        {selectedId && uploadedFiles.length === 0 && existingImages.length === 0 && (
-          <p className='text-sm text-red-600'>Minimal 1 gambar harus ada (existing atau upload baru)</p>
-        )}
+          {selectedId && existingImages.length > 0 && (
+            <div className='space-y-3'>
+              <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
+                <p className='text-sm text-blue-800'>
+                  💡 <strong>Petunjuk:</strong> Jika tidak ingin mengubah gambar, langsung update saja. Upload gambar
+                  baru hanya jika ingin menambah atau mengganti gambar existing.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium text-gray-700'>
+              {selectedId ? 'Upload Gambar Baru (Opsional)' : 'Upload Gambar'}
+            </Label>
+            <FileUpload
+              onChange={handleFileUploadChange}
+              acceptedFileTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+              allowMultiple={true}
+              maxFiles={10}
+              disabled={isLoading}
+              initialFiles={existingImages}
+            />
+          </div>
+
+          {!selectedId && uploadedFiles.length === 0 && (
+            <p className='text-sm text-red-600'>Minimal 1 gambar harus diupload</p>
+          )}
+
+          {selectedId && uploadedFiles.length === 0 && existingImages.length === 0 && (
+            <p className='text-sm text-red-600'>Minimal 1 gambar harus ada (existing atau upload baru)</p>
+          )}
+        </div>
       </div>
 
       <div className='flex justify-end space-x-2 pt-4'>

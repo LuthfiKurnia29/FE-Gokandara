@@ -7,6 +7,7 @@ import { ButtonGroup, ButtonGroupItem } from '@/components/ui/button-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { uncurrency } from '@/lib/utils';
 import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti, usePropertyById } from '@/services/properti';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
@@ -30,7 +31,7 @@ const bookingSchema = z.object({
     .refine(
       (value) => {
         if (!value || value.trim() === '') return true; // Allow empty
-        const numValue = parseFloat(value);
+        const numValue = isNaN(Number(value)) ? uncurrency(value) : parseFloat(value);
         return !isNaN(numValue) && numValue >= 0;
       },
       { message: 'Diskon harus berupa angka positif' }
@@ -75,7 +76,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
 
   // Fetch transaction data by ID for editing
-  const { data: transactionData, isLoading: isLoadingTransaction } = usePenjualanById(selectedId || null, [
+  const { data: transactionData, isFetching: isLoadingTransaction } = usePenjualanById(selectedId || null, [
     'konsumen',
     'properti',
     'blok',
@@ -131,7 +132,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     if (!value || value.trim() === '') return '';
 
     if (tipeDiskon === 'fixed') {
-      return value.replace(/[^\d]/g, '');
+      return uncurrency(value).toString();
     }
 
     return value;
@@ -510,7 +511,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                         setValue('diskon', value);
 
                         if (value && value.trim() !== '') {
-                          const rawValue = value.replace(/[^\d]/g, '');
+                          const rawValue = getRawValue(value);
                           const numValue = parseFloat(rawValue);
 
                           if (!isNaN(numValue) && numValue >= 0) {
@@ -644,7 +645,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                     Diskon ({tipeDiskon === 'percent' ? `${priceCalculation.discountPercent.toFixed(1)}%` : 'Nominal'})
                   </span>
                   <span className='text-right text-sm font-medium text-red-600'>
-                    -{formatRupiah(priceCalculation.discountAmount)}
+                    - {formatRupiah(priceCalculation.discountAmount)}
                   </span>
                 </div>
               )}

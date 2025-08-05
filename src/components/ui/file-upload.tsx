@@ -18,9 +18,9 @@ registerPlugin(
 );
 
 interface FileUploadProps extends Omit<FilePondProps, 'onupdatefiles'> {
-  onChange?: (file: File | ActualFileObject | null) => void;
+  onChange?: (file: FilePondFile[] | null) => void;
   initialFiles?: (string | Blob)[];
-  onupdatefiles?: (file: File | ActualFileObject | null) => void;
+  onupdatefiles?: (file: FilePondFile[] | null) => void;
 }
 
 const FileUpload = memo<FileUploadProps>(({ onChange, initialFiles, onupdatefiles, ...filePondProps }) => {
@@ -36,13 +36,13 @@ const FileUpload = memo<FileUploadProps>(({ onChange, initialFiles, onupdatefile
         setFiles(fileArray);
 
         // Get the actual File object from the first FilePondFile
-        const firstFile = filePondFiles.length > 0 ? filePondFiles[0].file : null;
+        // const firstFile = filePondFiles.length > 0 ? filePondFiles[0].file : null;
 
         if (onupdatefiles) {
-          onupdatefiles(firstFile);
+          onupdatefiles(filePondFiles);
         }
         if (onChange) {
-          onChange(firstFile);
+          onChange(filePondFiles);
         }
       }}
     />

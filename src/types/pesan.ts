@@ -15,14 +15,14 @@ export interface UserBasicData {
 export interface PesanData {
   id: number;
   user_pengirim_id: number;
-  user_penerima_id: number;
   pesan: string;
   deleted_at?: string | null;
   created_at: string;
   updated_at: string;
-  penerima: UserWithRelations;
+  penerima: UserWithRelations[];
   pengirim: UserWithRelations;
   file?: string;
+  file_url?: string;
 }
 
 export interface ChatConversationData extends UserWithRelations {
