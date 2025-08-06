@@ -36,6 +36,32 @@ const columns = [
     cell: ({ getValue }) => <span className='font-medium'>{getValue()}</span>,
     meta: { style: { minWidth: '180px' } }
   }),
+  columnHelper.accessor('color', {
+    header: 'Color',
+    cell: ({ getValue }) => {
+      const color = getValue();
+      const colorMap: { [key: string]: string } = {
+        blue: '#3B82F6',
+        green: '#10B981',
+        red: '#EF4444',
+        yellow: '#F59E0B',
+        purple: '#8B5CF6',
+        orange: '#F97316',
+        gray: '#6B7280'
+      };
+
+      return (
+        <div className='flex items-center gap-2'>
+          <div
+            className='h-4 w-4 rounded-full border border-gray-300'
+            style={{ backgroundColor: colorMap[color] || color }}
+          />
+          <span className='capitalize'>{color}</span>
+        </div>
+      );
+    },
+    meta: { style: { minWidth: '120px' } }
+  }),
   columnHelper.display({
     id: 'actions',
     header: 'Actions',

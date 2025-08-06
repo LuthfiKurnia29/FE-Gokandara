@@ -19,7 +19,12 @@ export const createProspek = async (payload: CreateProspekData) => {
 };
 
 export const updateProspek = async (id: number, payload: CreateProspekData) => {
-  return axios.put(`/prospek`, { id, ...payload });
+  return axios.put(`/prospek/${id}`, payload);
+};
+
+// Fallback method if backend cannot be changed
+export const updateProspekFallback = async (id: number, payload: CreateProspekData) => {
+  return axios.post('/prospek/update', { id, ...payload });
 };
 
 export const deleteProspek = async (id: number) => {

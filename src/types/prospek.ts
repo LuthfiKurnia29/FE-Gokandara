@@ -1,6 +1,7 @@
 export interface ProspekData {
   id: number;
   name: string;
+  color: string;
 }
 
 export interface ProspekResponse {
@@ -15,6 +16,7 @@ export interface ProspekApiResponse {
 
 export interface CreateProspekData {
   name: string;
+  color: string;
 }
 
 export interface UseProspekListParams {
