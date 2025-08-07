@@ -117,7 +117,8 @@ export const konsumenService = {
       params: {
         search,
         page,
-        per_page
+        per_page,
+        with: 'prospek,project,refrensi' // Load relations
       }
     });
 
@@ -126,20 +127,124 @@ export const konsumenService = {
 
   // Get konsumen by ID
   getKonsumenById: async (id: number): Promise<KonsumenData> => {
-    const response = await axios.get<KonsumenData>(`/konsumen/${id}`);
-    return response.data;
+    try {
+      const response = await axios.get<KonsumenData>(`/konsumen/${id}`, {
+        params: {
+          with: 'prospek,project,refrensi' // Load relations
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.log('🔴 Konsumen Get By ID Error:', {
+        id,
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      throw error;
+    }
   },
 
   // Create new konsumen
   createKonsumen: async (data: CreateKonsumenData): Promise<KonsumenData> => {
-    const response = await axios.post<KonsumenApiResponse>('/konsumen', data);
-    return response.data.data;
+    try {
+      const formData = new FormData();
+
+      // Add all text fields
+      formData.append('name', data.name);
+      formData.append('ktp_number', data.ktp_number);
+      formData.append('address', data.address);
+      formData.append('phone', data.phone);
+      formData.append('email', data.email);
+      formData.append('description', data.description || '');
+      formData.append('refrensi_id', data.refrensi_id.toString());
+      formData.append('prospek_id', data.prospek_id.toString());
+      formData.append('project_id', data.project_id.toString());
+      formData.append('kesiapan_dana', data.kesiapan_dana?.toString() || '');
+      formData.append('pengalaman', data.pengalaman || '');
+      formData.append('materi_fu_1', data.materi_fu_1 || '');
+      formData.append('tgl_fu_1', data.tgl_fu_1 || '');
+      formData.append('materi_fu_2', data.materi_fu_2 || '');
+      formData.append('tgl_fu_2', data.tgl_fu_2 || '');
+
+      // Add gambar files if present
+      if (data.gambar && data.gambar.length > 0) {
+        data.gambar.forEach((file) => {
+          formData.append('gambar', file);
+        });
+      }
+
+      const response = await axios.post<KonsumenApiResponse>('/konsumen', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.data;
+    } catch (error: any) {
+      console.log('🔴 Konsumen Create Error:', {
+        data,
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      throw error;
+    }
   },
 
   // Update existing konsumen
   updateKonsumen: async (id: number, data: Partial<CreateKonsumenData>): Promise<KonsumenData> => {
-    const response = await axios.put<KonsumenApiResponse>(`/konsumen/${id}`, data);
-    return response.data.data;
+    try {
+      const formData = new FormData();
+
+      // Add _method for Laravel to handle PUT request
+      formData.append('_method', 'PUT');
+
+      // Add all text fields
+      if (data.name) formData.append('name', data.name);
+      if (data.ktp_number) formData.append('ktp_number', data.ktp_number);
+      if (data.address) formData.append('address', data.address);
+      if (data.phone) formData.append('phone', data.phone);
+      if (data.email) formData.append('email', data.email);
+      if (data.description !== undefined) formData.append('description', data.description || '');
+      if (data.refrensi_id) formData.append('refrensi_id', data.refrensi_id.toString());
+      if (data.prospek_id) formData.append('prospek_id', data.prospek_id.toString());
+      if (data.project_id) formData.append('project_id', data.project_id.toString());
+      if (data.kesiapan_dana !== undefined) formData.append('kesiapan_dana', data.kesiapan_dana?.toString() || '');
+      if (data.pengalaman !== undefined) formData.append('pengalaman', data.pengalaman || '');
+      if (data.materi_fu_1 !== undefined) formData.append('materi_fu_1', data.materi_fu_1 || '');
+      if (data.tgl_fu_1 !== undefined) formData.append('tgl_fu_1', data.tgl_fu_1 || '');
+      if (data.materi_fu_2 !== undefined) formData.append('materi_fu_2', data.materi_fu_2 || '');
+      if (data.tgl_fu_2 !== undefined) formData.append('tgl_fu_2', data.tgl_fu_2 || '');
+
+      // Add gambar files if present
+      if (data.gambar && data.gambar.length > 0) {
+        data.gambar.forEach((file) => {
+          formData.append('gambar', file);
+        });
+      }
+
+      const response = await axios.post<KonsumenApiResponse>(`/konsumen/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.data;
+    } catch (error: any) {
+      console.log('🔴 Konsumen Update Error:', {
+        id,
+        data,
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      throw error;
+    }
   },
 
   // Delete konsumen

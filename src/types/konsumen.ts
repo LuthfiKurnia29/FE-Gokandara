@@ -20,6 +20,8 @@ export interface KonsumenData {
   project_id: number;
   refrensi_id: number;
   prospek_id: number;
+  gambar?: string | null; // URL gambar untuk existing data
+  gambar_url?: string | null; // Full URL gambar untuk menampilkan
   // Relations (optional when included)
   project?: ProjekData;
   refrensi?: ReferensiData;
@@ -67,6 +69,7 @@ export interface CreateKonsumenData {
   project_id: number;
   refrensi_id: number;
   prospek_id: number;
+  gambar?: File[]; // File array untuk upload gambar
 }
 
 export interface UseKonsumenListParams {

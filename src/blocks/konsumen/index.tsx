@@ -19,7 +19,7 @@ import {
 import { useDelete } from '@/hooks/use-delete';
 import { usePermissions } from '@/services/auth';
 import { useCreateKonsumen, useDeleteKonsumen, useUpdateKonsumen } from '@/services/konsumen';
-import { KonsumenData } from '@/types/konsumen';
+import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
@@ -52,6 +52,9 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
+  const [showImageModal, setShowImageModal] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImageName, setSelectedImageName] = useState<string>('');
   const { getUserData } = usePermissions();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
@@ -63,6 +66,9 @@ const KonsumenPage = memo(function KonsumenPage() {
   const userData = getUserData();
   const userRole = userData?.roles?.[0]?.role?.name || '';
   const userRoleId = userData?.roles?.[0]?.role_id || 0;
+
+  // Check if current user is Mitra
+  const isMitra = userRole.toLowerCase() === 'mitra' || userRoleId === 4; // Assuming Mitra role_id is 4
 
   // Check if user can see filter button (Admin and Supervisor only)
   const canSeeFilterButton = () => {
@@ -108,7 +114,19 @@ const KonsumenPage = memo(function KonsumenPage() {
     setSelectedKonsumen(null);
   };
 
-  const handleFormSubmit = async (data: Omit<KonsumenData, 'id' | 'no'>) => {
+  const handleShowImage = (imageUrl: string, konsumenName: string) => {
+    setSelectedImage(imageUrl);
+    setSelectedImageName(konsumenName);
+    setShowImageModal(true);
+  };
+
+  const handleCloseImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImage('');
+    setSelectedImageName('');
+  };
+
+  const handleFormSubmit = async (data: CreateKonsumenData) => {
     try {
       if (mode === 'create') {
         await createKonsumen.mutateAsync(data);
@@ -138,17 +156,66 @@ const KonsumenPage = memo(function KonsumenPage() {
   };
 
   const renderItem = (item: KonsumenData, index: number) => {
+    // Determine profile picture source based on role and available data
+    const getProfilePicture = () => {
+      if (isMitra && item.gambar_url) {
+        // For Mitra role, show uploaded image if available
+        return item.gambar_url;
+      }
+      // For other roles or when no image available, show default avatar
+      return 'https://github.com/shadcn.png';
+    };
+
+    // Get initials for avatar fallback
+    const getInitials = (name: string) => {
+      return name
+        .split(' ')
+        .map((word) => word.charAt(0))
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    };
+
+    // Check if avatar should be clickable (Mitra role with image)
+    const isAvatarClickable = isMitra && item.gambar_url;
+
+    // Get prospek color
+    const getProspekColor = () => {
+      const colorMap: { [key: string]: string } = {
+        blue: '#3B82F6',
+        green: '#10B981',
+        red: '#EF4444',
+        yellow: '#F59E0B',
+        purple: '#8B5CF6',
+        orange: '#F97316',
+        gray: '#6B7280'
+      };
+      return colorMap[item.prospek?.color || 'gray'] || '#6B7280';
+    };
+
     return (
       <div className='flex h-full justify-between rounded-lg border bg-white p-4 shadow-sm'>
         <div className='flex-1'>
           <div className='flex gap-4'>
-            <Avatar className='h-16 w-16'>
-              <AvatarImage src='https://github.com/shadcn.png' />
-              <AvatarFallback>CN</AvatarFallback>
+            <Avatar
+              className={`h-16 w-16 ${isAvatarClickable ? 'cursor-pointer transition-opacity hover:opacity-80' : ''}`}
+              onClick={isAvatarClickable ? () => handleShowImage(item.gambar_url!, item.name) : undefined}>
+              <AvatarImage src={getProfilePicture()} alt={`Profile ${item.name}`} />
+              <AvatarFallback>{getInitials(item.name)}</AvatarFallback>
             </Avatar>
             <div className='flex-1'>
               <div className='flex justify-between'>
                 <div>
+                  {item.prospek && (
+                    <div className='mb-1 flex items-center gap-1'>
+                      <div
+                        className='h-3 w-3 rounded-full border border-gray-300'
+                        style={{ backgroundColor: getProspekColor() }}
+                        title={`Prospek: ${item.prospek.name}`}
+                      />
+                      <span className='text-xs text-gray-500 capitalize'>{item.prospek.name}</span>
+                    </div>
+                  )}
                   <h3 className='text-lg font-semibold'>{item.name}</h3>
                   {item.description && <p className='text-sm text-gray-600'>{item.description}</p>}
                 </div>
@@ -193,6 +260,11 @@ const KonsumenPage = memo(function KonsumenPage() {
             <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
+            {item.address && (
+              <p className='text-sm'>
+                <span className='font-medium'>Alamat:</span> <span className='line-clamp-2'>{item.address}</span>
+              </p>
+            )}
             {item.tgl_fu_1 && (
               <p className='text-sm'>
                 <span className='font-medium'>Tanggal Follow Up:</span>{' '}
@@ -310,6 +382,47 @@ const KonsumenPage = memo(function KonsumenPage() {
         onOpenChange={setShowMemberFilter}
         onSelectMember={handleSelectMember}
       />
+
+      {/* Image Modal for Mitra Role */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className='max-w-2xl border-0 p-0'>
+          <DialogTitle className='sr-only'>Gambar Konsumen</DialogTitle>
+          <DialogDescription className='sr-only'>
+            Modal untuk menampilkan gambar konsumen dalam ukuran penuh
+          </DialogDescription>
+
+          <div className='relative'>
+            {/* Close button */}
+            <Button
+              variant='outline'
+              size='icon'
+              className='absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm hover:bg-white'
+              onClick={handleCloseImageModal}>
+              <X className='h-4 w-4' />
+            </Button>
+
+            {/* Image container */}
+            <div className='relative aspect-square w-full overflow-hidden rounded-lg'>
+              <img
+                src={selectedImage}
+                alt={`Gambar ${selectedImageName}`}
+                className='h-full w-full object-cover'
+                onError={(e) => {
+                  // Fallback jika gambar gagal dimuat
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://github.com/shadcn.png';
+                }}
+              />
+            </div>
+
+            {/* Image info */}
+            <div className='bg-white p-4'>
+              <h3 className='text-lg font-semibold text-gray-900'>{selectedImageName}</h3>
+              <p className='text-sm text-gray-600'>Gambar konsumen yang diupload oleh Mitra</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <DeleteConfirmDialog />
     </section>
