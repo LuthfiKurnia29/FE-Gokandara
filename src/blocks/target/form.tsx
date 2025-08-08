@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { uncurrency } from '@/lib/utils';
+import { currency, uncurrency } from '@/lib/utils';
 import { useRoleList } from '@/services/user';
 import { CreateTargetData, TargetWithRelations } from '@/types/target';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -80,7 +80,7 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
       role_id: target?.role_id || 0,
       tanggal_awal: target?.tanggal_awal || '',
       tanggal_akhir: target?.tanggal_akhir || '',
-      min_penjualan: target?.min_penjualan?.toString() || '',
+      min_penjualan: target?.min_penjualan != null ? currency(target.min_penjualan) : '',
       hadiah: target?.hadiah || ''
     }
   });
@@ -92,7 +92,7 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
         role_id: target.role_id,
         tanggal_awal: target.tanggal_awal,
         tanggal_akhir: target.tanggal_akhir,
-        min_penjualan: target.min_penjualan.toString(),
+        min_penjualan: currency(target.min_penjualan),
         hadiah: target.hadiah
       });
     } else {

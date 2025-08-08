@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { currency, uncurrency } from '@/lib/utils';
 import { useAllBlok, useAllTipe, useAllUnit } from '@/services/penjualan';
 import { useAllProjects, usePropertyById } from '@/services/properti';
 import { CreatePropertyData, PropertyData, UpdatePropertyData } from '@/types/properti';
@@ -148,13 +149,13 @@ export const PropertiForm = memo(function PropertiForm({
         luas_tanah: existingData.luas_tanah || '',
         kelebihan: existingData.kelebihan || '',
         lokasi: existingData.lokasi || '',
-        harga: existingData.harga ? existingData.harga.toString() : '',
+        harga: existingData.harga != null ? currency(existingData.harga) : '',
         properti__gambars: [],
         daftar_harga: existingData.daftar_harga
           ? existingData.daftar_harga.map((item) => ({
               tipe_id: item.tipe_id.toString(),
               unit_id: item.unit_id.toString(),
-              harga: item.harga.toString()
+              harga: currency(item.harga)
             }))
           : []
       };
@@ -208,7 +209,7 @@ export const PropertiForm = memo(function PropertiForm({
       return;
     }
 
-    const hargaNumber = data.harga ? parseFloat(data.harga.replace(/[^\d]/g, '')) : 0;
+    const hargaNumber = data.harga ? uncurrency(data.harga) : 0;
     if (isNaN(hargaNumber) || hargaNumber <= 0) {
       alert('Harga harus berupa angka positif');
       return;
@@ -254,7 +255,7 @@ export const PropertiForm = memo(function PropertiForm({
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
               unit_id: parseInt(item.unit_id),
-              harga: parseFloat(item.harga.replace(/[^\d]/g, ''))
+              harga: uncurrency(item.harga)
             }))
           : []
       };
@@ -274,7 +275,7 @@ export const PropertiForm = memo(function PropertiForm({
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
               unit_id: parseInt(item.unit_id),
-              harga: parseFloat(item.harga.replace(/[^\d]/g, ''))
+              harga: uncurrency(item.harga)
             }))
           : []
       };

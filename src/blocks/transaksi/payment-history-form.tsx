@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { uncurrency } from '@/lib/utils';
+import { currency, uncurrency } from '@/lib/utils';
 import { RiwayatPembayaranData } from '@/types/riwayat-pembayaran';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -56,7 +56,7 @@ const PaymentHistoryForm = memo(function PaymentHistoryForm({
     if (selectedData) {
       reset({
         tanggal: selectedData.tanggal ?? '',
-        nominal: selectedData.nominal?.toString() ?? '',
+        nominal: selectedData.nominal != null ? currency(selectedData.nominal) : '',
         keterangan: selectedData.keterangan ?? ''
       });
     } else {
