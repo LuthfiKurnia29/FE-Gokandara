@@ -41,11 +41,13 @@ const VISIBLE_HOURS = { from: 7, to: 18 };
 export function CalendarProvider({
   children,
   users,
-  events
+  events,
+  defaultView = 'week'
 }: {
   children: React.ReactNode;
   users: IUser[];
   events: IEvent[];
+  defaultView?: TCalendarView;
 }) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>('colored');
   const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
@@ -54,7 +56,7 @@ export function CalendarProvider({
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedUserId, setSelectedUserId] = useState<IUser['id'] | 'all'>('all');
 
-  const [view, setView] = useState<TCalendarView>('week');
+  const [view, setView] = useState<TCalendarView>(defaultView);
 
   // This localEvents doesn't need to exists in a real scenario.
   // It's used here just to simulate the update of the events.

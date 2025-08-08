@@ -1,13 +1,12 @@
-"use client";
+'use client';
 
-import { format, parseISO } from "date-fns";
-import { Calendar, Clock, Text, User } from "lucide-react";
+import { EditEventDialog } from '@/calendar/components/dialogs/edit-event-dialog';
+import type { IEvent } from '@/calendar/interfaces';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-import { Button } from "@/components/ui/button";
-import { EditEventDialog } from "@/calendar/components/dialogs/edit-event-dialog";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-import type { IEvent } from "@/calendar/interfaces";
+import { format, parseISO } from 'date-fns';
+import { Calendar, Clock, Text, User } from 'lucide-react';
 
 interface IProps {
   event: IEvent;
@@ -28,43 +27,43 @@ export function EventDetailsDialog({ event, children }: IProps) {
             <DialogTitle>{event.title}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="flex items-start gap-2">
-              <User className="mt-1 size-4 shrink-0" />
+          <div className='space-y-4'>
+            <div className='flex items-start gap-2'>
+              <User className='mt-1 size-4 shrink-0' />
               <div>
-                <p className="text-sm font-medium">Responsible</p>
-                <p className="text-sm text-muted-foreground">{event.user.name}</p>
+                <p className='text-sm font-medium'>Konsumen</p>
+                <p className='text-muted-foreground text-sm'>{event.user.name}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <Calendar className="mt-1 size-4 shrink-0" />
+            <div className='flex items-start gap-2'>
+              <Calendar className='mt-1 size-4 shrink-0' />
               <div>
-                <p className="text-sm font-medium">Start Date</p>
-                <p className="text-sm text-muted-foreground">{format(startDate, "MMM d, yyyy h:mm a")}</p>
+                <p className='text-sm font-medium'>Follow Up Awal</p>
+                <p className='text-muted-foreground text-sm'>{format(startDate, 'MMM d, yyyy h:mm a')}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <Clock className="mt-1 size-4 shrink-0" />
+            <div className='flex items-start gap-2'>
+              <Clock className='mt-1 size-4 shrink-0' />
               <div>
-                <p className="text-sm font-medium">End Date</p>
-                <p className="text-sm text-muted-foreground">{format(endDate, "MMM d, yyyy h:mm a")}</p>
+                <p className='text-sm font-medium'>Follow Up Terakhir</p>
+                <p className='text-muted-foreground text-sm'>{format(endDate, 'MMM d, yyyy h:mm a')}</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <Text className="mt-1 size-4 shrink-0" />
+            <div className='flex items-start gap-2'>
+              <Text className='mt-1 size-4 shrink-0' />
               <div>
-                <p className="text-sm font-medium">Description</p>
-                <p className="text-sm text-muted-foreground">{event.description}</p>
+                <p className='text-sm font-medium'>Hasil Follow Up</p>
+                <p className='text-muted-foreground text-sm'>{event.description}</p>
               </div>
             </div>
           </div>
 
           <DialogFooter>
             <EditEventDialog event={event}>
-              <Button type="button" variant="outline">
+              <Button type='button' variant='outline'>
                 Edit
               </Button>
             </EditEventDialog>

@@ -1,4 +1,6 @@
-import type { TEventColor } from "@/calendar/types";
+import type { TEventColor } from '@/calendar/types';
+import { KonsumenData } from '@/types/konsumen';
+import { ProspekData } from '@/types/prospek';
 
 export interface IUser {
   id: string;
@@ -13,7 +15,9 @@ export interface IEvent {
   title: string;
   color: TEventColor;
   description: string;
-  user: IUser;
+  user: KonsumenData | IUser;
+  prospek: ProspekData;
+  updated_at: string;
 }
 
 export interface ICalendarCell {

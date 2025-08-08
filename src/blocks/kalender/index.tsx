@@ -1,19 +1,31 @@
-import { memo } from 'react';
+'use client';
+
+import { memo, useMemo, useState } from 'react';
 
 import { ChangeBadgeVariantInput } from '@/calendar/components/change-badge-variant-input';
 import { ChangeVisibleHoursInput } from '@/calendar/components/change-visible-hours-input';
 import { ChangeWorkingHoursInput } from '@/calendar/components/change-working-hours-input';
-import { CalendarProvider } from '@/calendar/contexts/calendar-context';
+import { CalendarProvider, useCalendar } from '@/calendar/contexts/calendar-context';
+import type { IEvent, IUser } from '@/calendar/interfaces';
+import { TCalendarView, TEventColor } from '@/calendar/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useCurrentUser } from '@/services/auth';
+import { useCalendarList } from '@/services/calendar';
 
 import KalenderContainer from './container';
 import { Settings } from 'lucide-react';
 
-const KalenderPage = memo(function (KalenderPage) {
+const KalenderPage = memo(function KalenderPage() {
+  const [events, setEvents] = useState<IEvent[]>([]);
+  const [view, setView] = useState<TCalendarView>('week');
+
+  // Remount provider if the list of event ids changes to sync internal state
+  const providerKey = useMemo(() => JSON.stringify(events.map((e) => `${e.id}-${e.updated_at}`)), [events]);
+
   return (
-    <CalendarProvider users={[]} events={[]}>
+    <CalendarProvider key={providerKey} users={[]} events={events} defaultView={view}>
       <div className='mx-auto flex max-w-screen-2xl flex-col gap-4 px-8 py-4'>
-        <KalenderContainer />
+        <KalenderContainer setEvents={setEvents} setView={setView} />
 
         <Accordion type='single' collapsible>
           <AccordionItem value='item-1' className='border-none'>

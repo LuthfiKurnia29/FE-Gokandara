@@ -1,12 +1,10 @@
 'use client';
 
 import { useCalendar } from '@/calendar/contexts/calendar-context';
-import { useUpdateEvent } from '@/calendar/hooks/use-update-event';
 import type { IEvent } from '@/calendar/interfaces';
-import { eventSchema } from '@/calendar/schemas';
-import type { TEventFormData } from '@/calendar/schemas';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import {
   Dialog,
   DialogClose,
@@ -20,15 +18,16 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
-import { SingleDayPicker } from '@/components/ui/single-day-picker';
 import { Textarea } from '@/components/ui/textarea';
-import { TimeInput } from '@/components/ui/time-input';
 import { useDisclosure } from '@/hooks/use-disclosure';
+import { useUpdateCalendar } from '@/services/calendar';
+import { useAllKonsumen, useProspekList } from '@/services/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { parseISO } from 'date-fns';
-import type { TimeValue } from 'react-aria-components';
+import moment from 'moment';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface IProps {
   children: React.ReactNode;
@@ -38,43 +37,63 @@ interface IProps {
 export function EditEventDialog({ children, event }: IProps) {
   const { isOpen, onClose, onToggle } = useDisclosure();
 
-  const { users } = useCalendar();
+  const { users, setLocalEvents } = useCalendar();
 
-  const { updateEvent } = useUpdateEvent();
+  const editCalendarSchema = z.object({
+    konsumen_id: z.coerce.number({ required_error: 'Konsumen is required' }).optional(),
+    prospek_id: z.coerce.number({ required_error: 'Prospek is required' }).optional(),
+    followup_result: z.string().min(1, 'Result is required'),
+    followup_note: z.string().min(1, 'Note is required'),
+    followup_date: z.date({ required_error: 'Follow up date is required' }),
+    followup_last_day: z.date({ required_error: 'Follow up last day is required' })
+  });
 
-  const form = useForm<TEventFormData>({
-    resolver: zodResolver(eventSchema),
+  type TEditCalendarFormData = z.infer<typeof editCalendarSchema>;
+
+  const form = useForm<TEditCalendarFormData>({
+    resolver: zodResolver(editCalendarSchema),
     defaultValues: {
-      user: event.user.id,
-      title: event.title,
-      description: event.description,
-      startDate: parseISO(event.startDate),
-      startTime: { hour: parseISO(event.startDate).getHours(), minute: parseISO(event.startDate).getMinutes() },
-      endDate: parseISO(event.endDate),
-      endTime: { hour: parseISO(event.endDate).getHours(), minute: parseISO(event.endDate).getMinutes() },
-      color: event.color
+      followup_result: event.description,
+      followup_note: event.title,
+      followup_date: parseISO(event.startDate),
+      followup_last_day: parseISO(event.endDate),
+      konsumen_id: event.user?.id as number,
+      prospek_id: event.prospek?.id as number
     }
   });
 
-  const onSubmit = (values: TEventFormData) => {
-    const user = users.find((user) => user.id === values.user);
+  const { mutateAsync: updateCalendar } = useUpdateCalendar();
+  const { data: konsumen } = useAllKonsumen();
+  const { data: prospek } = useProspekList();
 
-    if (!user) throw new Error('User not found');
+  const onSubmit = async (values: TEditCalendarFormData) => {
+    const start = new Date(values.followup_date);
+    const end = new Date(values.followup_last_day);
 
-    const startDateTime = new Date(values.startDate);
-    startDateTime.setHours(values.startTime.hour, values.startTime.minute);
+    await updateCalendar({
+      id: event.id,
+      data: {
+        followup_date: moment(start).format('YYYY-MM-DD HH:mm:ss'),
+        followup_last_day: moment(end).format('YYYY-MM-DD HH:mm:ss'),
+        followup_note: values.followup_note,
+        followup_result: values.followup_result,
+        konsumen_id: values.konsumen_id ?? 0,
+        prospek_id: values.prospek_id ?? 0
+      }
+    });
 
-    const endDateTime = new Date(values.endDate);
-    endDateTime.setHours(values.endTime.hour, values.endTime.minute);
-
-    updateEvent({
-      ...event,
-      user,
-      title: values.title,
-      color: values.color,
-      description: values.description,
-      startDate: startDateTime.toISOString(),
-      endDate: endDateTime.toISOString()
+    // Update local calendar item
+    setLocalEvents((prev) => {
+      const idx = prev.findIndex((e) => e.id === event.id);
+      if (idx === -1) return prev;
+      const updated = {
+        ...prev[idx],
+        title: values.followup_note,
+        description: values.followup_result,
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      };
+      return [...prev.slice(0, idx), updated, ...prev.slice(idx + 1)];
     });
 
     onClose();
@@ -87,33 +106,31 @@ export function EditEventDialog({ children, event }: IProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Jadwal</DialogTitle>
-          <DialogDescription>Sesuaikan jadwal yang sudah ada agar tetap akurat dan up-to-date.</DialogDescription>
+          <DialogDescription>Sesuaikan jadwal yang sudah ada agar tetap akurat dan up to date.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form id='event-form' onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4 py-4'>
             <FormField
               control={form.control}
-              name='user'
+              name='konsumen_id'
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Responsible</FormLabel>
+                  <FormLabel>Konsumen</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
                       <SelectTrigger data-invalid={fieldState.invalid}>
-                        <SelectValue placeholder='Select an option' />
+                        <SelectValue placeholder='Pilih konsumen' />
                       </SelectTrigger>
-
                       <SelectContent>
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id} className='flex-1'>
+                        {konsumen?.map((k: any) => (
+                          <SelectItem key={k.id} value={String(k.id)} className='flex-1'>
                             <div className='flex items-center gap-2'>
-                              <Avatar key={user.id} className='size-6'>
-                                <AvatarImage src={user.picturePath ?? undefined} alt={user.name} />
-                                <AvatarFallback className='text-xxs'>{user.name[0]}</AvatarFallback>
+                              <Avatar className='size-6'>
+                                <AvatarImage src={undefined} alt={k.name} />
+                                <AvatarFallback className='text-xxs'>{k.name?.[0] || 'K'}</AvatarFallback>
                               </Avatar>
-
-                              <p className='truncate'>{user.name}</p>
+                              <p className='truncate'>{k.name}</p>
                             </div>
                           </SelectItem>
                         ))}
@@ -127,166 +144,21 @@ export function EditEventDialog({ children, event }: IProps) {
 
             <FormField
               control={form.control}
-              name='title'
+              name='prospek_id'
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel htmlFor='title'>Title</FormLabel>
-
+                  <FormLabel>Prospek</FormLabel>
                   <FormControl>
-                    <Input id='title' placeholder='Enter a title' data-invalid={fieldState.invalid} {...field} />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className='flex items-start gap-2'>
-              <FormField
-                control={form.control}
-                name='startDate'
-                render={({ field, fieldState }) => (
-                  <FormItem className='flex-1'>
-                    <FormLabel htmlFor='startDate'>Start Date</FormLabel>
-
-                    <FormControl>
-                      <SingleDayPicker
-                        id='startDate'
-                        value={field.value}
-                        onSelect={(date) => field.onChange(date as Date)}
-                        placeholder='Select a date'
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='startTime'
-                render={({ field, fieldState }) => (
-                  <FormItem className='flex-1'>
-                    <FormLabel>Start Time</FormLabel>
-
-                    <FormControl>
-                      <TimeInput
-                        value={field.value as TimeValue}
-                        onChange={field.onChange}
-                        hourCycle={12}
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className='flex items-start gap-2'>
-              <FormField
-                control={form.control}
-                name='endDate'
-                render={({ field, fieldState }) => (
-                  <FormItem className='flex-1'>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <SingleDayPicker
-                        value={field.value}
-                        onSelect={(date) => field.onChange(date as Date)}
-                        placeholder='Select a date'
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='endTime'
-                render={({ field, fieldState }) => (
-                  <FormItem className='flex-1'>
-                    <FormLabel>End Time</FormLabel>
-                    <FormControl>
-                      <TimeInput
-                        value={field.value as TimeValue}
-                        onChange={field.onChange}
-                        hourCycle={12}
-                        data-invalid={fieldState.invalid}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name='color'
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
                       <SelectTrigger data-invalid={fieldState.invalid}>
-                        <SelectValue placeholder='Select an option' />
+                        <SelectValue placeholder='Pilih prospek' />
                       </SelectTrigger>
-
                       <SelectContent>
-                        <SelectItem value='blue'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-blue-600' />
-                            Blue
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='green'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-green-600' />
-                            Green
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='red'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-red-600' />
-                            Red
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='yellow'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-yellow-600' />
-                            Yellow
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='purple'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-purple-600' />
-                            Purple
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='orange'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-orange-600' />
-                            Orange
-                          </div>
-                        </SelectItem>
-
-                        <SelectItem value='gray'>
-                          <div className='flex items-center gap-2'>
-                            <div className='size-3.5 rounded-full bg-neutral-600' />
-                            Gray
-                          </div>
-                        </SelectItem>
+                        {prospek?.map((p: any) => (
+                          <SelectItem key={p.id} value={String(p.id)} className='flex-1'>
+                            {p.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -297,13 +169,78 @@ export function EditEventDialog({ children, event }: IProps) {
 
             <FormField
               control={form.control}
-              name='description'
+              name='followup_date'
+              render={({ field, fieldState }) => (
+                <FormItem className='flex-1'>
+                  <FormLabel htmlFor='followup_date'>Follow Up Awal</FormLabel>
+
+                  <FormControl>
+                    <DateTimePicker
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date: Date | undefined) => field.onChange(date ? date.toISOString() : '')}
+                      format='dd/MM/yyyy HH:mm'
+                      className='h-12'
+                      withInput={false}
+                    />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='followup_last_day'
+              render={({ field, fieldState }) => (
+                <FormItem className='flex-1'>
+                  <FormLabel htmlFor='followup_last_day'>Follow Up Terakhir</FormLabel>
+
+                  <FormControl>
+                    <DateTimePicker
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date: Date | undefined) => field.onChange(date ? date.toISOString() : '')}
+                      format='dd/MM/yyyy HH:mm'
+                      className='h-12'
+                      withInput={false}
+                    />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='followup_note'
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Catatan</FormLabel>
 
                   <FormControl>
                     <Textarea {...field} value={field.value} data-invalid={fieldState.invalid} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='followup_result'
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel htmlFor='followup_result'>Hasil Follow Up</FormLabel>
+
+                  <FormControl>
+                    <Textarea
+                      id='followup_result'
+                      placeholder='Masukkan hasil follow up'
+                      data-invalid={fieldState.invalid}
+                      {...field}
+                    />
                   </FormControl>
 
                   <FormMessage />
@@ -316,12 +253,12 @@ export function EditEventDialog({ children, event }: IProps) {
         <DialogFooter>
           <DialogClose asChild>
             <Button type='button' variant='outline'>
-              Cancel
+              Batal
             </Button>
           </DialogClose>
 
           <Button form='event-form' type='submit'>
-            Save changes
+            Simpan Perubahan
           </Button>
         </DialogFooter>
       </DialogContent>
