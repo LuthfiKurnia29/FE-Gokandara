@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 
 import { ActualFileObject, FilePondFile } from 'filepond';
 import FilePondPluginFilePoster from 'filepond-plugin-file-poster';
@@ -25,6 +25,10 @@ interface FileUploadProps extends Omit<FilePondProps, 'onupdatefiles'> {
 
 const FileUpload = memo<FileUploadProps>(({ onChange, initialFiles, onupdatefiles, ...filePondProps }) => {
   const [files, setFiles] = useState<(string | Blob)[] | undefined>(initialFiles);
+
+  useEffect(() => {
+    setFiles(initialFiles);
+  }, [initialFiles]);
 
   return (
     <FilePond

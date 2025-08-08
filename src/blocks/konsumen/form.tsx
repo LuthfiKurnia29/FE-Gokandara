@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { currency } from '@/lib/utils';
 import { useCurrentUser } from '@/services/auth';
 import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from '@/services/konsumen';
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
@@ -51,7 +52,7 @@ const konsumenSchema = z
     tgl_fu_2: z.string().min(1, 'Tanggal & waktu follow up 2 harus diisi'),
 
     prospek_id: z.string().min(1, 'Prospek harus dipilih'),
-    gambar: z.array(z.instanceof(File)).optional()
+    gambar: z.array(z.any()).optional()
   })
   .refine(
     (data) => {
@@ -222,7 +223,7 @@ export const KonsumenForm = memo(function KonsumenForm({
         email: existingData.email || '',
         description: existingData.description || '',
         refrensi_id: existingData.refrensi_id?.toString() || '',
-        kesiapan_dana: existingData.kesiapan_dana ? existingData.kesiapan_dana.toString() : '',
+        kesiapan_dana: existingData.kesiapan_dana ? currency(existingData.kesiapan_dana) : '',
         prospek_id: existingData.prospek_id?.toString() || '',
         project_id: existingData.project_id?.toString() || '',
         pengalaman: existingData.pengalaman || '',
@@ -336,9 +337,7 @@ export const KonsumenForm = memo(function KonsumenForm({
           </CardHeader>
 
           {/* Scrollable Content Area */}
-          <CardContent
-            className='flex-1 px-6 pt-4'
-            style={{ overflow: 'auto', minHeight: 0, maxHeight: 'calc(100% - 140px)' }}>
+          <CardContent className='flex-1 px-6 pt-4' style={{ overflow: 'auto', minHeight: 0, maxHeight: 'calc(60vh)' }}>
             {/* Master Data Error Display */}
             {masterDataError && (
               <div className='mb-4 rounded-lg border border-red-200 bg-red-50 p-4'>

@@ -57,8 +57,6 @@ export const PesanForm = memo(function PesanForm({
     resolver: zodResolver(pesanSchema),
     defaultValues: { pesan: '' }
   });
-  console.log('watch', watch());
-  console.log('errors', errors);
 
   // Populate form with existing data in edit mode
   useEffect(() => {

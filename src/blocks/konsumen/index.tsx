@@ -333,7 +333,7 @@ const KonsumenPage = memo(function KonsumenPage() {
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent
-          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:max-w-[1000px] xl:max-w-[1200px]'
+          className='max-h-[700px] w-full max-w-[95vw] border-0 p-0 lg:top-[40%] lg:max-w-[1000px] xl:max-w-[1200px]'
           style={{
             height: 'min(700px, 85vh)',
             maxHeight: 'min(700px, 85vh)',
