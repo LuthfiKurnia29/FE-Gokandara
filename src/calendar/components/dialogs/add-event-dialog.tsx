@@ -80,7 +80,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
       prospek_id: values.prospek_id
     });
 
-    // Optimistically add to local calendar view
+    // Optimistically add to local calendar view (must satisfy IEvent)
     setLocalEvents((prev) => [
       {
         id: created.id,
@@ -90,7 +90,8 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
         color: 'blue',
         description: created.followup_result,
         user: { id: 'me', name: 'Me', picturePath: null },
-        prospek: { id: 0, name: '', color: 'blue' }
+        prospek: { id: 0, name: '', color: 'blue' },
+        updated_at: new Date().toISOString()
       },
       ...prev
     ]);
