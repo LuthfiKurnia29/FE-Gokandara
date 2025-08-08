@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { uncurrency } from '@/lib/utils';
 import { useRoleList } from '@/services/user';
 import { CreateTargetData, TargetWithRelations } from '@/types/target';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,13 +35,15 @@ const targetSchema = z
       })
       .min(1, 'Tanggal akhir harus diisi'),
     min_penjualan: z
-      .string({
-        required_error: 'Minimal penjualan harus diisi'
-      })
+      .string({ required_error: 'Minimal penjualan harus diisi' })
       .min(1, 'Minimal penjualan harus diisi')
-      .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
-        message: 'Minimal penjualan harus berupa angka positif'
-      }),
+      .refine(
+        (val) => {
+          const num = uncurrency(String(val ?? ''));
+          return !isNaN(num) && num >= 0;
+        },
+        { message: 'Minimal penjualan harus berupa angka positif' }
+      ),
     hadiah: z
       .string({
         required_error: 'Hadiah harus diisi'
@@ -108,64 +111,10 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
       role_id: data.role_id,
       tanggal_awal: data.tanggal_awal,
       tanggal_akhir: data.tanggal_akhir,
-      min_penjualan: parseFloat(data.min_penjualan.replace(/\./g, '')),
+      min_penjualan: uncurrency(data.min_penjualan),
       hadiah: data.hadiah
     };
     onSubmit(submitData);
-  };
-
-  // Helper function to format display value for Rupiah
-  const formatRupiah = (value: string) => {
-    if (!value || value.trim() === '') return '';
-
-    const numValue = parseFloat(value.replace(/\./g, ''));
-    if (!isNaN(numValue) && numValue > 0) {
-      return numValue.toLocaleString('id-ID');
-    }
-    return value;
-  };
-
-  // Helper function to get raw value for calculations
-  const getRawValue = (value: string) => {
-    if (!value || value.trim() === '') return '';
-    return value.replace(/\./g, '');
-  };
-
-  const handleMinPenjualanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    // Allow empty value
-    if (value === '') {
-      form.setValue('min_penjualan', '');
-      return;
-    }
-
-    // Remove formatting first
-    const rawValue = value.replace(/\./g, '');
-
-    // Check if value contains only numbers
-    if (!/^\d*$/.test(rawValue)) {
-      return;
-    }
-
-    const numValue = parseFloat(rawValue);
-
-    // If not a valid number, don't update
-    if (isNaN(numValue)) {
-      return;
-    }
-
-    // Prevent negative values
-    if (numValue < 0) {
-      form.setValue('min_penjualan', '0');
-      return;
-    }
-
-    // Format value for display
-    const displayValue = numValue.toLocaleString('id-ID');
-
-    // Valid value, update form
-    form.setValue('min_penjualan', displayValue);
   };
 
   return (
@@ -197,19 +146,13 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
 
       <div className='space-y-2'>
         <Label htmlFor='min_penjualan'>Minimal Penjualan *</Label>
-        <div className='relative'>
-          <Input
-            id='min_penjualan'
-            type='text'
-            {...form.register('min_penjualan')}
-            placeholder='Masukkan minimal penjualan'
-            disabled={isLoading}
-            value={formatRupiah(form.watch('min_penjualan'))}
-            onChange={handleMinPenjualanChange}
-            className='pl-8'
-          />
-          <span className='absolute top-1/2 left-3 -translate-y-1/2 text-sm text-gray-500'>Rp</span>
-        </div>
+        <Input
+          id='min_penjualan'
+          type='currency'
+          placeholder='Masukkan minimal penjualan'
+          disabled={isLoading}
+          {...form.register('min_penjualan')}
+        />
         {form.formState.errors.min_penjualan && (
           <p className='text-sm text-red-600'>{form.formState.errors.min_penjualan.message}</p>
         )}

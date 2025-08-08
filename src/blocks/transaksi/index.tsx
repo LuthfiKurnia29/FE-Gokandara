@@ -29,7 +29,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import MetricsSection from './metric-section';
-import { CheckCircle, Clock, Filter, MessageSquare, MoreHorizontal, Pencil, Plus, Trash, X } from 'lucide-react';
+import {
+  CheckCircle,
+  Clock,
+  Filter,
+  History,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash,
+  X
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // Helper function to format currency consistently
@@ -312,6 +323,15 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     handleDelete(`/delete-transaksi/${penjualan.id}`, 'delete');
   };
 
+  const handleOpenRiwayat = (penjualan: PenjualanWithRelations) => {
+    const skema = (penjualan as any).skema_pembayaran as string | undefined;
+    if (skema === 'Cash Tempo' || skema === 'Kredit') {
+      window.location.href = `/transaksi/${penjualan.id}`;
+      return;
+    }
+    toast.info('Riwayat Pembayaran hanya untuk skema Cash Tempo atau Kredit');
+  };
+
   const handleUpdateToNegotiation = async (penjualan: PenjualanWithRelations) => {
     try {
       await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Negotiation' } });
@@ -396,6 +416,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
+          {(['Cash Tempo', 'Kredit'] as const).includes((row.original as any).skema_pembayaran) && (
+            <DropdownMenuItem onClick={() => handleOpenRiwayat(row.original)} className='text-amber-600'>
+              <History className='mr-2 h-4 w-4' />
+              Riwayat Pembayaran
+            </DropdownMenuItem>
+          )}
           {canUpdateToNegotiation(row.original.status) && (
             <DropdownMenuItem
               onClick={() => handleUpdateToNegotiation(row.original)}
