@@ -25,6 +25,9 @@ export interface PenjualanData {
   unit_id: number;
   diskon: number | null;
   tipe_diskon: 'percent' | 'fixed' | null;
+  skema_pembayaran: 'Cash Keras' | 'Cash Tempo' | 'Kredit';
+  dp: number | null;
+  jangka_waktu: number | null; // dalam bulan
   grand_total: number;
   status: PenjualanStatus;
   created_at: string;
@@ -73,6 +76,9 @@ export interface CreatePenjualanData {
   unit_id: number;
   diskon?: number | null;
   tipe_diskon?: 'percent' | 'fixed' | null;
+  skema_pembayaran: 'Cash Keras' | 'Cash Tempo' | 'Kredit';
+  dp?: number | null;
+  jangka_waktu?: number | null; // dalam bulan, wajib saat Cash Tempo/Kredit
   grand_total?: number;
   status?: PenjualanStatus;
 }
@@ -85,6 +91,9 @@ export interface UpdatePenjualanData {
   unit_id?: number;
   diskon?: number | null;
   tipe_diskon?: 'percent' | 'fixed' | null;
+  skema_pembayaran?: 'Cash Keras' | 'Cash Tempo' | 'Kredit';
+  dp?: number | null;
+  jangka_waktu?: number | null;
   grand_total?: number;
 }
 

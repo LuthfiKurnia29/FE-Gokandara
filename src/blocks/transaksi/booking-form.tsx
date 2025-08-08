@@ -1,9 +1,10 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ButtonGroup, ButtonGroupItem } from '@/components/ui/button-group';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -19,30 +20,67 @@ import { toast } from 'react-toastify';
 import { z } from 'zod';
 
 // Form validation schema
-const bookingSchema = z.object({
-  konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
-  properti_id: z.string().min(1, 'Properti harus dipilih'),
-  blok_id: z.string().min(1, 'Blok harus dipilih'),
-  tipe_id: z.string().min(1, 'Tipe harus dipilih'),
-  unit_id: z.string().min(1, 'Unit harus dipilih'),
-  diskon: z
-    .string()
-    .optional()
-    .refine(
-      (value) => {
-        if (!value || value.trim() === '') return true; // Allow empty
-        const numValue = isNaN(Number(value)) ? uncurrency(value) : parseFloat(value);
-        return !isNaN(numValue) && numValue >= 0;
-      },
-      { message: 'Diskon harus berupa angka positif' }
-    )
-    .transform((value) => {
-      // Transform empty string to undefined
-      if (!value || value.trim() === '') return undefined;
-      return value;
+const bookingSchema = z
+  .object({
+    konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
+    properti_id: z.string().min(1, 'Properti harus dipilih'),
+    blok_id: z.string().min(1, 'Blok harus dipilih'),
+    tipe_id: z.string().min(1, 'Tipe harus dipilih'),
+    unit_id: z.string().min(1, 'Unit harus dipilih'),
+    diskon: z
+      .string()
+      .optional()
+      .refine(
+        (value) => {
+          if (!value || value.trim() === '') return true; // Allow empty
+          const numValue = isNaN(Number(value)) ? uncurrency(value) : parseFloat(value);
+          return !isNaN(numValue) && numValue >= 0;
+        },
+        { message: 'Diskon harus berupa angka positif' }
+      )
+      .transform((value) => {
+        // Transform empty string to undefined
+        if (!value || value.trim() === '') return undefined;
+        return value;
+      }),
+    tipe_diskon: z.enum(['percent', 'fixed']).optional(),
+    skema_pembayaran: z.enum(['Cash Keras', 'Cash Tempo', 'Kredit'], {
+      required_error: 'Skema pembayaran wajib dipilih'
     }),
-  tipe_diskon: z.enum(['percent', 'fixed']).optional()
-});
+    dp: z
+      .string()
+      .optional()
+      .refine(
+        (value) => {
+          if (!value || value.trim() === '') return true;
+          const num = uncurrency(value);
+          return !isNaN(num) && num >= 0;
+        },
+        { message: 'DP harus berupa angka positif' }
+      ),
+    jangka_waktu: z
+      .string()
+      .optional()
+      .refine(
+        (value) => {
+          if (value === undefined || value === '') return true;
+          const num = Number(value);
+          return Number.isInteger(num) && num > 0;
+        },
+        { message: 'Jangka waktu harus berupa bilangan bulat (bulan)' }
+      )
+  })
+  .superRefine((val, ctx) => {
+    if (val.skema_pembayaran === 'Cash Tempo' || val.skema_pembayaran === 'Kredit') {
+      if (!val.jangka_waktu || String(val.jangka_waktu).trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Jangka waktu wajib diisi untuk Cash Tempo/Kredit',
+          path: ['jangka_waktu']
+        });
+      }
+    }
+  });
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
@@ -110,7 +148,10 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     tipe_id: '',
     unit_id: '',
     diskon: '',
-    tipe_diskon: 'percent' as const
+    tipe_diskon: 'percent' as const,
+    skema_pembayaran: 'Cash Keras' as const,
+    dp: '',
+    jangka_waktu: ''
   };
 
   // Helper function to format display value
@@ -205,6 +246,9 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   const unitId = watch('unit_id');
   const diskon = watch('diskon');
   const tipeDiskon = watch('tipe_diskon') || 'percent';
+  const skemaPembayaran = watch('skema_pembayaran') || 'Cash Keras';
+  const dpValue = watch('dp') || '';
+  const jangkaWaktu = watch('jangka_waktu') || '';
 
   // Update selectedProperti when properti_id changes
   useEffect(() => {
@@ -315,7 +359,10 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         tipe_id: transactionData.tipe_id?.toString() || '',
         unit_id: transactionData.unit_id?.toString() || '',
         diskon: transactionData.diskon?.toString() || '',
-        tipe_diskon: transactionData.tipe_diskon || 'percent'
+        tipe_diskon: transactionData.tipe_diskon || 'percent',
+        skema_pembayaran: (transactionData as any).skema_pembayaran || 'Cash Keras',
+        dp: (transactionData as any).dp?.toString() || '',
+        jangka_waktu: (transactionData as any).jangka_waktu?.toString() || ''
       });
 
       // Update selected properti
@@ -332,7 +379,10 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         tipe_id: initialData.tipe_id || '',
         unit_id: initialData.unit_id || '',
         diskon: initialData.diskon || '',
-        tipe_diskon: initialData.tipe_diskon || 'percent'
+        tipe_diskon: initialData.tipe_diskon || 'percent',
+        skema_pembayaran: (initialData as any).skema_pembayaran || 'Cash Keras',
+        dp: (initialData as any).dp || '',
+        jangka_waktu: (initialData as any).jangka_waktu || ''
       });
 
       // Update selected properti based on user input
@@ -382,6 +432,15 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
       unit_id: data.unit_id ? parseInt(data.unit_id) : 1,
       diskon: validatedDiscount ? parseFloat(validatedDiscount) : null,
       tipe_diskon: data.tipe_diskon || 'percent',
+      skema_pembayaran: data.skema_pembayaran,
+      dp:
+        data.skema_pembayaran === 'Cash Tempo' || data.skema_pembayaran === 'Kredit'
+          ? dpValue
+            ? uncurrency(dpValue)
+            : 0
+          : 0,
+      jangka_waktu:
+        data.skema_pembayaran === 'Cash Tempo' || data.skema_pembayaran === 'Kredit' ? Number(jangkaWaktu) : null,
       // Add grand_total calculation
       grand_total: priceCalculation.finalPrice,
       // Keep existing status when editing, use default for new transactions
@@ -416,268 +475,329 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   }
 
   return (
-    <div className='flex h-full w-full items-center justify-center p-2'>
-      <div className='w-full max-w-6xl'>
-        {/* Back Button */}
-        <Button variant='ghost' size='sm' onClick={onBack} className='mb-4 p-0 hover:bg-transparent'>
-          <ArrowLeft className='mr-2 h-4 w-4' />
-          Kembali
-        </Button>
+    <div className='flex h-full w-full flex-col'>
+      <Card className='flex h-full w-full flex-col border-0 shadow-none'>
+        <CardHeader className='flex-shrink-0 px-6 pt-6 pb-0'>
+          <Button variant='ghost' size='sm' onClick={onBack} className='mb-4 w-fit p-0 hover:bg-transparent'>
+            <ArrowLeft className='mr-2 h-4 w-4' />
+            Kembali
+          </Button>
+          <h1 className='text-2xl font-bold text-gray-900'>Pemesanan</h1>
+        </CardHeader>
 
-        {/* Title */}
-        <h1 className='mb-6 text-3xl font-bold text-gray-900'>Pemesanan</h1>
-
-        <div className='grid gap-6 lg:grid-cols-2'>
-          {/* Property Image */}
-          <div className='overflow-hidden rounded-xl bg-gray-300'>
-            <div className='aspect-[4/3] w-full bg-gray-300' />
-          </div>
-
-          {/* Booking Details */}
-          <div className='space-y-4'>
-            {/* Form Fields - Blok, Unit, and Discount */}
-            <div className='grid grid-cols-2 gap-3'>
-              <div>
-                <Label className='mb-1 block text-sm font-medium text-gray-700'>Blok</Label>
-                <Select
-                  options={safeBlokOptions}
-                  value={blokId}
-                  onChange={(value) => setValue('blok_id', value as string)}
-                  placeholder={isLoadingBlok ? 'Loading...' : 'Pilih Blok'}
-                  disabled={isLoadingBlok}
-                  className='h-10'
-                />
-                {errors.blok_id && <p className='text-xs text-red-500'>{errors.blok_id.message}</p>}
-              </div>
-              <div>
-                <Label className='mb-1 block text-sm font-medium text-gray-700'>Unit</Label>
-                <Select
-                  options={safeUnitOptions}
-                  value={unitId}
-                  onChange={(value) => setValue('unit_id', value as string)}
-                  placeholder={isLoadingUnit ? 'Loading...' : 'Pilih Unit'}
-                  disabled={isLoadingUnit}
-                  className='h-10'
-                />
-                {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
-              </div>
+        <CardContent className='max-h-[60vh] flex-1 overflow-auto px-6 pt-4'>
+          <div className='grid gap-6 lg:grid-cols-2'>
+            {/* Property Image */}
+            <div className='overflow-hidden rounded-xl bg-gray-300'>
+              <div className='aspect-[4/3] w-full bg-gray-300' />
             </div>
 
-            {/* Discount Section - Full Width Below */}
-            <div>
-              <Label className='mb-1 block text-sm font-medium text-gray-700'>Diskon (Opsional)</Label>
-              <div className='space-y-3'>
-                {/* Discount Type Button Group */}
-                <ButtonGroup
-                  value={tipeDiskon}
-                  onValueChange={(value) => {
-                    if (value === 'fixed') {
-                      setValue('tipe_diskon', 'fixed');
-                    } else if (value === 'percent') {
-                      setValue('tipe_diskon', 'percent');
-                    } else {
-                      setValue('tipe_diskon', 'percent'); // fallback
-                    }
+            {/* Booking Details */}
+            <div className='space-y-4'>
+              {/* Form Fields - Blok, Unit, and Discount */}
+              <div className='grid grid-cols-2 gap-3'>
+                <div>
+                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Blok</Label>
+                  <Select
+                    options={safeBlokOptions}
+                    value={blokId}
+                    onChange={(value) => setValue('blok_id', value as string)}
+                    placeholder={isLoadingBlok ? 'Loading...' : 'Pilih Blok'}
+                    disabled={isLoadingBlok}
+                    className='h-10'
+                  />
+                  {errors.blok_id && <p className='text-xs text-red-500'>{errors.blok_id.message}</p>}
+                </div>
+                <div>
+                  <Label className='mb-1 block text-sm font-medium text-gray-700'>Unit</Label>
+                  <Select
+                    options={safeUnitOptions}
+                    value={unitId}
+                    onChange={(value) => setValue('unit_id', value as string)}
+                    placeholder={isLoadingUnit ? 'Loading...' : 'Pilih Unit'}
+                    disabled={isLoadingUnit}
+                    className='h-10'
+                  />
+                  {errors.unit_id && <p className='text-xs text-red-500'>{errors.unit_id.message}</p>}
+                </div>
+              </div>
 
-                    // Clear discount value when switching types to avoid confusion
-                    setValue('diskon', '');
-                    setDiscountError('');
-                  }}
-                  className='w-auto'>
-                  <ButtonGroupItem value='percent' className='px-6'>
-                    <Percent className='h-4 w-4' />
-                    Persen
-                  </ButtonGroupItem>
-                  <ButtonGroupItem value='fixed' className='px-6'>
-                    <DollarSign className='h-4 w-4' />
-                    Nominal
-                  </ButtonGroupItem>
-                </ButtonGroup>
+              {/* Discount Section - Full Width Below */}
+              <div>
+                <Label className='mb-1 block text-sm font-medium text-gray-700'>Diskon (Opsional)</Label>
+                <div className='space-y-3'>
+                  {/* Discount Type Button Group */}
+                  <ButtonGroup
+                    value={tipeDiskon}
+                    onValueChange={(value) => {
+                      if (value === 'fixed') {
+                        setValue('tipe_diskon', 'fixed');
+                      } else if (value === 'percent') {
+                        setValue('tipe_diskon', 'percent');
+                      } else {
+                        setValue('tipe_diskon', 'percent'); // fallback
+                      }
 
-                {/* Discount Input */}
-                <div className='relative w-full max-w-xs'>
-                  {tipeDiskon === 'fixed' ? (
-                    <Input
-                      id='diskon'
-                      type='currency'
-                      placeholder='0'
-                      value={diskon || ''}
-                      className={`h-10 border-gray-300 focus:border-teal-500 focus:ring-teal-500 ${
-                        discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
-                      onChange={(e) => {
-                        // Handle currency format validation
-                        const value = e.target.value;
-                        setValue('diskon', value);
+                      // Clear discount value when switching types to avoid confusion
+                      setValue('diskon', '');
+                      setDiscountError('');
+                    }}
+                    className='w-auto'>
+                    <ButtonGroupItem value='percent' className='px-6'>
+                      <Percent className='h-4 w-4' />
+                      Persen
+                    </ButtonGroupItem>
+                    <ButtonGroupItem value='fixed' className='px-6'>
+                      <DollarSign className='h-4 w-4' />
+                      Nominal
+                    </ButtonGroupItem>
+                  </ButtonGroup>
 
-                        if (value && value.trim() !== '') {
-                          const rawValue = getRawValue(value);
-                          const numValue = parseFloat(rawValue);
+                  {/* Discount Input */}
+                  <div className='relative w-full max-w-xs'>
+                    {tipeDiskon === 'fixed' ? (
+                      <Input
+                        id='diskon'
+                        type='currency'
+                        placeholder='0'
+                        value={diskon || ''}
+                        className={`h-10 border-gray-300 focus:border-teal-500 focus:ring-teal-500 ${
+                          discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                        onChange={(e) => {
+                          // Handle currency format validation
+                          const value = e.target.value;
+                          setValue('diskon', value);
 
-                          if (!isNaN(numValue) && numValue >= 0) {
-                            if (selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
-                              setDiscountError('Diskon tidak boleh melebihi harga properti');
-                              toast.warning('Diskon telah dibatasi maksimal harga properti');
+                          if (value && value.trim() !== '') {
+                            const rawValue = getRawValue(value);
+                            const numValue = parseFloat(rawValue);
+
+                            if (!isNaN(numValue) && numValue >= 0) {
+                              if (selectedPrice && selectedPrice > 0 && numValue > selectedPrice) {
+                                setDiscountError('Diskon tidak boleh melebihi harga properti');
+                                toast.warning('Diskon telah dibatasi maksimal harga properti');
+                              } else {
+                                setDiscountError('');
+                              }
                             } else {
-                              setDiscountError('');
+                              setDiscountError('Nilai tidak valid');
                             }
                           } else {
-                            setDiscountError('Nilai tidak valid');
+                            setDiscountError('');
                           }
-                        } else {
-                          setDiscountError('');
-                        }
-                      }}
-                      disabled={isLoadingTransaction}
-                    />
-                  ) : (
-                    <Input
-                      id='diskon'
-                      type='text'
-                      inputMode='decimal'
-                      placeholder='0'
-                      value={getDisplayValue(diskon || '')}
-                      className={`h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500 ${
-                        discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                      }`}
-                      onChange={handleDiscountChange}
-                      disabled={isLoadingTransaction}
-                    />
-                  )}
-                  {tipeDiskon === 'percent' && (
-                    <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>%</span>
-                  )}
-                </div>
-                {errors.diskon && <p className='text-xs text-red-500'>{errors.diskon.message}</p>}
-                {discountError && <p className='text-xs text-red-500'>{discountError}</p>}
-                <p className='text-xs text-gray-500'>
-                  Maksimal: {tipeDiskon === 'percent' ? '100%' : selectedPrice ? formatRupiah(selectedPrice) : 'Rp 0'}
-                </p>
-              </div>
-            </div>
-
-            {/* Transaction Details - Read Only */}
-            <div className='space-y-3'>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Konsumen</span>
-                <span className='text-right text-sm font-medium text-gray-900'>
-                  {konsumenOptions.find(
-                    (k) => k.id.toString() === (initialData?.konsumen_id || safeInitialData.konsumen_id)
-                  )?.name || '-'}
-                </span>
-              </div>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Properti</span>
-                <span className='text-right text-sm font-medium text-gray-900'>
-                  {propertiOptions.find(
-                    (p) => p.id?.toString() === (initialData?.properti_id || safeInitialData.properti_id)
-                  )?.lokasi || '-'}
-                </span>
-              </div>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Tipe</span>
-                <span className='text-right text-sm font-medium text-gray-900'>
-                  {tipeOptions?.find((t: any) => t.id.toString() === (initialData?.tipe_id || safeInitialData.tipe_id))
-                    ?.name || '-'}
-                </span>
-              </div>
-            </div>
-
-            {/* Property Details - Read Only */}
-            <div className='space-y-3'>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>LB/LT</span>
-                <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lbLt}</span>
-              </div>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Kelebihan</span>
-                <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.kelebihanTanah}</span>
-              </div>
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Lokasi</span>
-                <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lokasi}</span>
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className='space-y-3'>
-              {/* Price Availability Message */}
-              {!selectedProperti ? (
-                <div className='rounded-lg border border-gray-200 bg-gray-50 p-3'>
-                  <p className='text-sm font-medium text-gray-600'>
-                    ℹ️ Pilih properti terlebih dahulu untuk melihat harga
+                        }}
+                        disabled={isLoadingTransaction}
+                      />
+                    ) : (
+                      <Input
+                        id='diskon'
+                        type='text'
+                        inputMode='decimal'
+                        placeholder='0'
+                        value={getDisplayValue(diskon || '')}
+                        className={`h-10 border-gray-300 pr-8 focus:border-teal-500 focus:ring-teal-500 ${
+                          discountError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                        onChange={handleDiscountChange}
+                        disabled={isLoadingTransaction}
+                      />
+                    )}
+                    {tipeDiskon === 'percent' && (
+                      <span className='absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500'>%</span>
+                    )}
+                  </div>
+                  {errors.diskon && <p className='text-xs text-red-500'>{errors.diskon.message}</p>}
+                  {discountError && <p className='text-xs text-red-500'>{discountError}</p>}
+                  <p className='text-xs text-gray-500'>
+                    Maksimal: {tipeDiskon === 'percent' ? '100%' : selectedPrice ? formatRupiah(selectedPrice) : 'Rp 0'}
                   </p>
                 </div>
-              ) : !blokId || !unitId ? (
-                <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
-                  <p className='text-sm font-medium text-blue-600'>
-                    ℹ️ Silakan pilih blok dan unit untuk melihat harga
-                  </p>
-                </div>
-              ) : !selectedPrice && tipeId && unitId ? (
-                <div className='rounded-lg border border-red-200 bg-red-50 p-3'>
-                  <p className='text-sm font-medium text-red-600'>
-                    ⚠️ Harga tidak tersedia atau belum diatur untuk kombinasi Tipe dan Unit yang dipilih
-                  </p>
-                  <p className='mt-1 text-xs text-red-500'>
-                    Silakan pilih kombinasi Tipe dan Unit lain, atau hubungi admin untuk mengatur harga
-                  </p>
-                </div>
-              ) : null}
-
-              <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                <span className='text-sm text-gray-600'>Harga Dasar</span>
-                <span className='text-right text-sm font-medium text-gray-900'>
-                  {!selectedProperti ? (
-                    <span className='text-gray-500'>Pilih properti terlebih dahulu</span>
-                  ) : !blokId || !unitId ? (
-                    <span className='text-blue-600'>Silakan pilih blok dan unit</span>
-                  ) : selectedPrice ? (
-                    formatRupiah(priceCalculation.basePrice)
-                  ) : (
-                    <span className='text-red-500'>Harga tidak tersedia</span>
-                  )}
-                </span>
               </div>
-              {priceCalculation.discountAmount > 0 && (
+
+              {/* Transaction Details - Read Only */}
+              <div className='space-y-3'>
                 <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
-                  <span className='text-sm text-gray-600'>
-                    Diskon ({tipeDiskon === 'percent' ? `${priceCalculation.discountPercent.toFixed(1)}%` : 'Nominal'})
-                  </span>
-                  <span className='text-right text-sm font-medium text-red-600'>
-                    - {formatRupiah(priceCalculation.discountAmount)}
+                  <span className='text-sm text-gray-600'>Konsumen</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>
+                    {konsumenOptions.find(
+                      (k) => k.id.toString() === (initialData?.konsumen_id || safeInitialData.konsumen_id)
+                    )?.name || '-'}
                   </span>
                 </div>
-              )}
-              <div className='flex items-center justify-between pt-2'>
-                <span className='text-lg font-semibold text-gray-700'>Harga Akhir</span>
-                <span className='text-2xl font-bold text-green-600'>
-                  {!selectedProperti ? (
-                    <span className='text-lg text-gray-500'>Pilih properti terlebih dahulu</span>
-                  ) : !blokId || !unitId ? (
-                    <span className='text-lg text-blue-600'>Silakan pilih blok dan unit</span>
-                  ) : selectedPrice ? (
-                    formatRupiah(priceCalculation.finalPrice)
-                  ) : (
-                    <span className='text-lg text-red-500'>Harga tidak tersedia</span>
-                  )}
-                </span>
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>Properti</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>
+                    {propertiOptions.find(
+                      (p) => p.id?.toString() === (initialData?.properti_id || safeInitialData.properti_id)
+                    )?.lokasi || '-'}
+                  </span>
+                </div>
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>Tipe</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>
+                    {tipeOptions?.find(
+                      (t: any) => t.id.toString() === (initialData?.tipe_id || safeInitialData.tipe_id)
+                    )?.name || '-'}
+                  </span>
+                </div>
               </div>
-              {priceCalculation.discountAmount === 0 && diskon && diskon.trim() !== '' && discountError && (
-                <div className='mt-2 text-xs text-orange-500'>* Nilai diskon tidak valid, menggunakan 0</div>
-              )}
-              {priceCalculation.discountAmount === 0 && (!diskon || diskon.trim() === '') && selectedPrice && (
-                <div className='mt-2 text-xs text-gray-500'>
-                  * Maksimal diskon {tipeDiskon === 'percent' ? '100%' : 'harga properti'}
-                </div>
-              )}
-            </div>
 
-            {/* Booking Button */}
+              {/* Property Details - Read Only */}
+              <div className='space-y-3'>
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>LB/LT</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lbLt}</span>
+                </div>
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>Kelebihan</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.kelebihanTanah}</span>
+                </div>
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>Lokasi</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>{bookingDetails.lokasi}</span>
+                </div>
+              </div>
+
+              {/* Price */}
+              <div className='space-y-3'>
+                {/* Skema Pembayaran */}
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
+                  <div>
+                    <Label className='mb-1 block text-sm font-medium text-gray-700'>Skema Pembayaran</Label>
+                    <Select
+                      options={[
+                        { value: 'Cash Keras', label: 'Cash Keras' },
+                        { value: 'Cash Tempo', label: 'Cash Tempo' },
+                        { value: 'Kredit', label: 'Kredit' }
+                      ]}
+                      value={skemaPembayaran}
+                      onChange={(v) => setValue('skema_pembayaran', v as any)}
+                      className='h-10'
+                    />
+                    {(errors as any) && (errors as any).skema_pembayaran && (
+                      <p className='text-xs text-red-500'>{(errors as any).skema_pembayaran.message as string}</p>
+                    )}
+                  </div>
+                  {(skemaPembayaran === 'Cash Tempo' || skemaPembayaran === 'Kredit') && (
+                    <>
+                      <div>
+                        <Label className='mb-1 block text-sm font-medium text-gray-700'>Jangka Waktu (bulan)</Label>
+                        <Input
+                          type='number'
+                          inputMode='numeric'
+                          min={1}
+                          placeholder='0'
+                          value={jangkaWaktu}
+                          onChange={(e) => setValue('jangka_waktu', e.target.value)}
+                          className='h-10'
+                        />
+                        {(errors as any) && (errors as any).jangka_waktu && (
+                          <p className='text-xs text-red-500'>{(errors as any).jangka_waktu.message as string}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className='mb-1 block text-sm font-medium text-gray-700'>DP</Label>
+                        <Input
+                          type='currency'
+                          placeholder='0'
+                          value={dpValue}
+                          onChange={(e) => setValue('dp', e.target.value)}
+                          className='h-10'
+                        />
+                        {(errors as any) && (errors as any).dp && (
+                          <p className='text-xs text-red-500'>{(errors as any).dp.message as string}</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Price Availability Message */}
+                {!selectedProperti ? (
+                  <div className='rounded-lg border border-gray-200 bg-gray-50 p-3'>
+                    <p className='text-sm font-medium text-gray-600'>
+                      ℹ️ Pilih properti terlebih dahulu untuk melihat harga
+                    </p>
+                  </div>
+                ) : !blokId || !unitId ? (
+                  <div className='rounded-lg border border-blue-200 bg-blue-50 p-3'>
+                    <p className='text-sm font-medium text-blue-600'>
+                      ℹ️ Silakan pilih blok dan unit untuk melihat harga
+                    </p>
+                  </div>
+                ) : !selectedPrice && tipeId && unitId ? (
+                  <div className='rounded-lg border border-red-200 bg-red-50 p-3'>
+                    <p className='text-sm font-medium text-red-600'>
+                      ⚠️ Harga tidak tersedia atau belum diatur untuk kombinasi Tipe dan Unit yang dipilih
+                    </p>
+                    <p className='mt-1 text-xs text-red-500'>
+                      Silakan pilih kombinasi Tipe dan Unit lain, atau hubungi admin untuk mengatur harga
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                  <span className='text-sm text-gray-600'>Harga Dasar</span>
+                  <span className='text-right text-sm font-medium text-gray-900'>
+                    {!selectedProperti ? (
+                      <span className='text-gray-500'>Pilih properti terlebih dahulu</span>
+                    ) : !blokId || !unitId ? (
+                      <span className='text-blue-600'>Silakan pilih blok dan unit</span>
+                    ) : selectedPrice ? (
+                      formatRupiah(priceCalculation.basePrice)
+                    ) : (
+                      <span className='text-red-500'>Harga tidak tersedia</span>
+                    )}
+                  </span>
+                </div>
+                {priceCalculation.discountAmount > 0 && (
+                  <div className='flex items-center justify-between border-b border-gray-200 pb-2'>
+                    <span className='text-sm text-gray-600'>
+                      Diskon ({tipeDiskon === 'percent' ? `${priceCalculation.discountPercent.toFixed(1)}%` : 'Nominal'}
+                      )
+                    </span>
+                    <span className='text-right text-sm font-medium text-red-600'>
+                      - {formatRupiah(priceCalculation.discountAmount)}
+                    </span>
+                  </div>
+                )}
+                <div className='flex items-center justify-between pt-2'>
+                  <span className='text-lg font-semibold text-gray-700'>Harga Akhir</span>
+                  <span className='text-2xl font-bold text-green-600'>
+                    {!selectedProperti ? (
+                      <span className='text-lg text-gray-500'>Pilih properti terlebih dahulu</span>
+                    ) : !blokId || !unitId ? (
+                      <span className='text-lg text-blue-600'>Silakan pilih blok dan unit</span>
+                    ) : selectedPrice ? (
+                      formatRupiah(priceCalculation.finalPrice)
+                    ) : (
+                      <span className='text-lg text-red-500'>Harga tidak tersedia</span>
+                    )}
+                  </span>
+                </div>
+                {priceCalculation.discountAmount === 0 && diskon && diskon.trim() !== '' && discountError && (
+                  <div className='mt-2 text-xs text-orange-500'>* Nilai diskon tidak valid, menggunakan 0</div>
+                )}
+                {priceCalculation.discountAmount === 0 && (!diskon || diskon.trim() === '') && selectedPrice && (
+                  <div className='mt-2 text-xs text-gray-500'>
+                    * Maksimal diskon {tipeDiskon === 'percent' ? '100%' : 'harga properti'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+
+        <div className='flex-shrink-0 border-t border-gray-200 bg-gray-50 px-6 py-4'>
+          <div className='flex justify-end space-x-4'>
+            <Button type='button' variant='outline' onClick={onBack} className='h-12 px-8'>
+              Kembali
+            </Button>
             <Button
+              type='button'
               onClick={handleSubmit(handleFormSubmit)}
               disabled={!selectedProperti || !blokId || !unitId || !selectedPrice}
-              className='mt-6 h-12 w-full rounded-lg bg-green-500 text-base font-semibold text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500'>
+              className='h-12 rounded-lg bg-green-500 px-8 py-2 text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500'>
               {!selectedProperti
                 ? 'Pilih Properti Dulu'
                 : !blokId || !unitId
@@ -688,7 +808,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
             </Button>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

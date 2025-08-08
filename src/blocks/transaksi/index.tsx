@@ -149,6 +149,23 @@ const columns = [
     },
     meta: { style: { width: '150px' } }
   }),
+  columnHelper.accessor((row) => (row as any).skema_pembayaran ?? '-', {
+    id: 'skema_pembayaran',
+    header: 'Skema Pembayaran',
+    cell: ({ getValue }) => {
+      const skema = getValue() as 'Cash Keras' | 'Cash Tempo' | 'Kredit' | '-';
+      const style =
+        skema === 'Cash Keras'
+          ? 'bg-emerald-500 text-white hover:bg-emerald-600' // hijau
+          : skema === 'Cash Tempo'
+            ? 'bg-blue-500 text-white hover:bg-blue-600' // biru
+            : skema === 'Kredit'
+              ? 'bg-amber-500 text-white hover:bg-amber-600' // kuning
+              : 'bg-gray-500 text-white hover:bg-gray-600';
+      return <Badge className={`rounded-full px-3 py-2 ${style}`}>{skema}</Badge>;
+    },
+    meta: { style: { width: '160px' } }
+  }),
   columnHelper.accessor('unit.name', {
     header: 'Unit',
     cell: ({ row, getValue }) => {
@@ -283,6 +300,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const [formData, setFormData] = useState<any>(null);
 
   const handleEdit = (penjualan: PenjualanWithRelations) => {
+    if (penjualan.status === 'Approved' || penjualan.status === 'Rejected') {
+      toast.warning('Transaksi dengan status Approved/Rejected tidak dapat diedit.');
+      return;
+    }
     setSelectedId(penjualan.id);
     setOpenForm(true);
   };
@@ -369,7 +390,9 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
-          <DropdownMenuItem onClick={() => handleEdit(row.original)} disabled={updatePenjualan.isPending}>
+          <DropdownMenuItem
+            onClick={() => handleEdit(row.original)}
+            disabled={updatePenjualan.isPending || ['Approved', 'Rejected'].includes(row.original.status)}>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
@@ -507,6 +530,7 @@ const PenjualanPage = memo(function PenjualanPage() {
   const createPenjualan = useCreatePenjualan();
 
   const handleCreate = () => {
+    // Hanya create baru; tidak terpengaruh status
     setOpenForm(true);
   };
 
@@ -535,8 +559,12 @@ const PenjualanPage = memo(function PenjualanPage() {
         blok_id: data.blok_id!,
         tipe_id: data.tipe_id!,
         unit_id: data.unit_id!,
-        diskon: data.diskon,
-        tipe_diskon: data.tipe_diskon || 'percent',
+        diskon: data.diskon ?? null,
+        tipe_diskon: (data as any).tipe_diskon || 'percent',
+        skema_pembayaran: (data as any).skema_pembayaran || 'Cash Keras',
+        dp: (data as any).dp ?? null,
+        jangka_waktu: (data as any).jangka_waktu ?? null,
+        grand_total: (data as any).grand_total,
         status: 'Pending'
       };
 
