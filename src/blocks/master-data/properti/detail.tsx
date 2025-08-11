@@ -216,13 +216,13 @@ export const PropertyDetailModal = memo(function PropertyDetailModal({
               </div>
 
               {/* Price */}
-              <div className='flex items-center space-x-3 rounded-lg bg-gray-50 p-3'>
+              {/* <div className='flex items-center space-x-3 rounded-lg bg-gray-50 p-3'>
                 <Tag className='h-6 w-6 text-green-600' />
                 <div>
                   <p className='text-muted-foreground text-xs'>Harga</p>
                   <p className='font-medium text-green-700'>Rp {property.harga.toLocaleString('id-ID')}</p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Created Date */}
               <div className='flex items-center space-x-3 rounded-lg bg-gray-50 p-3'>
