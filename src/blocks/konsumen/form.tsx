@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { currency } from '@/lib/utils';
+import { currency, uncurrency } from '@/lib/utils';
 import { useCurrentUser } from '@/services/auth';
 import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from '@/services/konsumen';
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
@@ -26,7 +26,7 @@ const konsumenSchema = z
   .object({
     // Required fields (sesuai migration - tanpa nullable())
     name: z.string().min(1, 'Nama harus diisi'),
-    ktp_number: z.string().min(1, 'No. KTP/SIM harus diisi'),
+    ktp_number: z.string().regex(/^\d{16}$/, 'No. KTP harus 16 digit angka'),
     address: z.string().min(1, 'Alamat harus diisi'),
     phone: z.string().min(1, 'Nomor telepon harus diisi'),
     email: z.string().email('Format email tidak valid'),
@@ -39,9 +39,8 @@ const konsumenSchema = z
       .min(1, 'Kesiapan dana harus diisi')
       .refine(
         (value) => {
-          // Remove commas and check if it's a valid number
-          const numericValue = value.replace(/,/g, '');
-          return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
+          const numericValue = uncurrency(value);
+          return !isNaN(numericValue) && numericValue >= 0;
         },
         { message: 'Kesiapan dana harus berupa angka positif' }
       ),
@@ -64,7 +63,21 @@ const konsumenSchema = z
       message: 'Gambar wajib diupload untuk user dengan role Mitra',
       path: ['gambar']
     }
-  );
+  )
+  .superRefine((data, ctx) => {
+    const { tgl_fu_1, tgl_fu_2 } = data;
+    if (!tgl_fu_1 || !tgl_fu_2) return;
+    const first = new Date(tgl_fu_1);
+    const second = new Date(tgl_fu_2);
+    if (isNaN(first.getTime()) || isNaN(second.getTime())) return;
+    if (second <= first) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tgl_fu_2'],
+        message: 'Tanggal follow up 2 harus lebih besar dari Tanggal & waktu follow up 1'
+      });
+    }
+  });
 
 type KonsumenFormData = z.infer<typeof konsumenSchema>;
 
@@ -212,6 +225,23 @@ export const KonsumenForm = memo(function KonsumenForm({
   const tglFu = watch('tgl_fu_1');
   const tglFu2 = watch('tgl_fu_2');
 
+  const minDateFollowUp2 = React.useMemo(() => {
+    if (!tglFu) return undefined;
+    const first = new Date(tglFu);
+    const nextDay = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1);
+    return nextDay;
+  }, [tglFu]);
+
+  // Ensure follow up 2 is cleared if it becomes invalid compared to follow up 1
+  useEffect(() => {
+    if (!tglFu || !tglFu2) return;
+    const first = new Date(tglFu);
+    const second = new Date(tglFu2);
+    if (second <= first) {
+      setValue('tgl_fu_2', '');
+    }
+  }, [tglFu, tglFu2, setValue]);
+
   // Populate form with existing data in edit mode
   useEffect(() => {
     if (existingData) {
@@ -271,7 +301,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       refrensi_id: parseInt(data.refrensi_id),
       prospek_id: parseInt(data.prospek_id),
       project_id: parseInt(data.project_id),
-      kesiapan_dana: data.kesiapan_dana ? parseFloat(data.kesiapan_dana.replace(/[^\d]/g, '')) : null,
+      kesiapan_dana: data.kesiapan_dana ? uncurrency(data.kesiapan_dana) : null,
       pengalaman: data.pengalaman || null,
       materi_fu_1: data.materi_fu_1 || null,
       tgl_fu_1: data.tgl_fu_1 || null,
@@ -380,10 +410,13 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='ktp' className='font-medium text-gray-900'>
-                        No. KTP/SIM *
+                        No. KTP *
                       </Label>
                       <Input
                         id='ktp'
+                        inputMode='numeric'
+                        pattern='\d*'
+                        maxLength={16}
                         {...register('ktp_number')}
                         className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
                       />
@@ -611,9 +644,12 @@ export const KonsumenForm = memo(function KonsumenForm({
                           placeholder='Pilih tanggal & waktu follow up 2...'
                           format='dd/MM/yyyy HH:mm'
                           className='h-12'
+                          disabled={!tglFu}
+                          minDate={minDateFollowUp2}
                           withInput={false}
                         />
                         {errors.tgl_fu_2 && <p className='text-sm text-red-600'>{errors.tgl_fu_2.message}</p>}
+                        {!tglFu && <p className='text-sm text-orange-600'>Isi tanggal follow up pertama dulu</p>}
                       </div>
                     </div>
                   </div>

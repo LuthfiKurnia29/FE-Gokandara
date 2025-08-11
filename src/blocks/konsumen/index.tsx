@@ -29,8 +29,28 @@ import { toast } from 'react-toastify';
 
 const columnHelper = createColumnHelper<KonsumenData>();
 
-const openWhatsApp = (phoneNumber: string) => {
-  // Normalisasi nomor telepon
+const openWhatsApp = (konsumen: KonsumenData) => {
+  const parseDate = (value?: string) => {
+    if (!value) return undefined;
+    const isoLike = value.includes('T') ? value : value.replace(' ', 'T');
+    const d = new Date(isoLike);
+    return isNaN(d.getTime()) ? undefined : d;
+  };
+
+  const now = new Date();
+  const fu1 = parseDate(konsumen.tgl_fu_1 as unknown as string);
+  const fu2 = parseDate(konsumen.tgl_fu_2 as unknown as string);
+
+  let message = '';
+  if (fu1 && now < fu1) {
+    message = konsumen.materi_fu_1 || '';
+  } else if (fu2 && now < fu2) {
+    message = konsumen.materi_fu_2 || konsumen.materi_fu_1 || '';
+  } else {
+    message = konsumen.materi_fu_2 || konsumen.materi_fu_1 || '';
+  }
+
+  const phoneNumber = konsumen.phone || '';
   const cleanedNumber = phoneNumber.replace(/\D/g, '');
   const waNumber = cleanedNumber.startsWith('0')
     ? `62${cleanedNumber.slice(1)}`
@@ -38,7 +58,7 @@ const openWhatsApp = (phoneNumber: string) => {
       ? cleanedNumber
       : `62${cleanedNumber}`;
 
-  const whatsappUrl = `https://wa.me/${waNumber}`;
+  const whatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
   window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 };
 
@@ -248,7 +268,7 @@ const KonsumenPage = memo(function KonsumenPage() {
                 <Button
                   variant='ghost'
                   size='sm'
-                  onClick={() => openWhatsApp(item.phone)}
+                  onClick={() => openWhatsApp(item)}
                   className='p-2 text-green-600 hover:bg-green-50'
                   title='Hubungi via WhatsApp'>
                   <WhatsappLogo className='!h-6 !w-6' weight='fill' />
