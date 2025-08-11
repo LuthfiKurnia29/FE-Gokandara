@@ -25,17 +25,8 @@ const propertiSchema = z.object({
   luas_tanah: z.string().min(1, 'Luas tanah harus diisi'),
   kelebihan: z.string().min(1, 'Kelebihan harus diisi').max(255, 'Kelebihan maksimal 255 karakter'),
   lokasi: z.string().min(1, 'Lokasi harus diisi').max(255, 'Lokasi maksimal 255 karakter'),
-  harga: z
-    .string()
-    .min(1, 'Harga harus diisi')
-    .refine(
-      (value) => {
-        const numericValue = value.replace(/[^\d]/g, '');
-        return !isNaN(parseFloat(numericValue)) && parseFloat(numericValue) >= 0;
-      },
-      { message: 'Harga harus berupa angka positif' }
-    ),
-  properti__gambars: z.array(z.instanceof(File)).optional(),
+  harga: z.string().optional(),
+  properti__gambars: z.array(z.any()).optional(),
   daftar_harga: z
     .array(
       z.object({
@@ -120,7 +111,7 @@ export const PropertiForm = memo(function PropertiForm({
       luas_tanah: '',
       kelebihan: '',
       lokasi: '',
-      harga: '',
+      harga: '1',
       properti__gambars: [],
       daftar_harga: []
     }
@@ -204,16 +195,16 @@ export const PropertiForm = memo(function PropertiForm({
       return;
     }
 
-    if (!data.project_id || !data.luas_bangunan || !data.luas_tanah || !data.kelebihan || !data.lokasi || !data.harga) {
+    if (!data.project_id || !data.luas_bangunan || !data.luas_tanah || !data.kelebihan || !data.lokasi) {
       alert('Semua field wajib diisi');
       return;
     }
 
     const hargaNumber = data.harga ? uncurrency(data.harga) : 0;
-    if (isNaN(hargaNumber) || hargaNumber <= 0) {
-      alert('Harga harus berupa angka positif');
-      return;
-    }
+    // if (isNaN(hargaNumber) || hargaNumber <= 0) {
+    //   alert('Harga harus berupa angka positif');
+    //   return;
+    // }
 
     if (data.daftar_harga && data.daftar_harga.length > 0) {
       const invalidDaftarHarga = data.daftar_harga.some((item) => !item.tipe_id || !item.unit_id || !item.harga);
@@ -397,7 +388,7 @@ export const PropertiForm = memo(function PropertiForm({
             {errors.lokasi && <p className='text-sm text-red-600'>{errors.lokasi.message}</p>}
           </div>
 
-          <div className='space-y-2'>
+          {/* <div className='space-y-2'>
             <Label htmlFor='harga'>Harga *</Label>
             <Input
               id='harga'
@@ -407,7 +398,7 @@ export const PropertiForm = memo(function PropertiForm({
               disabled={isLoading}
             />
             {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
-          </div>
+          </div> */}
         </div>
 
         <div className='my-8 space-y-4'>

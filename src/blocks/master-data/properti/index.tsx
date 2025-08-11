@@ -56,15 +56,15 @@ const columns = [
     cell: ({ getValue }) => <span className='text-sm'>{getValue()}</span>,
     meta: { style: { minWidth: '150px' } }
   }),
-  columnHelper.display({
-    id: 'harga',
-    header: 'Harga',
-    cell: ({ row }) => {
-      const harga = row.original.harga;
-      return <span className='font-medium text-green-600'>Rp {harga.toLocaleString('id-ID')}</span>;
-    },
-    meta: { style: { width: '150px' } }
-  }),
+  //   columnHelper.display({
+  //     id: 'harga',
+  //     header: 'Harga',
+  //     cell: ({ row }) => {
+  //       const harga = row.original.harga;
+  //       return <span className='font-medium text-green-600'>Rp {harga.toLocaleString('id-ID')}</span>;
+  //     },
+  //     meta: { style: { width: '150px' } }
+  //   }),
   columnHelper.display({
     id: 'relations',
     header: 'Proyek',
