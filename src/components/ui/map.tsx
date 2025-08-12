@@ -13,7 +13,7 @@ interface MapProps {
 
 const Map = ({ center, zoom = 15, address }: MapProps) => {
   return (
-    <div className='h-full w-full overflow-hidden rounded-lg'>
+    <div className='relative z-[1] h-full w-full overflow-hidden rounded-lg'>
       <MapContainer center={center} zoom={zoom} scrollWheelZoom={false} className='h-full w-full'>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

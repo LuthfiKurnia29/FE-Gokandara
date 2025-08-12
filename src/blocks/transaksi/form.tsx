@@ -34,9 +34,16 @@ interface PropertyTypeModalProps {
   selectedId?: number | null;
   onSubmit?: (data: CreatePenjualanData | UpdatePenjualanData) => Promise<void>;
   onProceedToBooking?: (formData: TransaksiFormData) => void;
+  defaultPropertiId?: number | string;
 }
 
-const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }: PropertyTypeModalProps) => {
+const PropertyTypeModal = ({
+  onClose,
+  selectedId,
+  onSubmit,
+  onProceedToBooking,
+  defaultPropertiId
+}: PropertyTypeModalProps) => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedProperti, setSelectedProperti] = useState<any>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
@@ -81,6 +88,14 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
   const konsumenId = watch('konsumen_id');
   const propertiId = watch('properti_id');
   const tipeId = watch('tipe_id');
+  const isPropertiLocked = Boolean(defaultPropertiId);
+
+  // Preselect property when invoked from property page
+  useEffect(() => {
+    if (defaultPropertiId && !propertiId) {
+      setValue('properti_id', String(defaultPropertiId));
+    }
+  }, [defaultPropertiId, propertiId, setValue]);
 
   const safeKonsumenOptions = konsumenOptions.map((konsumen: KonsumenData) => ({
     value: konsumen.id.toString(),
@@ -263,9 +278,12 @@ const PropertyTypeModal = ({ onClose, selectedId, onSubmit, onProceedToBooking }
               <Select
                 options={safePropertiOptions}
                 value={propertiId}
-                onChange={(value) => setValue('properti_id', value as string)}
+                onChange={(value) => {
+                  if (isPropertiLocked) return;
+                  setValue('properti_id', value as string);
+                }}
                 placeholder={isLoadingProperti ? 'Loading...' : 'Pilih Properti'}
-                disabled={isLoadingProperti}
+                disabled={isLoadingProperti || isPropertiLocked}
                 className='h-10'
               />
               {errors.properti_id && <p className='text-xs text-red-500'>{errors.properti_id.message}</p>}

@@ -135,14 +135,6 @@ export const konsumenService = {
       });
       return response.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Get By ID Error:', {
-        id,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },
@@ -183,14 +175,6 @@ export const konsumenService = {
       });
       return response.data.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Create Error:', {
-        data,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },
@@ -234,15 +218,6 @@ export const konsumenService = {
       });
       return response.data.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Update Error:', {
-        id,
-        data,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },

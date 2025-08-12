@@ -17,6 +17,7 @@ import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { addDays, startOfDay } from 'date-fns';
 import { FilePondFile } from 'filepond';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -70,11 +71,12 @@ const konsumenSchema = z
     const first = new Date(tgl_fu_1);
     const second = new Date(tgl_fu_2);
     if (isNaN(first.getTime()) || isNaN(second.getTime())) return;
-    if (second <= first) {
+    const minSecond = addDays(first, 7);
+    if (second < minSecond) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['tgl_fu_2'],
-        message: 'Tanggal follow up 2 harus lebih besar dari Tanggal & waktu follow up 1'
+        message: 'Tanggal follow up 2 minimal 7 hari setelah Tanggal & waktu follow up 1'
       });
     }
   });
@@ -226,10 +228,11 @@ export const KonsumenForm = memo(function KonsumenForm({
   const tglFu2 = watch('tgl_fu_2');
 
   const minDateFollowUp2 = React.useMemo(() => {
-    if (!tglFu) return undefined;
-    const first = new Date(tglFu);
-    const nextDay = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1);
-    return nextDay;
+    const today = startOfDay(new Date());
+    if (!tglFu) return today;
+    const first = startOfDay(new Date(tglFu));
+    const sevenDaysAfter = addDays(first, 7);
+    return sevenDaysAfter > today ? sevenDaysAfter : today;
   }, [tglFu]);
 
   // Ensure follow up 2 is cleared if it becomes invalid compared to follow up 1
@@ -237,7 +240,8 @@ export const KonsumenForm = memo(function KonsumenForm({
     if (!tglFu || !tglFu2) return;
     const first = new Date(tglFu);
     const second = new Date(tglFu2);
-    if (second <= first) {
+    const minSecond = addDays(first, 7);
+    if (second < minSecond) {
       setValue('tgl_fu_2', '');
     }
   }, [tglFu, tglFu2, setValue]);
