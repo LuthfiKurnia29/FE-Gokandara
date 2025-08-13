@@ -18,6 +18,7 @@ export interface PropertyData {
 
 export interface PenjualanData {
   id: number;
+  no_transaksi?: number;
   konsumen_id: number;
   properti_id: number;
   blok_id: number;
@@ -69,6 +70,7 @@ export interface PenjualanApiResponse {
 }
 
 export interface CreatePenjualanData {
+  no_transaksi: number;
   konsumen_id: number;
   properti_id: number;
   blok_id: number;
@@ -84,6 +86,7 @@ export interface CreatePenjualanData {
 }
 
 export interface UpdatePenjualanData {
+  no_transaksi?: number;
   konsumen_id?: number;
   properti_id?: number;
   blok_id?: number;

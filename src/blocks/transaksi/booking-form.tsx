@@ -22,6 +22,10 @@ import { z } from 'zod';
 // Form validation schema
 const bookingSchema = z
   .object({
+    no_transaksi: z
+      .string()
+      .min(1, 'No. transaksi wajib diisi')
+      .regex(/^\d+$/, 'No. transaksi hanya boleh berisi angka'),
     konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
     properti_id: z.string().min(1, 'Properti harus dipilih'),
     blok_id: z.string().min(1, 'Blok harus dipilih'),
@@ -240,6 +244,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
   // Watch form values
   const konsumenId = watch('konsumen_id');
+  const noTransaksi = watch('no_transaksi') || '';
   const propertiId = watch('properti_id');
   const blokId = watch('blok_id');
   const tipeId = watch('tipe_id');
@@ -315,6 +320,13 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     const value = e.target.value;
     setValue('diskon', value);
     setDiscountError('');
+  };
+
+  // Prevent non-numeric characters for number input (e/E/+/-/.)
+  const handleNoTransaksiKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+      e.preventDefault();
+    }
   };
 
   // Safe option mapping
@@ -424,6 +436,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
     const submitData = {
       // Use data from previous form (initialData) for fields not in this form
+      no_transaksi: Number(noTransaksi),
       konsumen_id: parseInt(safeInitialData.konsumen_id),
       properti_id: parseInt(safeInitialData.properti_id),
       tipe_id: parseInt(safeInitialData.tipe_id),
@@ -494,8 +507,25 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
 
             {/* Booking Details */}
             <div className='space-y-4'>
-              {/* Form Fields - Blok, Unit, and Discount */}
+              {/* Form Fields - No Transaksi, Blok, Unit, and Discount */}
               <div className='grid grid-cols-2 gap-3'>
+                <div className='col-span-2'>
+                  <Label className='mb-1 block text-sm font-medium text-gray-700'>No. Transaksi</Label>
+                  <Input
+                    type='number'
+                    inputMode='numeric'
+                    min={1}
+                    step={1}
+                    placeholder='Masukkan angka saja'
+                    value={noTransaksi}
+                    onChange={(e) => setValue('no_transaksi', e.target.value)}
+                    onKeyDown={handleNoTransaksiKeyDown}
+                    className='h-10'
+                  />
+                  {(errors as any) && (errors as any).no_transaksi && (
+                    <p className='text-xs text-red-500'>{(errors as any).no_transaksi.message as string}</p>
+                  )}
+                </div>
                 <div>
                   <Label className='mb-1 block text-sm font-medium text-gray-700'>Blok</Label>
                   <Select
