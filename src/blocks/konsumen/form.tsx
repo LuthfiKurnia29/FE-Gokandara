@@ -345,6 +345,16 @@ export const KonsumenForm = memo(function KonsumenForm({
             <h1 className='mb-6 text-2xl font-bold text-gray-900'>
               {selectedId ? 'Edit Data Konsumen' : 'Tambah Data Konsumen'}
             </h1>
+            {existingData &&
+              ((existingData as any).status_delete === 1 ||
+                (existingData as any).status_delete === '1' ||
+                (existingData as any).status_delete === 'pending') && (
+                <div className='mt-2'>
+                  <span className='inline-flex items-center rounded-md border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800'>
+                    Menunggu persetujuan hapus
+                  </span>
+                </div>
+              )}
 
             {/* Tabs */}
             <div className='flex space-x-8 border-b border-gray-200'>

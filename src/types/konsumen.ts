@@ -11,6 +11,7 @@ export interface KonsumenData {
   email?: string;
   address: string;
   ktp_number: string;
+  status_delete?: number | string | null;
   kesiapan_dana?: number | null;
   pengalaman?: string | null;
   materi_fu_1?: string | null;
