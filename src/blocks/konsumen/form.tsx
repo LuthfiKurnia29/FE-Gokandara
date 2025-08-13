@@ -27,10 +27,15 @@ const konsumenSchema = z
   .object({
     // Required fields (sesuai migration - tanpa nullable())
     name: z.string().min(1, 'Nama harus diisi'),
-    ktp_number: z.string().regex(/^\d{16}$/, 'No. KTP harus 16 digit angka'),
+    ktp_number: z
+      .string()
+      .optional()
+      .refine((val) => !val || val === '' || /^\d{16}$/.test(val), {
+        message: 'No. KTP harus 16 digit angka'
+      }),
     address: z.string().min(1, 'Alamat harus diisi'),
     phone: z.string().min(1, 'Nomor telepon harus diisi'),
-    email: z.string().email('Format email tidak valid'),
+    email: z.string().email('Format email tidak valid').optional().or(z.literal('')),
     refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
     project_id: z.string().min(1, 'Proyek harus dipilih'),
 
@@ -300,7 +305,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       ktp_number: data.ktp_number,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || undefined,
       description: data.description || '',
       refrensi_id: parseInt(data.refrensi_id),
       prospek_id: parseInt(data.prospek_id),
@@ -414,7 +419,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='ktp' className='font-medium text-gray-900'>
-                        No. KTP *
+                        No. KTP (Opsional)
                       </Label>
                       <Input
                         id='ktp'
@@ -441,7 +446,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='email' className='font-medium text-gray-900'>
-                        Email *
+                        Email (Opsional)
                       </Label>
                       <Input
                         id='email'
