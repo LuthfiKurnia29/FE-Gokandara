@@ -5,6 +5,7 @@ import type { IEvent } from '@/calendar/interfaces';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
+import { LogsEventDialog } from './logs-event-dialog';
 import { format, parseISO } from 'date-fns';
 import { Calendar, Clock, Text, User } from 'lucide-react';
 
@@ -32,7 +33,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
               <User className='mt-1 size-4 shrink-0' />
               <div>
                 <p className='text-sm font-medium'>Konsumen</p>
-                <p className='text-muted-foreground text-sm'>{event.user.name}</p>
+                <p className='text-muted-foreground text-sm'>{event.konsumen?.name}</p>
               </div>
             </div>
 
@@ -62,8 +63,13 @@ export function EventDetailsDialog({ event, children }: IProps) {
           </div>
 
           <DialogFooter>
-            <EditEventDialog event={event}>
+            <LogsEventDialog event={event}>
               <Button type='button' variant='outline'>
+                Log Survey
+              </Button>
+            </LogsEventDialog>
+            <EditEventDialog event={event}>
+              <Button type='button' className='bg-amber-400 hover:bg-amber-500'>
                 Edit
               </Button>
             </EditEventDialog>

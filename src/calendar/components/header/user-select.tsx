@@ -1,4 +1,5 @@
 import { useCalendar } from '@/calendar/contexts/calendar-context';
+import { KonsumenFollowup } from '@/calendar/interfaces';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
@@ -7,7 +8,9 @@ export function UserSelect() {
   const { users, selectedUserId, setSelectedUserId } = useCalendar();
 
   return (
-    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+    <Select
+      value={selectedUserId.toString()}
+      onValueChange={(value) => setSelectedUserId(value as KonsumenFollowup['id'] | 'all')}>
       <SelectTrigger className='flex-1 md:w-48'>
         <SelectValue />
       </SelectTrigger>

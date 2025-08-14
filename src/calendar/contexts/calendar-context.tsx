@@ -3,14 +3,14 @@
 import { createContext, useContext, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
-import type { IEvent, IUser } from '@/calendar/interfaces';
+import type { IEvent, IUser, KonsumenFollowup } from '@/calendar/interfaces';
 import type { TBadgeVariant, TCalendarView, TVisibleHours, TWorkingHours } from '@/calendar/types';
 
 interface ICalendarContext {
   selectedDate: Date;
   setSelectedDate: (date: Date | undefined) => void;
-  selectedUserId: IUser['id'] | 'all';
-  setSelectedUserId: (userId: IUser['id'] | 'all') => void;
+  selectedUserId: KonsumenFollowup['id'] | 'all';
+  setSelectedUserId: (userId: KonsumenFollowup['id'] | 'all') => void;
   badgeVariant: TBadgeVariant;
   setBadgeVariant: (variant: TBadgeVariant) => void;
   users: IUser[];
@@ -54,7 +54,7 @@ export function CalendarProvider({
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedUserId, setSelectedUserId] = useState<IUser['id'] | 'all'>('all');
+  const [selectedUserId, setSelectedUserId] = useState<KonsumenFollowup['id'] | 'all'>('all');
 
   const [view, setView] = useState<TCalendarView>(defaultView);
 

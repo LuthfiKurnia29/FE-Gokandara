@@ -35,6 +35,7 @@ interface IProps {
   children: React.ReactNode;
   startDate?: Date;
   startTime?: { hour: number; minute: number };
+  defaultKonsumenId?: number;
 }
 
 const createCalendarSchema = z.object({
@@ -48,7 +49,7 @@ const createCalendarSchema = z.object({
 
 type TCreateCalendarFormData = z.infer<typeof createCalendarSchema>;
 
-export function AddEventDialog({ children, startDate, startTime }: IProps) {
+export function AddEventDialog({ children, startDate, startTime, defaultKonsumenId }: IProps) {
   const { setLocalEvents } = useCalendar();
 
   const { isOpen, onClose, onToggle } = useDisclosure();
@@ -56,7 +57,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
   const form = useForm<TCreateCalendarFormData>({
     resolver: zodResolver(createCalendarSchema),
     defaultValues: {
-      konsumen_id: undefined as unknown as number,
+      konsumen_id: defaultKonsumenId,
       prospek_id: undefined as unknown as number,
       followup_result: '',
       followup_note: '',
@@ -81,20 +82,21 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
     });
 
     // Optimistically add to local calendar view (must satisfy IEvent)
-    setLocalEvents((prev) => [
-      {
-        id: created.id,
-        startDate: new Date(created.followup_date).toISOString(),
-        endDate: new Date(created.followup_last_day || created.followup_date).toISOString(),
-        title: created.followup_note,
-        color: 'blue',
-        description: created.followup_result,
-        user: { id: 'me', name: 'Me', picturePath: null },
-        prospek: { id: 0, name: '', color: 'blue' },
-        updated_at: new Date().toISOString()
-      },
-      ...prev
-    ]);
+    // setLocalEvents((prev) => [
+    //   {
+    //     id: created.id,
+    //     startDate: new Date(created.followup_date).toISOString(),
+    //     endDate: new Date(created.followup_last_day || created.followup_date).toISOString(),
+    //     title: created.followup_note,
+    //     color: 'blue',
+    //     description: created.followup_result,
+    //     konsumen: { id: created.konsumen_id, name: '', followups: [] },
+    //     prospek: { id: created.prospek_id, name: '', color: 'blue' },
+    //     sales: { id: 'me', name: 'Me', picturePath: null },
+    //     updated_at: new Date().toISOString()
+    //   },
+    //   ...prev
+    // ]);
 
     onClose();
     form.reset();
@@ -107,6 +109,12 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
     });
   }, [form.reset]);
 
+  useEffect(() => {
+    if (defaultKonsumenId) {
+      form.setValue('konsumen_id', defaultKonsumenId);
+    }
+  }, [defaultKonsumenId]);
+
   const { data: konsumen } = useAllKonsumen();
   const { data: prospek } = useProspekList();
 
@@ -116,7 +124,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Buat Jadwal baru</DialogTitle>
+          <DialogTitle>Buat Jadwal Baru</DialogTitle>
           <DialogDescription>
             Tambahkan acara baru ke kalender agar kamu tidak melewatkan hal penting.
           </DialogDescription>
@@ -132,7 +140,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                   <FormLabel>Konsumen</FormLabel>
                   <FormControl>
                     <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
+                      <SelectTrigger data-invalid={fieldState.invalid} className='w-full'>
                         <SelectValue placeholder='Pilih konsumen' />
                       </SelectTrigger>
                       <SelectContent>

@@ -4,11 +4,21 @@ import { memo, useEffect, useMemo } from 'react';
 
 import { ClientContainer } from '@/calendar/components/client-container';
 import { useCalendar } from '@/calendar/contexts/calendar-context';
-import { IEvent } from '@/calendar/interfaces';
+import { IEvent, KonsumenFollowup } from '@/calendar/interfaces';
 import { TCalendarView, TEventColor } from '@/calendar/types';
 import { useCalendarList } from '@/services/calendar';
+import { UserWithRelations } from '@/types/user';
 
-import { endOfMonth, endOfWeek, endOfYear, formatDate, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
+import {
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  formatDate,
+  startOfMonth,
+  startOfWeek,
+  startOfYear
+} from 'date-fns';
 
 const KalenderContainer = memo(function KalenderContainer({
   setEvents,
@@ -24,15 +34,17 @@ const KalenderContainer = memo(function KalenderContainer({
     if (view === 'week') return formatDate(startOfWeek(selectedDate), 'yyyy-MM-dd');
     if (view === 'month') return formatDate(startOfMonth(selectedDate), 'yyyy-MM-dd');
     if (view === 'year') return formatDate(startOfYear(selectedDate), 'yyyy-MM-dd');
+    if (view === 'agenda') return formatDate(startOfYear(selectedDate), 'yyyy-MM-dd');
 
     return null;
   }, [view, selectedDate]);
 
   const endDay = useMemo(() => {
-    if (view === 'day') return formatDate(selectedDate, 'yyyy-MM-dd');
+    if (view === 'day') return formatDate(addDays(selectedDate, 1), 'yyyy-MM-dd');
     if (view === 'week') return formatDate(endOfWeek(selectedDate), 'yyyy-MM-dd');
     if (view === 'month') return formatDate(endOfMonth(selectedDate), 'yyyy-MM-dd');
     if (view === 'year') return formatDate(endOfYear(selectedDate), 'yyyy-MM-dd');
+    if (view === 'agenda') return formatDate(endOfYear(selectedDate), 'yyyy-MM-dd');
 
     return null;
   }, [view, selectedDate]);
@@ -48,9 +60,10 @@ const KalenderContainer = memo(function KalenderContainer({
       title: item.followup_note,
       color: item.prospek.color as TEventColor,
       description: item.followup_result,
-      user: item.konsumen,
+      konsumen: item.konsumen as KonsumenFollowup,
       prospek: item.prospek,
-      updated_at: item.updated_at
+      updated_at: item.updated_at,
+      sales: item.sales as UserWithRelations
     }));
 
     setEvents(events);

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { differenceInMinutes, format, parseISO } from 'date-fns';
+import { User } from 'lucide-react';
 
 const calendarWeekEventCardVariants = cva(
   'flex select-none flex-col gap-0.5 truncate whitespace-nowrap rounded-md border px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
@@ -90,7 +91,14 @@ export function EventBlock({ event, className }: IProps) {
               </svg>
             )}
 
-            <p className='truncate font-semibold'>{event.title}</p>
+            <div className='truncate'>
+              <div className='mb-1 flex items-center gap-1'>
+                <User className='size-3 shrink-0' />
+                <p className='truncate text-xs font-bold'>{event.konsumen?.name}</p>
+              </div>
+
+              <p className='mb-2 truncate font-semibold'>{event.title}</p>
+            </div>
           </div>
 
           {durationInMinutes > 25 && (

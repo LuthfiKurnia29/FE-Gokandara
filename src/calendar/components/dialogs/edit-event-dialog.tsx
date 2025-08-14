@@ -57,7 +57,7 @@ export function EditEventDialog({ children, event }: IProps) {
       followup_note: event.title,
       followup_date: parseISO(event.startDate),
       followup_last_day: parseISO(event.endDate),
-      konsumen_id: event.user?.id as number,
+      konsumen_id: event.konsumen?.id as number,
       prospek_id: event.prospek?.id as number
     }
   });

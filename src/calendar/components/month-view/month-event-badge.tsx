@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { endOfDay, format, isSameDay, parseISO, startOfDay } from 'date-fns';
+import { User } from 'lucide-react';
 
 const eventBadgeVariants = cva(
-  'mx-1 flex size-auto h-6.5 select-none items-center justify-between gap-1.5 truncate whitespace-nowrap rounded-md border px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+  'mx-1 flex size-auto h-12 select-none items-center justify-between gap-1.5 truncate whitespace-nowrap rounded-md border px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
   {
     variants: {
       color: {
@@ -113,14 +114,20 @@ export function MonthEventBadge({
           )}
 
           {renderBadgeText && (
-            <p className='flex-1 truncate font-semibold'>
-              {eventCurrentDay && (
-                <span className='text-xs'>
-                  Day {eventCurrentDay} of {eventTotalDays} •{' '}
-                </span>
-              )}
-              {event.title}
-            </p>
+            <div className='truncate'>
+              <div className='flex items-center gap-1'>
+                <User className='size-3 shrink-0' />
+                <p className='truncate text-xs font-bold'>{event.konsumen?.name}</p>
+              </div>
+              <p className='flex-1 truncate font-semibold'>
+                {eventCurrentDay && (
+                  <span className='text-xs'>
+                    Day {eventCurrentDay} of {eventTotalDays} •{' '}
+                  </span>
+                )}
+                {event.title} asasasasasas
+              </p>
+            </div>
           )}
         </div>
 

@@ -1,11 +1,33 @@
 import type { TEventColor } from '@/calendar/types';
 import { KonsumenData } from '@/types/konsumen';
 import { ProspekData } from '@/types/prospek';
+import { UserWithRelations } from '@/types/user';
 
 export interface IUser {
   id: string;
   name: string;
   picturePath: string | null;
+}
+
+export interface IFollowup {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  followup_date: string;
+  followup_note: string;
+  followup_result: string;
+  sales_id: number;
+  sales: UserWithRelations;
+  konsumen_id: number;
+  konsumen: KonsumenData;
+  followup_last_day: string;
+  color: string | null;
+  prospek_id: number;
+  prospek: ProspekData;
+}
+
+export interface KonsumenFollowup extends KonsumenData {
+  followups: IFollowup[];
 }
 
 export interface IEvent {
@@ -15,8 +37,9 @@ export interface IEvent {
   title: string;
   color: TEventColor;
   description: string;
-  user: KonsumenData | IUser;
+  konsumen: KonsumenFollowup;
   prospek: ProspekData;
+  sales: UserWithRelations;
   updated_at: string;
 }
 
