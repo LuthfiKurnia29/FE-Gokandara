@@ -15,7 +15,8 @@ import {
 import { useNotificationList } from '@/services/notification';
 import type { NotificationItem } from '@/types/notification';
 
-import { Search as SearchIcon } from 'lucide-react';
+import { formatDate } from 'date-fns';
+import { MessageCircle, Search as SearchIcon, Users } from 'lucide-react';
 
 const NotifikasiPage = memo(function NotifikasiPage() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
@@ -40,13 +41,7 @@ const NotifikasiPage = memo(function NotifikasiPage() {
 
   const renderNotification = (n: NotificationItem) => {
     const isUnread = !n.is_read;
-    const time = new Date(n.created_at).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const time = formatDate(n.created_at, 'dd MMMM yyyy, HH:mm');
 
     const kindLabel = n.jenis_notifikasi === 'chat' ? 'CHAT' : 'KONSUMEN';
     const message =
@@ -59,16 +54,25 @@ const NotifikasiPage = memo(function NotifikasiPage() {
         key={n.id}
         className={`rounded-xl border p-4 shadow-sm ${!isUnread ? 'bg-gray-100 opacity-80 hover:opacity-100' : 'bg-white'}`}>
         <div className='flex items-start justify-between gap-4'>
+          {n.jenis_notifikasi == 'chat' ? (
+            <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-900'>
+              <MessageCircle className='h-5 w-5 text-white' />
+            </div>
+          ) : (
+            <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-amber-900'>
+              <Users className='h-5 w-5 text-white' />
+            </div>
+          )}
           <div className='flex-1'>
             <h4 className='text-base font-semibold text-gray-900'>
               {n.jenis_notifikasi === 'chat' ? 'Pesan baru' : 'Notifikasi Konsumen'}
             </h4>
-            <p className='mt-1 text-sm text-gray-700'>{message}</p>
+            <p className='mt-1 line-clamp-3 text-sm text-gray-700'>{message}</p>
             <div className='mt-2 flex items-center gap-3'>
-              <Badge variant='outline' className='text-xs'>
+              <Badge variant='outline' className='border-blue-600 text-xs text-blue-600'>
                 {kindLabel}
               </Badge>
-              <span className='text-xs text-gray-500'>{time}</span>
+              <span className='text-xs font-medium text-gray-500'>{time}</span>
             </div>
           </div>
           <div className='flex items-center gap-2'>
