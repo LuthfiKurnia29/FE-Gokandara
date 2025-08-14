@@ -187,7 +187,7 @@ export const PesanForm = memo(function PesanForm({
             render={({ field: { value, onChange, ...field } }) => {
               return (
                 <FileUpload
-                  initialFiles={value ? [value[0].file] : undefined}
+                  //   initialFiles={value ? value : []}
                   onupdatefiles={onChange}
                   allowMultiple={false}
                   labelIdle="Drag & Drop your logo or <span class='filepond--label-action'>Browse</span>"

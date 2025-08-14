@@ -66,9 +66,9 @@ const ConversationItem = memo(
     }).format(createdAtDate);
 
     const senderRole = conversation.pengirim.roles[0]?.role.name || 'User';
-    const firstRecipient = conversation.penerima[0];
+    const firstRecipient = Array.isArray(conversation.penerima) ? conversation.penerima[0] : conversation.penerima;
     const firstRecipientRole = firstRecipient?.roles[0]?.role.name || 'User';
-    const additionalRecipients = conversation.penerima.slice(1);
+    const additionalRecipients = Array.isArray(conversation.penerima) ? conversation.penerima.slice(1) : [];
     const additionalRecipientsCount = additionalRecipients.length;
 
     return (
