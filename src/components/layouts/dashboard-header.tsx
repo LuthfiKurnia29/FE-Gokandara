@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -11,8 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { authService, useCurrentUser } from '@/services/auth';
-import { notificationService } from '@/services/notification';
-import { useTransaksiTotalCount } from '@/services/penjualan';
+import { useNotificationCount } from '@/services/notification';
 
 import { useTitleContext } from '../title';
 import { SidebarTrigger } from '../ui/sidebar';
@@ -42,11 +43,15 @@ const handleStarNotificationClick = () => {
 };
 
 const handleMessageNotificationClick = (count: number) => {
-  notificationService.showNotification('Pesan', count);
+  toast(count > 0 ? 'Ada notifikasi pesan yang menanti' : 'Tidak ada notifikasi terbaru', {
+    icon: count > 0 ? '🔔' : '📭'
+  });
 };
 
 const handleTransaksiNotificationClick = (count: number) => {
-  notificationService.showNotification('Transaksi', count);
+  toast(count > 0 ? 'Ada notifikasi transaksi yang menanti' : 'Tidak ada notifikasi terbaru', {
+    icon: count > 0 ? '🔔' : '📭'
+  });
 };
 
 const handleCalendarNotificationClick = () => {
@@ -54,18 +59,20 @@ const handleCalendarNotificationClick = () => {
 };
 
 const handleNotificationClick = (count: number) => {
-  notificationService.showNotification('Transaksi', count);
+  toast(count > 0 ? 'Ada notifikasi yang menanti' : 'Tidak ada notifikasi terbaru', {
+    icon: count > 0 ? '🔔' : '📭'
+  });
 };
 
 export function DashboardHeader() {
   const { title } = useTitleContext();
   const { data: currentUser } = useCurrentUser();
-  const { data: transaksiTotal = 0 } = useTransaksiTotalCount();
+  const { data: notifCount = 0 } = useNotificationCount();
 
   // Calculate badge counts
   const starBadgeCount = determineBadgeCount('Star');
   const messageBadgeCount = determineBadgeCount('Pesan');
-  const transaksiBadgeCount = determineBadgeCount('Transaksi', transaksiTotal);
+  const transaksiBadgeCount = determineBadgeCount('Transaksi', notifCount);
   const calendarBadgeCount = determineBadgeCount('Calendar');
 
   const handleLogout = () => {
@@ -119,20 +126,15 @@ export function DashboardHeader() {
               <Star className='h-6 w-6 cursor-pointer text-gray-600' />
             </div>
 
-            {/* Bell Icon with Orange Badge */}
-            {transaksiBadgeCount > 0 && (
-              <div className='relative' onClick={() => handleTransaksiNotificationClick(transaksiBadgeCount)}>
-                <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
+            {/* Bell Icon → navigate to /notifikasi */}
+            <Link href='/notifikasi' className='relative'>
+              <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
+              {transaksiBadgeCount > 0 && (
                 <span className='font-sf-pro absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[11px] leading-3 font-bold text-white'>
                   {transaksiBadgeCount}
                 </span>
-              </div>
-            )}
-            {transaksiBadgeCount === 0 && (
-              <div className='relative' onClick={() => handleTransaksiNotificationClick(0)}>
-                <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
-              </div>
-            )}
+              )}
+            </Link>
 
             {/* Message Icon with Red Badge */}
             {messageBadgeCount > 0 && (
