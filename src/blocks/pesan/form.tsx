@@ -161,6 +161,7 @@ export const PesanForm = memo(function PesanForm({
             url='/user'
             id='user'
             perPage={10}
+            searchIsForm={false}
             queryKey={['/user']}
             payload={{
               include: 'role',

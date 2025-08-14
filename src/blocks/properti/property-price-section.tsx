@@ -37,6 +37,7 @@ export const PropertyPriceSection = ({ property }: PropertyPriceSectionProps) =>
   const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
       const submitData: CreatePenjualanData = {
+        no_transaksi: Number((data as any).no_transaksi),
         konsumen_id: data.konsumen_id!,
         properti_id: data.properti_id!,
         blok_id: data.blok_id!,

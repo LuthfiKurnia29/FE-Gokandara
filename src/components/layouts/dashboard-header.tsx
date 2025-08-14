@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import NotificationDropdown from '@/components/notification-dropdown';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -126,15 +127,8 @@ export function DashboardHeader() {
               <Star className='h-6 w-6 cursor-pointer text-gray-600' />
             </div>
 
-            {/* Bell Icon → navigate to /notifikasi */}
-            <Link href='/notifikasi' className='relative'>
-              <Bell className='h-6 w-6 cursor-pointer text-gray-600' />
-              {transaksiBadgeCount > 0 && (
-                <span className='font-sf-pro absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[11px] leading-3 font-bold text-white'>
-                  {transaksiBadgeCount}
-                </span>
-              )}
-            </Link>
+            {/* Bell Icon → open dropdown */}
+            <NotificationDropdown />
 
             {/* Message Icon with Red Badge */}
             {messageBadgeCount > 0 && (

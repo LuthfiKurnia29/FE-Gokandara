@@ -60,6 +60,8 @@ interface PaginateTableProps<TData> {
   grouped?: boolean;
   queryKey?: string[];
   perPage?: number;
+  // When used inside another <form>, avoid nested <form> to prevent hydration errors
+  searchIsForm?: boolean;
 }
 
 // Define types for the component ref
@@ -152,7 +154,8 @@ const PaginateTable = memo(
         Plugin = () => null,
         grouped = false,
         queryKey,
-        perPage = 10
+        perPage = 10,
+        searchIsForm = true
       },
       ref
     ) => {
@@ -248,15 +251,27 @@ const PaginateTable = memo(
             <div className='mb-4 flex flex-wrap justify-between gap-2 pt-4'>
               <div className='flex items-center gap-2'>
                 <DataTableViewOptions table={table} />
-                <form onSubmit={handleSearch} className='flex'>
-                  <Input
-                    type='search'
-                    className='w-full'
-                    placeholder='Cari ...'
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </form>
+                {searchIsForm ? (
+                  <form onSubmit={handleSearch} className='flex'>
+                    <Input
+                      type='search'
+                      className='w-full'
+                      placeholder='Cari ...'
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </form>
+                ) : (
+                  <div className='flex'>
+                    <Input
+                      type='search'
+                      className='w-full'
+                      placeholder='Cari ...'
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
               <div className='flex items-center gap-4'>
                 <Plugin />
