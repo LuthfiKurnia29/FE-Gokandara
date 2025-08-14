@@ -61,6 +61,15 @@ const columns = [
     cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
     meta: { style: { width: '100px' } }
   }),
+  columnHelper.accessor((row) => (row as any).no_transaksi ?? '-', {
+    id: 'no_transaksi',
+    header: 'No. Transaksi',
+    cell: ({ getValue }) => {
+      const val = getValue() as number | string;
+      return <span className='font-mono text-sm'>{val}</span>;
+    },
+    meta: { style: { width: '140px' } }
+  }),
   columnHelper.accessor('created_at', {
     header: 'Waktu',
     cell: ({ getValue }) => {
@@ -580,6 +589,7 @@ const PenjualanPage = memo(function PenjualanPage() {
   const handleFormSubmit = async (data: CreatePenjualanData | UpdatePenjualanData) => {
     try {
       const submitData: CreatePenjualanData = {
+        no_transaksi: (data as any).no_transaksi!,
         konsumen_id: data.konsumen_id!,
         properti_id: data.properti_id!,
         blok_id: data.blok_id!,

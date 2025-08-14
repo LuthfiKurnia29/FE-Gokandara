@@ -117,7 +117,6 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const [openDetailModal, setOpenDetailModal] = useState<boolean>(false);
 
   const handleEdit = (property: PropertyData) => {
-    console.log('Edit clicked for property:', property.id, property);
     setSelectedId(property.id);
     setOpenForm(true);
   };

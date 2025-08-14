@@ -135,14 +135,6 @@ export const konsumenService = {
       });
       return response.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Get By ID Error:', {
-        id,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },
@@ -154,10 +146,14 @@ export const konsumenService = {
 
       // Add all text fields
       formData.append('name', data.name);
-      formData.append('ktp_number', data.ktp_number);
+      if (data.ktp_number) {
+        formData.append('ktp_number', data.ktp_number);
+      }
       formData.append('address', data.address);
       formData.append('phone', data.phone);
-      formData.append('email', data.email);
+      if (data.email) {
+        formData.append('email', data.email);
+      }
       formData.append('description', data.description || '');
       formData.append('refrensi_id', data.refrensi_id.toString());
       formData.append('prospek_id', data.prospek_id.toString());
@@ -183,14 +179,6 @@ export const konsumenService = {
       });
       return response.data.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Create Error:', {
-        data,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },
@@ -208,7 +196,7 @@ export const konsumenService = {
       if (data.ktp_number) formData.append('ktp_number', data.ktp_number);
       if (data.address) formData.append('address', data.address);
       if (data.phone) formData.append('phone', data.phone);
-      if (data.email) formData.append('email', data.email);
+      if (data.email !== undefined) formData.append('email', data.email || '');
       if (data.description !== undefined) formData.append('description', data.description || '');
       if (data.refrensi_id) formData.append('refrensi_id', data.refrensi_id.toString());
       if (data.prospek_id) formData.append('prospek_id', data.prospek_id.toString());
@@ -234,15 +222,6 @@ export const konsumenService = {
       });
       return response.data.data;
     } catch (error: any) {
-      console.log('🔴 Konsumen Update Error:', {
-        id,
-        data,
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
-      });
       throw error;
     }
   },

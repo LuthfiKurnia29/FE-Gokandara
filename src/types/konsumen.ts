@@ -8,9 +8,10 @@ export interface KonsumenData {
   name: string;
   description: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
   ktp_number: string;
+  status_delete?: number | string | null;
   kesiapan_dana?: number | null;
   pengalaman?: string | null;
   materi_fu_1?: string | null;
@@ -57,9 +58,9 @@ export interface CreateKonsumenData {
   name: string;
   description: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
-  ktp_number: string;
+  ktp_number?: string;
   kesiapan_dana?: number | null;
   pengalaman?: string | null;
   materi_fu_1?: string | null;

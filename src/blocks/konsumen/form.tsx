@@ -17,6 +17,7 @@ import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { addDays, startOfDay } from 'date-fns';
 import { FilePondFile } from 'filepond';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,10 +27,15 @@ const konsumenSchema = z
   .object({
     // Required fields (sesuai migration - tanpa nullable())
     name: z.string().min(1, 'Nama harus diisi'),
-    ktp_number: z.string().regex(/^\d{16}$/, 'No. KTP harus 16 digit angka'),
+    ktp_number: z
+      .string()
+      .optional()
+      .refine((val) => !val || val === '' || /^\d{16}$/.test(val), {
+        message: 'No. KTP harus 16 digit angka'
+      }),
     address: z.string().min(1, 'Alamat harus diisi'),
     phone: z.string().min(1, 'Nomor telepon harus diisi'),
-    email: z.string().email('Format email tidak valid'),
+    email: z.string().email('Format email tidak valid').optional().or(z.literal('')),
     refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
     project_id: z.string().min(1, 'Proyek harus dipilih'),
 
@@ -70,11 +76,12 @@ const konsumenSchema = z
     const first = new Date(tgl_fu_1);
     const second = new Date(tgl_fu_2);
     if (isNaN(first.getTime()) || isNaN(second.getTime())) return;
-    if (second <= first) {
+    const minSecond = addDays(first, 7);
+    if (second < minSecond) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['tgl_fu_2'],
-        message: 'Tanggal follow up 2 harus lebih besar dari Tanggal & waktu follow up 1'
+        message: 'Tanggal follow up 2 minimal 7 hari setelah Tanggal & waktu follow up 1'
       });
     }
   });
@@ -226,10 +233,11 @@ export const KonsumenForm = memo(function KonsumenForm({
   const tglFu2 = watch('tgl_fu_2');
 
   const minDateFollowUp2 = React.useMemo(() => {
-    if (!tglFu) return undefined;
-    const first = new Date(tglFu);
-    const nextDay = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1);
-    return nextDay;
+    const today = startOfDay(new Date());
+    if (!tglFu) return today;
+    const first = startOfDay(new Date(tglFu));
+    const sevenDaysAfter = addDays(first, 7);
+    return sevenDaysAfter > today ? sevenDaysAfter : today;
   }, [tglFu]);
 
   // Ensure follow up 2 is cleared if it becomes invalid compared to follow up 1
@@ -237,7 +245,8 @@ export const KonsumenForm = memo(function KonsumenForm({
     if (!tglFu || !tglFu2) return;
     const first = new Date(tglFu);
     const second = new Date(tglFu2);
-    if (second <= first) {
+    const minSecond = addDays(first, 7);
+    if (second < minSecond) {
       setValue('tgl_fu_2', '');
     }
   }, [tglFu, tglFu2, setValue]);
@@ -296,7 +305,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       ktp_number: data.ktp_number,
       address: data.address,
       phone: data.phone,
-      email: data.email,
+      email: data.email || undefined,
       description: data.description || '',
       refrensi_id: parseInt(data.refrensi_id),
       prospek_id: parseInt(data.prospek_id),
@@ -336,6 +345,16 @@ export const KonsumenForm = memo(function KonsumenForm({
             <h1 className='mb-6 text-2xl font-bold text-gray-900'>
               {selectedId ? 'Edit Data Konsumen' : 'Tambah Data Konsumen'}
             </h1>
+            {existingData &&
+              ((existingData as any).status_delete === 1 ||
+                (existingData as any).status_delete === '1' ||
+                (existingData as any).status_delete === 'pending') && (
+                <div className='mt-2'>
+                  <span className='inline-flex items-center rounded-md border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800'>
+                    Menunggu persetujuan hapus
+                  </span>
+                </div>
+              )}
 
             {/* Tabs */}
             <div className='flex space-x-8 border-b border-gray-200'>
@@ -410,7 +429,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='ktp' className='font-medium text-gray-900'>
-                        No. KTP *
+                        No. KTP (Opsional)
                       </Label>
                       <Input
                         id='ktp'
@@ -437,7 +456,7 @@ export const KonsumenForm = memo(function KonsumenForm({
 
                     <div className='space-y-2'>
                       <Label htmlFor='email' className='font-medium text-gray-900'>
-                        Email *
+                        Email (Opsional)
                       </Label>
                       <Input
                         id='email'

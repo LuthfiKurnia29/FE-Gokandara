@@ -185,7 +185,6 @@ export const PesanForm = memo(function PesanForm({
             control={control}
             name='file'
             render={({ field: { value, onChange, ...field } }) => {
-              // console.log("logo", value);
               return (
                 <FileUpload
                   initialFiles={value ? [value[0].file] : undefined}

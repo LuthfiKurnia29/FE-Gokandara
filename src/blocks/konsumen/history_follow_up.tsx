@@ -2,6 +2,7 @@
 
 import { memo } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { KonsumenData } from '@/types/konsumen';
@@ -121,6 +122,15 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
               </div>
               <div className='flex-1'>
                 <h3 className='text-lg font-semibold text-gray-900'>{konsumen.name}</h3>
+                {(konsumen as any).status_delete === 1 ||
+                (konsumen as any).status_delete === '1' ||
+                (konsumen as any).status_delete === 'pending' ? (
+                  <div className='mt-1'>
+                    <Badge className='border border-amber-200 bg-amber-100 text-amber-800'>
+                      Menunggu persetujuan hapus
+                    </Badge>
+                  </div>
+                ) : null}
                 <div className='mt-2 grid grid-cols-1 gap-2 text-sm text-gray-600 md:grid-cols-2'>
                   <div className='flex items-center gap-2'>
                     <Phone className='h-4 w-4' />

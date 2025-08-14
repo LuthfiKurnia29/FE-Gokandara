@@ -8,6 +8,7 @@ import { MemberFilterModal } from '@/blocks/konsumen/member-filter-modal';
 import { PageTitle } from '@/components/page-title';
 import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -155,7 +156,13 @@ const KonsumenPage = memo(function KonsumenPage() {
       }
       handleCloseForm();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Terjadi sesuatu Error!');
+      const status = error?.response?.status;
+      const errors = error?.response?.data?.errors || {};
+      const msgFromField = Array.isArray(errors.tgl_fu_2) ? errors.tgl_fu_2[0] : undefined;
+      const fallbackMsg = error?.response?.data?.message;
+      const message =
+        status === 422 && (msgFromField || fallbackMsg) ? msgFromField || fallbackMsg : 'Terjadi sesuatu Error!';
+      toast.error(message || 'Tanggal follow up 2 minimal 7 hari setelah Tanggal & waktu follow up 1');
     }
   };
 
@@ -237,6 +244,15 @@ const KonsumenPage = memo(function KonsumenPage() {
                     </div>
                   )}
                   <h3 className='text-lg font-semibold'>{item.name}</h3>
+                  {(item as any).status_delete === 1 ||
+                  (item as any).status_delete === '1' ||
+                  (item as any).status_delete === 'pending' ? (
+                    <div className='mt-1'>
+                      <Badge className='border border-amber-200 bg-amber-100 text-amber-800'>
+                        Menunggu persetujuan hapus
+                      </Badge>
+                    </div>
+                  ) : null}
                   {item.description && <p className='text-sm text-gray-600'>{item.description}</p>}
                 </div>
                 <DropdownMenu>
@@ -259,19 +275,24 @@ const KonsumenPage = memo(function KonsumenPage() {
                       disabled={deleteKonsumen.isPending}
                       variant='destructive'>
                       <Trash className='mr-2 h-4 w-4' />
-                      Delete
+                      {userRole.toLowerCase() === 'sales' ||
+                      userRole.toLowerCase() === 'supervisor' ||
+                      userRoleId === 3 ||
+                      userRoleId === 2
+                        ? 'Ajukan Hapus'
+                        : 'Delete'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className='my-2 -ml-2 flex items-center gap-2'>
+              <div className='my-2 flex items-center gap-2'>
                 <Button
-                  variant='ghost'
                   size='sm'
                   onClick={() => openWhatsApp(item)}
-                  className='p-2 text-green-600 hover:bg-green-50'
-                  title='Hubungi via WhatsApp'>
-                  <WhatsappLogo className='!h-6 !w-6' weight='fill' />
+                  aria-label='Chat di WhatsApp'
+                  className='flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-white shadow-sm transition-colors hover:bg-green-700'>
+                  <WhatsappLogo className='!h-5 !w-5' weight='fill' />
+                  <span>Chat di WhatsApp</span>
                 </Button>
               </div>
             </div>
@@ -317,7 +338,7 @@ const KonsumenPage = memo(function KonsumenPage() {
         payload={{
           ...(selectedMemberId && { created_id: selectedMemberId })
         }}
-        containerClassName='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        containerClassName='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2'
         renderItem={renderItem}
         Plugin={() => (
           <div className='flex items-center gap-2'>
