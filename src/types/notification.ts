@@ -1,8 +1,10 @@
+import { PesanData } from './pesan';
+
 export type NotificationKind = 'chat' | 'konsumen';
 
 export interface NotificationItem {
   id: number;
-  type: NotificationKind;
+  jenis_notifikasi: NotificationKind;
   is_read: boolean | number;
   message?: string;
   created_at: string;
@@ -10,6 +12,7 @@ export interface NotificationItem {
   pengirim?: import('./user').UserWithRelations;
   konsumen?: import('./konsumen').KonsumenData;
   phone?: string;
+  chatting: PesanData;
   payload?: Record<string, any>;
 }
 

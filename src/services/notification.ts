@@ -15,8 +15,8 @@ export const notificationService = {
   },
 
   count: async (): Promise<number> => {
-    const { data } = await axios.get<{ count: number }>('/notifikasi-count');
-    return (data as any).count ?? 0;
+    const { data } = await axios.get<number>('/notifikasi-count');
+    return data ?? 0;
   },
 
   read: async (id: number) => {
