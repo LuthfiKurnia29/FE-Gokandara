@@ -18,14 +18,15 @@ import { Settings } from 'lucide-react';
 const KalenderPage = memo(function KalenderPage() {
   const [events, setEvents] = useState<IEvent[]>([]);
   const [view, setView] = useState<TCalendarView>('week');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Remount provider if the list of event ids changes to sync internal state
   const providerKey = useMemo(() => JSON.stringify(events.map((e) => `${e.id}-${e.updated_at}`)), [events]);
 
   return (
-    <CalendarProvider key={providerKey} users={[]} events={events} defaultView={view}>
+    <CalendarProvider key={providerKey} users={[]} events={events} defaultView={view} defaultDate={selectedDate}>
       <div className='mx-auto flex max-w-screen-2xl flex-col gap-4 px-8 py-4'>
-        <KalenderContainer setEvents={setEvents} setView={setView} />
+        <KalenderContainer setEvents={setEvents} setView={setView} setSelectedDate={setSelectedDate} />
 
         <Accordion type='single' collapsible>
           <AccordionItem value='item-1' className='border-none'>

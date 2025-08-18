@@ -42,18 +42,20 @@ export function CalendarProvider({
   children,
   users,
   events,
-  defaultView = 'week'
+  defaultView = 'week',
+  defaultDate = new Date()
 }: {
   children: React.ReactNode;
   users: IUser[];
   events: IEvent[];
   defaultView?: TCalendarView;
+  defaultDate?: Date;
 }) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>('colored');
   const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(defaultDate);
   const [selectedUserId, setSelectedUserId] = useState<KonsumenFollowup['id'] | 'all'>('all');
 
   const [view, setView] = useState<TCalendarView>(defaultView);

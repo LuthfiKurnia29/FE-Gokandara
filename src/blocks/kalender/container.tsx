@@ -22,10 +22,12 @@ import {
 
 const KalenderContainer = memo(function KalenderContainer({
   setEvents,
-  setView
+  setView,
+  setSelectedDate
 }: {
   setEvents: (events: IEvent[]) => void;
   setView: (view: TCalendarView) => void;
+  setSelectedDate: (date: Date) => void;
 }) {
   const { view, selectedDate } = useCalendar();
 
@@ -48,6 +50,10 @@ const KalenderContainer = memo(function KalenderContainer({
 
     return null;
   }, [view, selectedDate]);
+
+  useEffect(() => {
+    setSelectedDate(selectedDate);
+  }, [selectedDate, setSelectedDate]);
 
   const { data: items, refetch } = useCalendarList({ startDay, endDay });
 
