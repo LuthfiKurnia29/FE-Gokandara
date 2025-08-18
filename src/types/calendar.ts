@@ -15,6 +15,7 @@ export interface FollowupMonitoring {
   prospek: ProspekData;
   sales: UserWithRelations;
   updated_at: string;
+  status?: number;
 }
 
 export interface CalendarListResponse {

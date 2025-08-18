@@ -14,6 +14,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useUpdateCalendarStatus } from '@/services/calendar';
 
 import { AddEventDialog } from './add-event-dialog';
 import { format } from 'date-fns';
@@ -40,6 +41,8 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
     };
     return mapping[color] ?? 'bg-gray-100';
   };
+
+  const { mutate: updateCalendarStatus, isLoading: isUpdatingCalendarStatus } = useUpdateCalendarStatus();
 
   return (
     <Dialog>
@@ -95,20 +98,24 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
                   </div>
 
                   <div className='flex items-center gap-1'>
-                    <Button
+                    {/* <Button
                       variant='ghost'
                       size='icon'
                       aria-label='Tandai Tidak Hadir'
                       className='cursor-pointer hover:bg-red-500/10'>
                       <X className='size-4 text-red-500' />
-                    </Button>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      aria-label='Tandai Hadir'
-                      className='cursor-pointer hover:bg-green-500/10'>
-                      <Check className='size-4 text-green-600' />
-                    </Button>
+                    </Button> */}
+                    {!fu.status && (
+                      <Button
+                        variant='ghost'
+                        aria-label='Tandai Hadir'
+                        className='cursor-pointer text-green-600 hover:bg-green-500/10'
+                        onClick={() => updateCalendarStatus(fu.id)}
+                        disabled={isUpdatingCalendarStatus}>
+                        <Check className='size-4 text-green-600' />
+                        Selesai
+                      </Button>
+                    )}
                     <Button
                       variant='ghost'
                       size='icon'

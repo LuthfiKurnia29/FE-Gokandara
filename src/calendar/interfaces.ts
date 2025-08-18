@@ -24,6 +24,7 @@ export interface IFollowup {
   color: string | null;
   prospek_id: number;
   prospek: ProspekData;
+  status?: number;
 }
 
 export interface KonsumenFollowup extends KonsumenData {
@@ -41,6 +42,7 @@ export interface IEvent {
   prospek: ProspekData;
   sales: UserWithRelations;
   updated_at: string;
+  status?: number;
 }
 
 export interface ICalendarCell {

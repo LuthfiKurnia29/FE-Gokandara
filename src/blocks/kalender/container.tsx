@@ -69,7 +69,8 @@ const KalenderContainer = memo(function KalenderContainer({
       konsumen: item.konsumen as KonsumenFollowup,
       prospek: item.prospek,
       updated_at: item.updated_at,
-      sales: item.sales as UserWithRelations
+      sales: item.sales as UserWithRelations,
+      status: item.status
     }));
 
     setEvents(events);

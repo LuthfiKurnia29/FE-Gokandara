@@ -9,8 +9,6 @@ import { CalendarProvider, useCalendar } from '@/calendar/contexts/calendar-cont
 import type { IEvent, IUser } from '@/calendar/interfaces';
 import { TCalendarView, TEventColor } from '@/calendar/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useCurrentUser } from '@/services/auth';
-import { useCalendarList } from '@/services/calendar';
 
 import KalenderContainer from './container';
 import { Settings } from 'lucide-react';

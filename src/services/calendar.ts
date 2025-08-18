@@ -36,6 +36,9 @@ export const calendarService = {
 
   deleteCalendar: async (id: number): Promise<void> => {
     await axios.delete(`/delete-calendar`, { params: { id } });
+  },
+  updateCalendarStatus: async (id: number): Promise<void> => {
+    await axios.post(`/update-status-follow-up/${id}`);
   }
 };
 
@@ -79,6 +82,16 @@ export const useDeleteCalendar = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => calendarService.deleteCalendar(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/get-calendar'] });
+    }
+  });
+};
+
+export const useUpdateCalendarStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => calendarService.updateCalendarStatus(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/get-calendar'] });
     }
