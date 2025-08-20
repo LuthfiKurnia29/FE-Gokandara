@@ -18,7 +18,7 @@ import { useNotificationCount } from '@/services/notification';
 
 import { useTitleContext } from '../title';
 import { SidebarTrigger } from '../ui/sidebar';
-import { Bell, Calendar, ChevronDown, LogOut, MessageSquare, Search, Star, User } from 'lucide-react';
+import { Award, Bell, Calendar, ChevronDown, LogOut, MessageSquare, Search, User } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 
 // Notification badge logic
@@ -122,10 +122,10 @@ export function DashboardHeader() {
         <div className='flex items-center gap-6'>
           {/* Notification Icons */}
           <div className='hidden items-center gap-4 lg:flex'>
-            {/* Star Icon with Gray Badge */}
-            <div className='relative' onClick={handleStarNotificationClick}>
-              <Star className='h-6 w-6 cursor-pointer text-gray-600' />
-            </div>
+            {/* Award Icon opens Leaderboard */}
+            <Link href='/leaderboard' className='relative'>
+              <Award className='h-6 w-6 cursor-pointer text-gray-600' />
+            </Link>
 
             {/* Bell Icon → open dropdown */}
             <NotificationDropdown />
