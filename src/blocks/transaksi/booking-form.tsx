@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/select';
 import { uncurrency } from '@/lib/utils';
 import { useAllBlok, useAllKonsumen, useAllTipe, useAllUnit, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti, usePropertyById } from '@/services/properti';
+import { useAllSkemaPembayaran } from '@/services/skema-pembayaran';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -48,9 +49,7 @@ const bookingSchema = z
         return value;
       }),
     tipe_diskon: z.enum(['percent', 'fixed']).optional(),
-    skema_pembayaran: z.enum(['Cash Keras', 'Cash Tempo', 'Kredit'], {
-      required_error: 'Skema pembayaran wajib dipilih'
-    }),
+    skema_pembayaran_id: z.number().min(1, 'Skema pembayaran wajib dipilih'),
     dp: z
       .string()
       .optional()
@@ -75,14 +74,14 @@ const bookingSchema = z
       )
   })
   .superRefine((val, ctx) => {
-    if (val.skema_pembayaran === 'Cash Tempo' || val.skema_pembayaran === 'Kredit') {
-      if (!val.jangka_waktu || String(val.jangka_waktu).trim() === '') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Jangka waktu wajib diisi untuk Cash Tempo/Kredit',
-          path: ['jangka_waktu']
-        });
-      }
+    // Note: This validation will need to be updated based on the actual skema pembayaran data
+    // For now, we'll keep the jangka_waktu validation for all cases
+    if (!val.jangka_waktu || String(val.jangka_waktu).trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Jangka waktu wajib diisi',
+        path: ['jangka_waktu']
+      });
     }
   });
 
@@ -116,6 +115,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
   const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
   const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
+  const { data: skemaPembayaranOptions = [] } = useAllSkemaPembayaran();
 
   // Fetch transaction data by ID for editing
   const { data: transactionData, isFetching: isLoadingTransaction } = usePenjualanById(selectedId || null, [
@@ -153,7 +153,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
     unit_id: '',
     diskon: '',
     tipe_diskon: 'percent' as const,
-    skema_pembayaran: 'Cash Keras' as const,
+    skema_pembayaran_id: 1, // Default to first skema pembayaran
     dp: '',
     jangka_waktu: ''
   };
@@ -251,7 +251,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   const unitId = watch('unit_id');
   const diskon = watch('diskon');
   const tipeDiskon = watch('tipe_diskon') || 'percent';
-  const skemaPembayaran = watch('skema_pembayaran') || 'Cash Keras';
+  const skemaPembayaranId = watch('skema_pembayaran_id') || 1;
   const dpValue = watch('dp') || '';
   const jangkaWaktu = watch('jangka_waktu') || '';
 
@@ -372,7 +372,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         unit_id: transactionData.unit_id?.toString() || '',
         diskon: transactionData.diskon?.toString() || '',
         tipe_diskon: transactionData.tipe_diskon || 'percent',
-        skema_pembayaran: (transactionData as any).skema_pembayaran || 'Cash Keras',
+        skema_pembayaran_id: (transactionData as any).skema_pembayaran_id || 1,
         dp: (transactionData as any).dp?.toString() || '',
         jangka_waktu: (transactionData as any).jangka_waktu?.toString() || ''
       });
@@ -392,7 +392,7 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
         unit_id: initialData.unit_id || '',
         diskon: initialData.diskon || '',
         tipe_diskon: initialData.tipe_diskon || 'percent',
-        skema_pembayaran: (initialData as any).skema_pembayaran || 'Cash Keras',
+        skema_pembayaran_id: (initialData as any).skema_pembayaran_id || 1,
         dp: (initialData as any).dp || '',
         jangka_waktu: (initialData as any).jangka_waktu || ''
       });
@@ -445,15 +445,9 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
       unit_id: data.unit_id ? parseInt(data.unit_id) : 1,
       diskon: validatedDiscount ? parseFloat(validatedDiscount) : null,
       tipe_diskon: data.tipe_diskon || 'percent',
-      skema_pembayaran: data.skema_pembayaran,
-      dp:
-        data.skema_pembayaran === 'Cash Tempo' || data.skema_pembayaran === 'Kredit'
-          ? dpValue
-            ? uncurrency(dpValue)
-            : 0
-          : 0,
-      jangka_waktu:
-        data.skema_pembayaran === 'Cash Tempo' || data.skema_pembayaran === 'Kredit' ? Number(jangkaWaktu) : null,
+      skema_pembayaran_id: data.skema_pembayaran_id,
+      dp: dpValue ? uncurrency(dpValue) : 0,
+      jangka_waktu: jangkaWaktu ? Number(jangkaWaktu) : null,
       // Add grand_total calculation
       grand_total: priceCalculation.finalPrice,
       // Keep existing status when editing, use default for new transactions
@@ -696,51 +690,46 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                   <div>
                     <Label className='mb-1 block text-sm font-medium text-gray-700'>Skema Pembayaran</Label>
                     <Select
-                      options={[
-                        { value: 'Cash Keras', label: 'Cash Keras' },
-                        { value: 'Cash Tempo', label: 'Cash Tempo' },
-                        { value: 'Kredit', label: 'Kredit' }
-                      ]}
-                      value={skemaPembayaran}
-                      onChange={(v) => setValue('skema_pembayaran', v as any)}
+                      options={skemaPembayaranOptions.map((skema) => ({
+                        value: skema.id.toString(),
+                        label: skema.nama
+                      }))}
+                      value={skemaPembayaranId.toString()}
+                      onChange={(v) => setValue('skema_pembayaran_id', Number(v))}
                       className='h-10'
                     />
-                    {(errors as any) && (errors as any).skema_pembayaran && (
-                      <p className='text-xs text-red-500'>{(errors as any).skema_pembayaran.message as string}</p>
+                    {(errors as any) && (errors as any).skema_pembayaran_id && (
+                      <p className='text-xs text-red-500'>{(errors as any).skema_pembayaran_id.message as string}</p>
                     )}
                   </div>
-                  {(skemaPembayaran === 'Cash Tempo' || skemaPembayaran === 'Kredit') && (
-                    <>
-                      <div>
-                        <Label className='mb-1 block text-sm font-medium text-gray-700'>Jangka Waktu (bulan)</Label>
-                        <Input
-                          type='number'
-                          inputMode='numeric'
-                          min={1}
-                          placeholder='0'
-                          value={jangkaWaktu}
-                          onChange={(e) => setValue('jangka_waktu', e.target.value)}
-                          className='h-10'
-                        />
-                        {(errors as any) && (errors as any).jangka_waktu && (
-                          <p className='text-xs text-red-500'>{(errors as any).jangka_waktu.message as string}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label className='mb-1 block text-sm font-medium text-gray-700'>DP</Label>
-                        <Input
-                          type='currency'
-                          placeholder='0'
-                          value={dpValue}
-                          onChange={(e) => setValue('dp', e.target.value)}
-                          className='h-10'
-                        />
-                        {(errors as any) && (errors as any).dp && (
-                          <p className='text-xs text-red-500'>{(errors as any).dp.message as string}</p>
-                        )}
-                      </div>
-                    </>
-                  )}
+                  <div>
+                    <Label className='mb-1 block text-sm font-medium text-gray-700'>Jangka Waktu (bulan)</Label>
+                    <Input
+                      type='number'
+                      inputMode='numeric'
+                      min={1}
+                      placeholder='0'
+                      value={jangkaWaktu}
+                      onChange={(e) => setValue('jangka_waktu', e.target.value)}
+                      className='h-10'
+                    />
+                    {(errors as any) && (errors as any).jangka_waktu && (
+                      <p className='text-xs text-red-500'>{(errors as any).jangka_waktu.message as string}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className='mb-1 block text-sm font-medium text-gray-700'>DP</Label>
+                    <Input
+                      type='currency'
+                      placeholder='0'
+                      value={dpValue}
+                      onChange={(e) => setValue('dp', e.target.value)}
+                      className='h-10'
+                    />
+                    {(errors as any) && (errors as any).dp && (
+                      <p className='text-xs text-red-500'>{(errors as any).dp.message as string}</p>
+                    )}
+                  </div>
                 </div>
                 {/* Price Availability Message */}
                 {!selectedProperti ? (

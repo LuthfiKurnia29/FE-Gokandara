@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import BookingForm from '@/blocks/transaksi/booking-form';
 import PropertyTypeModal from '@/blocks/transaksi/form';
@@ -24,6 +24,7 @@ import {
   useUpdatePenjualan,
   useUpdatePenjualanStatus
 } from '@/services/penjualan';
+import { useAllSkemaPembayaran } from '@/services/skema-pembayaran';
 import { CreatePenjualanData, PenjualanWithRelations, UpdatePenjualanData } from '@/types/penjualan';
 import { useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -54,6 +55,9 @@ const formatRupiah = (amount: number) => {
 };
 
 const columnHelper = createColumnHelper<PenjualanWithRelations>();
+
+// Mapping from skema_pembayaran_id to skema name, updated inside component via hook
+let skemaPembayaranMap: Record<number, string> = {};
 
 const columns = [
   columnHelper.accessor('id', {
@@ -169,20 +173,22 @@ const columns = [
     },
     meta: { style: { width: '150px' } }
   }),
-  columnHelper.accessor((row) => (row as any).skema_pembayaran ?? '-', {
-    id: 'skema_pembayaran',
+  columnHelper.accessor((row) => (row as any).skema_pembayaran_id ?? '-', {
+    id: 'skema_pembayaran_id',
     header: 'Skema Pembayaran',
     cell: ({ getValue }) => {
-      const skema = getValue() as 'Cash Keras' | 'Cash Tempo' | 'Kredit' | '-';
-      const style =
-        skema === 'Cash Keras'
-          ? 'bg-emerald-500 text-white hover:bg-emerald-600' // hijau
-          : skema === 'Cash Tempo'
-            ? 'bg-blue-500 text-white hover:bg-blue-600' // biru
-            : skema === 'Kredit'
-              ? 'bg-amber-500 text-white hover:bg-amber-600' // kuning
-              : 'bg-gray-500 text-white hover:bg-gray-600';
-      return <Badge className={`rounded-full px-3 py-2 ${style}`}>{skema}</Badge>;
+      const skemaId = getValue() as number | '-';
+
+      if (skemaId === '-') {
+        return <Badge className='rounded-full bg-gray-500 px-3 py-2 text-white hover:bg-gray-600'>-</Badge>;
+      }
+
+      const skemaName = skemaPembayaranMap[Number(skemaId)] || `Skema ${skemaId}`;
+
+      // Default styling for all skema pembayaran
+      const style = 'bg-emerald-500 text-white hover:bg-emerald-600';
+
+      return <Badge className={`rounded-full px-3 py-2 ${style}`}>{skemaName}</Badge>;
     },
     meta: { style: { width: '160px' } }
   }),
@@ -425,12 +431,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
-          {(['Cash Tempo', 'Kredit'] as const).includes((row.original as any).skema_pembayaran) && (
+          {/* {(row.original as any).skema_pembayaran_id > 1 && (
             <DropdownMenuItem onClick={() => handleOpenRiwayat(row.original)} className='text-amber-600'>
               <History className='mr-2 h-4 w-4' />
               Riwayat Pembayaran
             </DropdownMenuItem>
-          )}
+          )} */}
           {canUpdateToNegotiation(row.original.status) && (
             <DropdownMenuItem
               onClick={() => handleUpdateToNegotiation(row.original)}
@@ -563,6 +569,21 @@ const PenjualanPage = memo(function PenjualanPage() {
   };
 
   const createPenjualan = useCreatePenjualan();
+  const { data: skemaPembayaranOptions = [] } = useAllSkemaPembayaran();
+
+  // Build a memoized map from id -> nama so columns can render names
+  const skemaMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    skemaPembayaranOptions.forEach((s: any) => {
+      if (s && typeof s.id === 'number') {
+        map[s.id] = s.nama;
+      }
+    });
+    return map;
+  }, [skemaPembayaranOptions]);
+
+  // Expose to column cell (module-level variable referenced above)
+  skemaPembayaranMap = skemaMap;
 
   const handleCreate = () => {
     // Hanya create baru; tidak terpengaruh status
@@ -597,7 +618,7 @@ const PenjualanPage = memo(function PenjualanPage() {
         unit_id: data.unit_id!,
         diskon: data.diskon ?? null,
         tipe_diskon: (data as any).tipe_diskon || 'percent',
-        skema_pembayaran: (data as any).skema_pembayaran || 'Cash Keras',
+        skema_pembayaran_id: (data as any).skema_pembayaran_id || 1,
         dp: (data as any).dp ?? null,
         jangka_waktu: (data as any).jangka_waktu ?? null,
         grand_total: (data as any).grand_total,

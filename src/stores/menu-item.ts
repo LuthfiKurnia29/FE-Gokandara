@@ -154,6 +154,11 @@ const menuItems: MenuItem[] = [
         title: 'Properti',
         url: '/master-data/properti',
         icon: Building
+      },
+      {
+        title: 'Skema Pembayaran',
+        url: '/master-data/skema-pembayaran',
+        icon: Coins
       }
     ]
   },
