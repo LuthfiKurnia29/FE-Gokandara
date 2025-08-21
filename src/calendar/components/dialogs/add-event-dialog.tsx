@@ -171,7 +171,7 @@ export function AddEventDialog({ children, startDate, startTime, defaultKonsumen
                   <FormLabel>Prospek</FormLabel>
                   <FormControl>
                     <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
+                      <SelectTrigger data-invalid={fieldState.invalid} className='w-full'>
                         <SelectValue placeholder='Pilih prospek' />
                       </SelectTrigger>
                       <SelectContent>

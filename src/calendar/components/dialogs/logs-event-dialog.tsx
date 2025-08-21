@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { IEvent } from '@/calendar/interfaces';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarGroup } from '@/components/ui/avatar-group';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -13,19 +14,25 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
+import { useDisclosure } from '@/hooks/use-disclosure';
 import { cn } from '@/lib/utils';
-import { useUpdateCalendarStatus } from '@/services/calendar';
+import { useDeleteCalendar, useUpdateCalendarStatus } from '@/services/calendar';
 
 import { AddEventDialog } from './add-event-dialog';
+import { EditEventDialog } from './edit-event-dialog';
 import { format } from 'date-fns';
-import { Calendar, Check, Clock, EllipsisVertical, MapPin, User, X } from 'lucide-react';
+import { Calendar, Check, Clock, EllipsisVertical, MapPin, Pencil, Trash, User, X } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface IProps {
   children: React.ReactNode;
   event: IEvent;
+  onClose: () => void;
 }
 
-export const LogsEventDialog = memo(({ children, event }: IProps) => {
+export const LogsEventDialog = memo(({ children, event, onClose: onCloseParent }: IProps) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
   const followups = event.konsumen?.followups || [];
 
   const getStatusColor = (color?: string | null) => {
@@ -42,7 +49,17 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
     return mapping[color] ?? 'bg-gray-100';
   };
 
-  const { mutate: updateCalendarStatus, isLoading: isUpdatingCalendarStatus } = useUpdateCalendarStatus();
+  const { mutate: updateCalendarStatus, isLoading: isUpdatingCalendarStatus } = useUpdateCalendarStatus(() => {
+    onClose();
+    onCloseParent();
+    toast.success('Jadwal berhasil ditandai selesai');
+  });
+
+  const { mutate: deleteCalendar, isLoading: isDeletingCalendar } = useDeleteCalendar(() => {
+    onClose();
+    onCloseParent();
+    toast.success('Jadwal berhasil dihapus');
+  });
 
   return (
     <Dialog>
@@ -80,6 +97,17 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
               .join('')
               .toUpperCase();
 
+            const thisEvent = {
+              ...fu,
+              description: fu.followup_result,
+              title: fu.followup_note,
+              startDate: fu.followup_date,
+              endDate: fu.followup_last_day,
+              konsumen: { id: fu.konsumen_id },
+              prospek: { id: fu.prospek_id },
+              sales: { id: fu.sales_id }
+            };
+
             return (
               <Card key={fu.id} className='rounded-2xl border-gray-200'>
                 <CardHeader className='flex flex-row items-start justify-between'>
@@ -93,6 +121,7 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
                       <Calendar className='size-5 text-gray-800' />
                     </span>
                     <div>
+                      {Boolean(fu.status) && <Badge className='bg-green-600 text-white'>Selesai</Badge>}
                       <CardTitle className='text-base'>{event.konsumen?.name}</CardTitle>
                     </div>
                   </div>
@@ -107,21 +136,29 @@ export const LogsEventDialog = memo(({ children, event }: IProps) => {
                     </Button> */}
                     {!fu.status && (
                       <Button
-                        variant='ghost'
+                        variant='outline'
                         aria-label='Tandai Hadir'
-                        className='cursor-pointer text-green-600 hover:bg-green-500/10'
+                        className='cursor-pointer border border-green-600 text-green-600 hover:bg-green-600/10'
                         onClick={() => updateCalendarStatus(fu.id)}
                         disabled={isUpdatingCalendarStatus}>
                         <Check className='size-4 text-green-600' />
-                        Selesai
+                        Tandai Selesai
                       </Button>
                     )}
+
+                    <EditEventDialog event={thisEvent as unknown as IEvent} simpleEdit>
+                      <Button variant='ghost' size='icon' aria-label='Edit'>
+                        <Pencil className='size-4' />
+                      </Button>
+                    </EditEventDialog>
+
                     <Button
                       variant='ghost'
                       size='icon'
-                      aria-label='Lainnya'
-                      className='cursor-pointer hover:bg-gray-200'>
-                      <EllipsisVertical className='size-4' />
+                      aria-label='Delete'
+                      onClick={() => deleteCalendar(fu.id)}
+                      disabled={isDeletingCalendar}>
+                      <Trash className='size-4' />
                     </Button>
                   </div>
                 </CardHeader>

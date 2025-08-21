@@ -20,21 +20,25 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useDisclosure } from '@/hooks/use-disclosure';
-import { useUpdateCalendar } from '@/services/calendar';
+import { useDeleteCalendar, useUpdateCalendar, useUpdateCalendarStatus } from '@/services/calendar';
 import { useAllKonsumen, useProspekList } from '@/services/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { LogsEventDialog } from './logs-event-dialog';
 import { parseISO } from 'date-fns';
+import { CheckCheck } from 'lucide-react';
 import moment from 'moment';
 import { useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
 import { z } from 'zod';
 
 interface IProps {
   children: React.ReactNode;
   event: IEvent;
+  simpleEdit?: boolean;
 }
 
-export function EditEventDialog({ children, event }: IProps) {
+export function EditEventDialog({ children, event, simpleEdit = false }: IProps) {
   const { isOpen, onClose, onToggle } = useDisclosure();
 
   const { users, setLocalEvents } = useCalendar();
@@ -44,8 +48,8 @@ export function EditEventDialog({ children, event }: IProps) {
     prospek_id: z.coerce.number({ required_error: 'Prospek is required' }).optional(),
     followup_result: z.string().min(1, 'Result is required'),
     followup_note: z.string().min(1, 'Note is required'),
-    followup_date: z.date({ required_error: 'Follow up date is required' }),
-    followup_last_day: z.date({ required_error: 'Follow up last day is required' })
+    followup_date: z.string().min(1, 'Follow Up Awal is required'),
+    followup_last_day: z.string().min(1, 'Follow Up Terakhir is required')
   });
 
   type TEditCalendarFormData = z.infer<typeof editCalendarSchema>;
@@ -55,8 +59,8 @@ export function EditEventDialog({ children, event }: IProps) {
     defaultValues: {
       followup_result: event.description,
       followup_note: event.title,
-      followup_date: parseISO(event.startDate),
-      followup_last_day: parseISO(event.endDate),
+      followup_date: event.startDate,
+      followup_last_day: event.endDate,
       konsumen_id: event.konsumen?.id as number,
       prospek_id: event.prospek?.id as number
     }
@@ -99,6 +103,16 @@ export function EditEventDialog({ children, event }: IProps) {
     onClose();
   };
 
+  const { mutate: updateCalendarStatus, isLoading: isUpdatingCalendarStatus } = useUpdateCalendarStatus(() => {
+    toast.success('Jadwal berhasil ditandai selesai');
+    onClose();
+  });
+
+  const { mutate: deleteCalendar, isLoading: isDeletingCalendar } = useDeleteCalendar(() => {
+    toast.success('Jadwal berhasil dihapus');
+    onClose();
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={onToggle}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -108,6 +122,17 @@ export function EditEventDialog({ children, event }: IProps) {
           <DialogTitle>Edit Jadwal</DialogTitle>
           <DialogDescription>Sesuaikan jadwal yang sudah ada agar tetap akurat dan up to date.</DialogDescription>
         </DialogHeader>
+
+        {!event.status && !simpleEdit && (
+          <Button
+            type='button'
+            className='ml-auto w-full bg-green-600 text-white hover:bg-green-700'
+            onClick={() => updateCalendarStatus(event.id)}
+            disabled={isUpdatingCalendarStatus}>
+            <CheckCheck />
+            Tandai Selesai
+          </Button>
+        )}
 
         <Form {...form}>
           <form id='event-form' onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4 py-4'>
@@ -119,7 +144,7 @@ export function EditEventDialog({ children, event }: IProps) {
                   <FormLabel>Konsumen</FormLabel>
                   <FormControl>
                     <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
+                      <SelectTrigger data-invalid={fieldState.invalid} className='w-full'>
                         <SelectValue placeholder='Pilih konsumen' />
                       </SelectTrigger>
                       <SelectContent>
@@ -150,7 +175,7 @@ export function EditEventDialog({ children, event }: IProps) {
                   <FormLabel>Prospek</FormLabel>
                   <FormControl>
                     <Select value={field.value?.toString()} onValueChange={(v) => field.onChange(Number(v))}>
-                      <SelectTrigger data-invalid={fieldState.invalid}>
+                      <SelectTrigger data-invalid={fieldState.invalid} className='w-full'>
                         <SelectValue placeholder='Pilih prospek' />
                       </SelectTrigger>
                       <SelectContent>
@@ -251,14 +276,27 @@ export function EditEventDialog({ children, event }: IProps) {
         </Form>
 
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type='button' variant='outline'>
-              Batal
+          {!simpleEdit && (
+            <LogsEventDialog event={event} onClose={onClose}>
+              <Button type='button' variant='outline' className='mr-auto'>
+                Log Survey
+              </Button>
+            </LogsEventDialog>
+          )}
+
+          {!simpleEdit && (
+            <Button
+              type='button'
+              variant='outline'
+              className='border-destructive text-destructive hover:bg-destructive/20'
+              onClick={() => deleteCalendar(event.id)}
+              disabled={isDeletingCalendar}>
+              Hapus
             </Button>
-          </DialogClose>
+          )}
 
           <Button form='event-form' type='submit'>
-            Simpan Perubahan
+            Simpan
           </Button>
         </DialogFooter>
       </DialogContent>

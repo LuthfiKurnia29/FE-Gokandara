@@ -75,7 +75,7 @@ export function CalendarHeader({ view, events }: IProps) {
             </Button>
           </div>
 
-          <UserSelect />
+          {/* <UserSelect /> */}
         </div>
 
         <AddEventDialog>

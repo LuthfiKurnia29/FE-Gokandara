@@ -35,7 +35,7 @@ export const calendarService = {
   },
 
   deleteCalendar: async (id: number): Promise<void> => {
-    await axios.delete(`/delete-calendar`, { params: { id } });
+    await axios.delete(`/delete-calendar/${id}`);
   },
   updateCalendarStatus: async (id: number): Promise<void> => {
     await axios.post(`/update-status-follow-up/${id}`);
@@ -78,22 +78,24 @@ export const useUpdateCalendar = () => {
   });
 };
 
-export const useDeleteCalendar = () => {
+export const useDeleteCalendar = (callback?: () => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => calendarService.deleteCalendar(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/get-calendar'] });
+      callback?.();
     }
   });
 };
 
-export const useUpdateCalendarStatus = () => {
+export const useUpdateCalendarStatus = (callback?: (status: boolean) => void) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => calendarService.updateCalendarStatus(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/get-calendar'] });
+      callback?.(true);
     }
   });
 };

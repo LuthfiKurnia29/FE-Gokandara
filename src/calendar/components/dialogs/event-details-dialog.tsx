@@ -5,6 +5,7 @@ import type { IEvent } from '@/calendar/interfaces';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useDisclosure } from '@/hooks/use-disclosure';
 import { useUpdateCalendarStatus } from '@/services/calendar';
 
 import { LogsEventDialog } from './logs-event-dialog';
@@ -17,6 +18,8 @@ interface IProps {
 }
 
 export function EventDetailsDialog({ event, children }: IProps) {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
 
@@ -68,7 +71,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
           </div>
 
           <DialogFooter className='mt-8'>
-            <LogsEventDialog event={event}>
+            <LogsEventDialog event={event} onClose={onClose}>
               <Button type='button' variant='outline'>
                 Log Survey
               </Button>
