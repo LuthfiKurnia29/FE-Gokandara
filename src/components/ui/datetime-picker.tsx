@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 
 import { format, isBefore, startOfDay } from 'date-fns';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon, Clock } from 'lucide-react';
 
 interface DateTimePickerProps {
   value?: Date;
@@ -22,7 +22,7 @@ interface DateTimePickerProps {
   minDate?: Date; // Minimum allowed date
 }
 
-function formatDateTime(date: Date | undefined, formatStr: string = 'PPP p') {
+function formatDateTime(date: Date | undefined, formatStr = 'PPP p') {
   if (!date) {
     return '';
   }
@@ -44,7 +44,10 @@ function isDateBeforeToday(date: Date): boolean {
 
 // Helper function to format time for HTML time input
 function formatTimeForInput(date: Date | undefined): string {
-  if (!date) return '';
+  if (!date) {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  }
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
@@ -62,6 +65,13 @@ export function DateTimePicker({
   const [date, setDate] = React.useState<Date | undefined>(value);
   const [month, setMonth] = React.useState<Date | undefined>(value || new Date());
   const [inputValue, setInputValue] = React.useState(formatDateTime(value, displayFormat));
+  const [currentTime, setCurrentTime] = React.useState<string>(() => {
+    if (value) {
+      return formatTimeForInput(value);
+    }
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  });
 
   // Sync with external value changes
   React.useEffect(() => {
@@ -70,25 +80,24 @@ export function DateTimePicker({
       setInputValue(formatDateTime(value, displayFormat));
       if (value) {
         setMonth(value);
+        setCurrentTime(formatTimeForInput(value));
       }
     }
   }, [value, date, displayFormat]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      // If we have an existing time, preserve it
-      const currentTime = date
-        ? {
-            hours: date.getHours(),
-            minutes: date.getMinutes()
-          }
-        : {
-            hours: new Date().getHours(),
-            minutes: new Date().getMinutes()
-          };
+      // Parse current time from the time input to preserve user's selection
+      const [hours, minutes] = currentTime.split(':').map(Number);
 
       const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(currentTime.hours, currentTime.minutes, 0, 0);
+      // Use the current time from the time input, not from existing date
+      newDateTime.setHours(
+        !isNaN(hours) ? hours : new Date().getHours(),
+        !isNaN(minutes) ? minutes : new Date().getMinutes(),
+        0,
+        0
+      );
 
       setDate(newDateTime);
       setInputValue(formatDateTime(newDateTime, displayFormat));
@@ -101,14 +110,29 @@ export function DateTimePicker({
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (date && e.target.value) {
-      const [hours, minutes] = e.target.value.split(':').map(Number);
-      const newDateTime = new Date(date);
-      newDateTime.setHours(hours, minutes, 0, 0);
+    const timeValue = e.target.value;
+    setCurrentTime(timeValue); // Update current time state
 
-      setDate(newDateTime);
-      setInputValue(formatDateTime(newDateTime, displayFormat));
-      onChange?.(newDateTime);
+    if (timeValue) {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        let newDateTime: Date;
+
+        if (date) {
+          // If we have an existing date, update its time
+          newDateTime = new Date(date);
+          newDateTime.setHours(hours, minutes, 0, 0);
+        } else {
+          // If no date is selected, create a new date with today's date and selected time
+          newDateTime = new Date();
+          newDateTime.setHours(hours, minutes, 0, 0);
+        }
+
+        setDate(newDateTime);
+        setInputValue(formatDateTime(newDateTime, displayFormat));
+        onChange?.(newDateTime);
+      }
     }
   };
 
@@ -123,6 +147,7 @@ export function DateTimePicker({
         if (isValidDate(parsedDate)) {
           setDate(parsedDate);
           setMonth(parsedDate);
+          setCurrentTime(formatTimeForInput(parsedDate));
           onChange?.(parsedDate);
         }
       } else {
@@ -193,18 +218,24 @@ export function DateTimePicker({
                 endMonth={new Date(2050, 11)}
                 disabled={disabledDays}
               />
-              <div className='mt-3 border-t pt-3'>
-                <div className='mb-2 flex items-center gap-2'>
-                  <Clock className='text-muted-foreground h-4 w-4' />
-                  <span className='text-sm font-medium'>Time</span>
+              <div className='mt-4 space-y-3 border-t pt-4'>
+                <div className='text-foreground flex items-center gap-2 text-sm font-medium'>
+                  <Clock className='text-primary h-4 w-4' />
+                  <span>Time</span>
                 </div>
-                <Input
-                  type='time'
-                  value={formatTimeForInput(date)}
-                  onChange={handleTimeChange}
-                  disabled={disabled}
-                  className='w-full'
-                />
+                <div className='relative'>
+                  <Input
+                    type='time'
+                    value={currentTime}
+                    onChange={handleTimeChange}
+                    disabled={disabled}
+                    className='focus:border-primary w-full border-2 text-center font-mono text-lg tracking-wider transition-colors'
+                    step='300'
+                  />
+                  <div className='pointer-events-none absolute inset-y-0 right-3 flex items-center'>
+                    <Clock className='text-muted-foreground h-4 w-4' />
+                  </div>
+                </div>
               </div>
             </div>
           </PopoverContent>
@@ -238,18 +269,24 @@ export function DateTimePicker({
             endMonth={new Date(2050, 11)}
             disabled={disabledDays}
           />
-          <div className='mt-3 border-t pt-3'>
-            <div className='mb-2 flex items-center gap-2'>
-              <Clock className='text-muted-foreground h-4 w-4' />
-              <span className='text-sm font-medium'>Time</span>
+          <div className='mt-4 space-y-3 border-t pt-4'>
+            <div className='text-foreground flex items-center gap-2 text-sm font-medium'>
+              <Clock className='text-primary h-4 w-4' />
+              <span>Time</span>
             </div>
-            <Input
-              type='time'
-              value={formatTimeForInput(date)}
-              onChange={handleTimeChange}
-              disabled={disabled}
-              className='w-full'
-            />
+            <div className='relative'>
+              <Input
+                type='time'
+                value={currentTime}
+                onChange={handleTimeChange}
+                disabled={disabled}
+                className='focus:border-primary w-full border-2 text-center font-mono text-lg tracking-wider transition-colors'
+                step='300'
+              />
+              <div className='pointer-events-none absolute inset-y-0 right-3 flex items-center'>
+                <Clock className='text-muted-foreground h-4 w-4' />
+              </div>
+            </div>
           </div>
         </div>
       </PopoverContent>

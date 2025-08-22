@@ -45,7 +45,7 @@ export const PropertyPriceSection = ({ property }: PropertyPriceSectionProps) =>
         unit_id: data.unit_id!,
         diskon: data.diskon ?? null,
         tipe_diskon: (data as any).tipe_diskon || 'percent',
-        skema_pembayaran: (data as any).skema_pembayaran || 'Cash Keras',
+        skema_pembayaran_id: (data as any).skema_pembayaran_id || 1,
         dp: (data as any).dp ?? null,
         jangka_waktu: (data as any).jangka_waktu ?? null,
         grand_total: (data as any).grand_total,

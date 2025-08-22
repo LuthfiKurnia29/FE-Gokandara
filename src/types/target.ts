@@ -15,6 +15,11 @@ export interface TargetWithRelations extends Target {
     name: string;
     code: string;
   };
+  // Additional fields for non-admin users (from backend)
+  has_claimed?: boolean;
+  is_achieved?: boolean;
+  total_penjualan?: number;
+  percentage?: number;
 }
 
 export interface TargetResponse {

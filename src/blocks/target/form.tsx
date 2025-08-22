@@ -28,12 +28,26 @@ const targetSchema = z
       .string({
         required_error: 'Tanggal awal harus diisi'
       })
-      .min(1, 'Tanggal awal harus diisi'),
+      .min(1, 'Tanggal awal harus diisi')
+      .refine(
+        (val) => {
+          const date = new Date(val);
+          return !isNaN(date.getTime());
+        },
+        { message: 'Tanggal awal harus berupa format tanggal yang valid' }
+      ),
     tanggal_akhir: z
       .string({
         required_error: 'Tanggal akhir harus diisi'
       })
-      .min(1, 'Tanggal akhir harus diisi'),
+      .min(1, 'Tanggal akhir harus diisi')
+      .refine(
+        (val) => {
+          const date = new Date(val);
+          return !isNaN(date.getTime());
+        },
+        { message: 'Tanggal akhir harus berupa format tanggal yang valid' }
+      ),
     min_penjualan: z
       .string({ required_error: 'Minimal penjualan harus diisi' })
       .min(1, 'Minimal penjualan harus diisi')
@@ -163,10 +177,10 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
         <DateTimePicker
           value={form.watch('tanggal_awal') ? new Date(form.watch('tanggal_awal')) : undefined}
           onChange={(date: Date | undefined) => {
-            form.setValue('tanggal_awal', date ? date.toISOString().split('T')[0] : '');
+            form.setValue('tanggal_awal', date ? date.toISOString() : '');
           }}
           placeholder='Pilih tanggal awal'
-          format='dd/MM/yyyy'
+          format='dd/MM/yyyy HH:mm'
           className='h-12'
           withInput={false}
           disabled={isLoading}
@@ -181,10 +195,10 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
         <DateTimePicker
           value={form.watch('tanggal_akhir') ? new Date(form.watch('tanggal_akhir')) : undefined}
           onChange={(date: Date | undefined) => {
-            form.setValue('tanggal_akhir', date ? date.toISOString().split('T')[0] : '');
+            form.setValue('tanggal_akhir', date ? date.toISOString() : '');
           }}
           placeholder='Pilih tanggal akhir'
-          format='dd/MM/yyyy'
+          format='dd/MM/yyyy HH:mm'
           className='h-12'
           withInput={false}
           disabled={isLoading}
