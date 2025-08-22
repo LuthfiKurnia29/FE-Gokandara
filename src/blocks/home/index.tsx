@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import CompactTargetTable from '@/blocks/home/compact-target-table';
 import CustomerSection from '@/blocks/home/customer-section';
 import KonsumenCard from '@/blocks/home/konsumen-card';
 import MetricCards from '@/blocks/home/metric-cards';
@@ -35,6 +36,20 @@ const HomePage = React.memo(() => {
       </div>
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-12'>
+        {/* Target Table - Full width above other sections */}
+        <div className='lg:col-span-12'>
+          <Card className='border-gray-200 shadow-sm'>
+            <CardContent className='p-4'>
+              <div className='mb-4'>
+                <h3 className='text-lg font-semibold text-gray-900'>Target Management</h3>
+                <p className='text-sm text-gray-600'>Daftar target penjualan untuk setiap role</p>
+              </div>
+              <CompactTargetTable />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Left Column - Realisasi and Customer Section */}
         <div className='lg:col-span-4 xl:col-span-3'>
           <div className='space-y-4'>
             <Card className='border-gray-200 shadow-sm'>
@@ -50,6 +65,7 @@ const HomePage = React.memo(() => {
           </div>
         </div>
 
+        {/* Right Column - Properti Section and other components */}
         <div className='lg:col-span-8 xl:col-span-9'>
           <div className='space-y-4'>
             <PropertiSection />
