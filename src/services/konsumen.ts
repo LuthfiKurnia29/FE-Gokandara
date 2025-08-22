@@ -158,6 +158,9 @@ export const konsumenService = {
       formData.append('refrensi_id', data.refrensi_id.toString());
       formData.append('prospek_id', data.prospek_id.toString());
       formData.append('project_id', data.project_id.toString());
+      if (data.created_id) {
+        formData.append('created_id', data.created_id.toString());
+      }
       formData.append('kesiapan_dana', data.kesiapan_dana?.toString() || '');
       formData.append('pengalaman', data.pengalaman || '');
       formData.append('materi_fu_1', data.materi_fu_1 || '');
@@ -201,6 +204,7 @@ export const konsumenService = {
       if (data.refrensi_id) formData.append('refrensi_id', data.refrensi_id.toString());
       if (data.prospek_id) formData.append('prospek_id', data.prospek_id.toString());
       if (data.project_id) formData.append('project_id', data.project_id.toString());
+      if (data.created_id !== undefined) formData.append('created_id', data.created_id?.toString() || '');
       if (data.kesiapan_dana !== undefined) formData.append('kesiapan_dana', data.kesiapan_dana?.toString() || '');
       if (data.pengalaman !== undefined) formData.append('pengalaman', data.pengalaman || '');
       if (data.materi_fu_1 !== undefined) formData.append('materi_fu_1', data.materi_fu_1 || '');

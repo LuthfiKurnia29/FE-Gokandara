@@ -31,6 +31,16 @@ export const userService = {
     return response.data;
   },
 
+  // Get SPV and Sales users for Telemarketing role
+  getSpvSalesUsers: async (): Promise<{
+    success: boolean;
+    message: string;
+    data: Array<{ id: number; name: string }>;
+  }> => {
+    const response = await axios.get('/user-spv-sales');
+    return response.data;
+  },
+
   // Get user by ID
   getById: async (id: number, include?: string[]): Promise<UserWithRelations> => {
     const params = new URLSearchParams();
@@ -100,9 +110,14 @@ export const useUserById = (id: number | null, include?: string[]) => {
 export const useRoleList = () => {
   return useQuery({
     queryKey: ['/role'],
-    queryFn: (): Promise<RoleResponse> => {
-      return roleService.getList();
-    }
+    queryFn: roleService.getList
+  });
+};
+
+export const useSpvSalesUsers = () => {
+  return useQuery({
+    queryKey: ['/user-spv-sales'],
+    queryFn: userService.getSpvSalesUsers
   });
 };
 

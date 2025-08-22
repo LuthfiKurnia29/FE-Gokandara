@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { currency, uncurrency } from '@/lib/utils';
 import { useCurrentUser } from '@/services/auth';
 import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from '@/services/konsumen';
+import { useSpvSalesUsers } from '@/services/user';
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -38,6 +39,7 @@ const konsumenSchema = z
     email: z.string().email('Format email tidak valid').optional().or(z.literal('')),
     refrensi_id: z.string().min(1, 'Referensi harus dipilih'),
     project_id: z.string().min(1, 'Proyek harus dipilih'),
+    created_id: z.string().optional(), // Optional field for Telemarketing role
 
     description: z.string().optional(),
     kesiapan_dana: z
@@ -116,12 +118,25 @@ export const KonsumenForm = memo(function KonsumenForm({
     );
   }, [currentUser]);
 
+  // Check if current user is Telemarketing
+  const isTelemarketing = React.useMemo(() => {
+    if (!currentUser?.roles) return false;
+    // Check if user has Telemarketing role based on roles array
+    return currentUser.roles.some(
+      (userRole) =>
+        userRole.role.name.toLowerCase() === 'telemarketing' || userRole.role.code.toLowerCase() === 'telemarketing'
+    );
+  }, [currentUser]);
+
   // Fetch master data from APIs with improved error handling
   const { data: referensiOptions = [], isLoading: isLoadingReferensi, error: errorReferensi } = useReferensiList();
 
   const { data: proyekOptions = [], isLoading: isLoadingProyek, error: errorProyek } = useProjekList();
 
   const { data: prospekOptions = [], isLoading: isLoadingProspek, error: errorProspek } = useProspekList();
+
+  // Fetch SPV and Sales users for Telemarketing role
+  const { data: spvSalesUsers, isLoading: isLoadingSpvSales, error: errorSpvSales } = useSpvSalesUsers();
 
   // Safe option mapping to prevent Select component errors
   const safeReferensiOptions = React.useMemo(() => {
@@ -154,44 +169,16 @@ export const KonsumenForm = memo(function KonsumenForm({
       }));
   }, [proyekOptions]);
 
-  // Debug information for development
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.group('🔍 Konsumen Form - Master Data Status');
-      console.log('📊 Referensi:', {
-        data: referensiOptions,
-        loading: isLoadingReferensi,
-        error: errorReferensi,
-        safeOptions: safeReferensiOptions.length
-      });
-      console.log('📊 Prospek:', {
-        data: prospekOptions,
-        loading: isLoadingProspek,
-        error: errorProspek,
-        safeOptions: safeProspekOptions.length
-      });
-      console.log('📊 Proyek:', {
-        data: proyekOptions,
-        loading: isLoadingProyek,
-        error: errorProyek,
-        safeOptions: safeProjekOptions.length
-      });
-      console.groupEnd();
-    }
-  }, [
-    referensiOptions,
-    isLoadingReferensi,
-    errorReferensi,
-    safeReferensiOptions,
-    prospekOptions,
-    isLoadingProspek,
-    errorProspek,
-    safeProspekOptions,
-    proyekOptions,
-    isLoadingProyek,
-    errorProyek,
-    safeProjekOptions
-  ]);
+  // Safe options mapping for SPV/Sales users
+  const safeSpvSalesOptions = React.useMemo(() => {
+    if (!spvSalesUsers?.data || !Array.isArray(spvSalesUsers.data)) return [];
+    return spvSalesUsers.data
+      .filter((user) => user && user.id && user.name)
+      .map((user) => ({
+        value: user.id.toString(),
+        label: user.name
+      }));
+  }, [spvSalesUsers]);
 
   // Get existing data for edit mode
   const { data: existingData } = useKonsumenById(selectedId || null);
@@ -221,7 +208,8 @@ export const KonsumenForm = memo(function KonsumenForm({
       tgl_fu_1: '',
       materi_fu_2: '',
       tgl_fu_2: '',
-      gambar: []
+      gambar: [],
+      created_id: ''
     }
   });
 
@@ -229,6 +217,7 @@ export const KonsumenForm = memo(function KonsumenForm({
   const referensiId = watch('refrensi_id');
   const prospekId = watch('prospek_id');
   const projectId = watch('project_id');
+  const createdId = watch('created_id');
   const tglFu = watch('tgl_fu_1');
   const tglFu2 = watch('tgl_fu_2');
 
@@ -265,6 +254,7 @@ export const KonsumenForm = memo(function KonsumenForm({
         kesiapan_dana: existingData.kesiapan_dana ? currency(existingData.kesiapan_dana) : '',
         prospek_id: existingData.prospek_id?.toString() || '',
         project_id: existingData.project_id?.toString() || '',
+        created_id: existingData.created_id?.toString() || '',
         pengalaman: existingData.pengalaman || '',
         materi_fu_1: existingData.materi_fu_1 || '',
         tgl_fu_1: existingData.tgl_fu_1 || '',
@@ -272,8 +262,13 @@ export const KonsumenForm = memo(function KonsumenForm({
         tgl_fu_2: existingData.tgl_fu_2 || '',
         gambar: [] // Reset gambar field for new uploads
       });
+    } else {
+      // For new forms, ensure created_id is properly initialized
+      if (isTelemarketing) {
+        setValue('created_id', '');
+      }
     }
-  }, [existingData, reset]);
+  }, [existingData, reset, isTelemarketing, setValue]);
 
   // Handle file upload change
   const handleFileUploadChange = (file: FilePondFile[] | null) => {
@@ -299,6 +294,12 @@ export const KonsumenForm = memo(function KonsumenForm({
       }
     }
 
+    // Validate created_id for Telemarketing role
+    if (isTelemarketing && !data.created_id) {
+      alert('Pengampu wajib dipilih untuk user dengan role Telemarketing');
+      return;
+    }
+
     // Convert string IDs to numbers and format data for Laravel
     const submitData: CreateKonsumenData = {
       name: data.name,
@@ -310,6 +311,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       refrensi_id: parseInt(data.refrensi_id),
       prospek_id: parseInt(data.prospek_id),
       project_id: parseInt(data.project_id),
+      created_id: data.created_id && data.created_id !== '' ? parseInt(data.created_id) : null,
       kesiapan_dana: data.kesiapan_dana ? uncurrency(data.kesiapan_dana) : null,
       pengalaman: data.pengalaman || null,
       materi_fu_1: data.materi_fu_1 || null,
@@ -328,6 +330,7 @@ export const KonsumenForm = memo(function KonsumenForm({
     if (errorReferensi) errors.push('Referensi');
     if (errorProspek) errors.push('Prospek');
     if (errorProyek) errors.push('Proyek');
+    if (isTelemarketing && errorSpvSales) errors.push('Pengampu');
 
     if (errors.length === 0) return null;
 
@@ -415,6 +418,26 @@ export const KonsumenForm = memo(function KonsumenForm({
               {activeTab === 'basic' && (
                 <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                   <div className='space-y-4'>
+                    {/* Pengampu field - Only for Telemarketing role */}
+                    {isTelemarketing && (
+                      <div className='space-y-2'>
+                        <Label htmlFor='pengampu' className='font-medium text-gray-900'>
+                          Pengampu *
+                        </Label>
+                        <Select
+                          options={safeSpvSalesOptions}
+                          value={createdId}
+                          onChange={(value) => setValue('created_id', value as string)}
+                          placeholder={isLoadingSpvSales ? 'Loading...' : 'Pilih pengampu'}
+                          className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                          disabled={isLoadingSpvSales}
+                        />
+                        {/* Hidden input to ensure form registration */}
+                        <input type='hidden' {...register('created_id')} value={createdId || ''} />
+                        {errors.created_id && <p className='text-sm text-red-600'>{errors.created_id.message}</p>}
+                      </div>
+                    )}
+
                     <div className='space-y-2'>
                       <Label htmlFor='nama' className='font-medium text-gray-900'>
                         Nama *
@@ -732,7 +755,13 @@ export const KonsumenForm = memo(function KonsumenForm({
                   </Button>
                   <Button
                     type='submit'
-                    disabled={isLoading || isLoadingReferensi || isLoadingProspek || isLoadingProyek}
+                    disabled={
+                      isLoading ||
+                      isLoadingReferensi ||
+                      isLoadingProspek ||
+                      isLoadingProyek ||
+                      (isTelemarketing && isLoadingSpvSales)
+                    }
                     className='h-12 rounded-lg bg-green-500 px-8 py-2 text-white hover:bg-green-600'>
                     {isLoading ? 'Menyimpan...' : selectedId ? 'Update' : 'Simpan'}
                   </Button>
