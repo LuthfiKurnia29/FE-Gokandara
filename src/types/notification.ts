@@ -1,6 +1,9 @@
+import { KonsumenData } from './konsumen';
 import { PesanData } from './pesan';
+import { Target } from './target';
+import { UserWithRelations } from './user';
 
-export type NotificationKind = 'chat' | 'konsumen';
+export type NotificationKind = 'chat' | 'konsumen' | 'claim';
 
 export interface NotificationItem {
   id: number;
@@ -9,11 +12,13 @@ export interface NotificationItem {
   message?: string;
   created_at: string;
   // Optional relations/payloads from backend
-  pengirim?: import('./user').UserWithRelations;
-  konsumen?: import('./konsumen').KonsumenData;
+  pengirim?: UserWithRelations;
+  konsumen?: KonsumenData;
   phone?: string;
   chatting: PesanData;
   payload?: Record<string, any>;
+  user?: UserWithRelations;
+  target?: Target;
 }
 
 export interface NotificationPaginationResponse {

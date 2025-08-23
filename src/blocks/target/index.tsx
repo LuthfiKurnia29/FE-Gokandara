@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -40,128 +40,6 @@ const formatRupiah = (amount: number) => {
 };
 
 const columnHelper = createColumnHelper<TargetWithRelations>();
-
-const columns = [
-  columnHelper.accessor('id', {
-    header: 'ID',
-    cell: ({ getValue }) => <span className='font-mono text-sm'>#{getValue()}</span>,
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('role.name', {
-    header: 'Role',
-    cell: ({ row }) => {
-      const role = row.original.role;
-      return (
-        <div className='flex flex-col'>
-          <span className='font-medium'>{role?.name || '-'}</span>
-          {role?.code && <span className='text-muted-foreground text-xs'>{role.code}</span>}
-        </div>
-      );
-    },
-    meta: { style: { minWidth: '150px' } }
-  }),
-  columnHelper.accessor('tanggal_awal', {
-    header: 'Tanggal Awal',
-    cell: ({ getValue }) => {
-      const date = new Date(getValue());
-      return (
-        <div className='flex flex-col'>
-          <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '120px' } }
-  }),
-  columnHelper.accessor('tanggal_akhir', {
-    header: 'Tanggal Akhir',
-    cell: ({ getValue }) => {
-      const date = new Date(getValue());
-      return (
-        <div className='flex flex-col'>
-          <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '120px' } }
-  }),
-  columnHelper.accessor('min_penjualan', {
-    header: 'Min. Penjualan',
-    cell: ({ getValue }) => {
-      const value = getValue();
-      return (
-        <div className='flex flex-col'>
-          <span className='font-medium'>{formatRupiah(value)}</span>
-        </div>
-      );
-    },
-    meta: { style: { minWidth: '150px' } }
-  }),
-  columnHelper.accessor('hadiah', {
-    header: 'Hadiah',
-    cell: ({ getValue }) => {
-      const hadiah = getValue();
-      return (
-        <div className='max-w-[200px]'>
-          <span className='line-clamp-2 text-sm'>{hadiah}</span>
-        </div>
-      );
-    },
-    meta: { style: { minWidth: '200px' } }
-  }),
-  columnHelper.accessor('created_at', {
-    header: 'Tanggal Dibuat',
-    cell: ({ getValue }) => {
-      const date = new Date(getValue());
-      return (
-        <div className='flex flex-col'>
-          <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
-          <span className='text-muted-foreground text-xs'>{format(date, 'HH:mm')}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '140px' } }
-  }),
-  // New columns for non-admin users
-  columnHelper.accessor('total_penjualan', {
-    header: 'Total Penjualan',
-    cell: ({ getValue, row }) => {
-      const value = getValue();
-      // Only show for non-admin users (when total_penjualan exists)
-      if (value !== undefined) {
-        return (
-          <div className='flex flex-col'>
-            <span className='font-medium'>{formatRupiah(value)}</span>
-          </div>
-        );
-      }
-      return <span className='text-muted-foreground'>-</span>;
-    },
-    meta: { style: { minWidth: '150px' } }
-  }),
-  columnHelper.accessor('percentage', {
-    header: 'Pencapaian',
-    cell: ({ getValue, row }) => {
-      const value = getValue();
-      // Only show for non-admin users (when percentage exists)
-      if (value !== undefined) {
-        return (
-          <div className='flex flex-col'>
-            <span className='font-medium'>{value}%</span>
-            <span className='text-muted-foreground text-xs'>dari target</span>
-          </div>
-        );
-      }
-      return <span className='text-muted-foreground'>-</span>;
-    },
-    meta: { style: { minWidth: '120px' } }
-  }),
-  columnHelper.display({
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => <ActionCell row={row} />,
-    meta: { style: { width: '100px' } }
-  })
-];
 
 const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const queryClient = useQueryClient();
@@ -321,6 +199,135 @@ const TargetPage = memo(function TargetPage() {
   };
 
   const isFormLoading = createTarget.isPending;
+
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor('id', {
+        header: 'ID',
+        cell: ({ getValue }) => <span className='font-mono text-sm'>#{getValue()}</span>,
+        meta: { style: { width: '80px' } }
+      }),
+      columnHelper.accessor('role.name', {
+        header: 'Role',
+        cell: ({ row }) => {
+          const role = row.original.role;
+          return (
+            <div className='flex flex-col'>
+              <span className='font-medium'>{role?.name || '-'}</span>
+              {role?.code && <span className='text-muted-foreground text-xs'>{role.code}</span>}
+            </div>
+          );
+        },
+        meta: { style: { minWidth: '150px' } }
+      }),
+      columnHelper.accessor('tanggal_awal', {
+        header: 'Tanggal Awal',
+        cell: ({ getValue }) => {
+          const date = new Date(getValue());
+          return (
+            <div className='flex flex-col'>
+              <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
+            </div>
+          );
+        },
+        meta: { style: { width: '120px' } }
+      }),
+      columnHelper.accessor('tanggal_akhir', {
+        header: 'Tanggal Akhir',
+        cell: ({ getValue }) => {
+          const date = new Date(getValue());
+          return (
+            <div className='flex flex-col'>
+              <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
+            </div>
+          );
+        },
+        meta: { style: { width: '120px' } }
+      }),
+      columnHelper.accessor('min_penjualan', {
+        header: 'Min. Penjualan',
+        cell: ({ getValue }) => {
+          const value = getValue();
+          return (
+            <div className='flex flex-col'>
+              <span className='font-medium'>{formatRupiah(value)}</span>
+            </div>
+          );
+        },
+        meta: { style: { minWidth: '150px' } }
+      }),
+      columnHelper.accessor('hadiah', {
+        header: 'Hadiah',
+        cell: ({ getValue }) => {
+          const hadiah = getValue();
+          return (
+            <div className='max-w-[200px]'>
+              <span className='line-clamp-2 text-sm'>{hadiah}</span>
+            </div>
+          );
+        },
+        meta: { style: { minWidth: '200px' } }
+      }),
+      columnHelper.accessor('created_at', {
+        header: 'Tanggal Dibuat',
+        cell: ({ getValue }) => {
+          const date = new Date(getValue());
+          return (
+            <div className='flex flex-col'>
+              <span className='text-sm'>{format(date, 'dd MMM yyyy', { locale: id })}</span>
+              <span className='text-muted-foreground text-xs'>{format(date, 'HH:mm')}</span>
+            </div>
+          );
+        },
+        meta: { style: { width: '140px' } }
+      }),
+      ...(!isAdmin
+        ? [
+            // New columns for non-admin users
+            columnHelper.accessor('total_penjualan', {
+              header: 'Total Penjualan',
+              cell: ({ getValue, row }) => {
+                const value = getValue();
+                // Only show for non-admin users (when total_penjualan exists)
+                if (value !== undefined) {
+                  return (
+                    <div className='flex flex-col'>
+                      <span className='font-medium'>{formatRupiah(value)}</span>
+                    </div>
+                  );
+                }
+                return <span className='text-muted-foreground'>-</span>;
+              },
+              meta: { style: { minWidth: '150px' } }
+            }),
+            columnHelper.accessor('percentage', {
+              header: 'Pencapaian',
+              cell: ({ getValue, row }) => {
+                const value = getValue();
+                // Only show for non-admin users (when percentage exists)
+                if (value !== undefined) {
+                  return (
+                    <div className='flex flex-col'>
+                      <span className='font-medium'>{value}%</span>
+                      <span className='text-muted-foreground text-xs'>dari target</span>
+                    </div>
+                  );
+                }
+                return <span className='text-muted-foreground'>-</span>;
+              },
+              meta: { style: { minWidth: '120px' } }
+            })
+          ]
+        : []),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => <ActionCell row={row} />,
+        meta: { style: { width: '100px' } }
+      })
+    ],
+    [isAdmin]
+  );
 
   return (
     <section className='p-4'>

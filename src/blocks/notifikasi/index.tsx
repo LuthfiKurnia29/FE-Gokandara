@@ -16,7 +16,35 @@ import { useNotificationList } from '@/services/notification';
 import type { NotificationItem } from '@/types/notification';
 
 import { formatDate } from 'date-fns';
-import { MessageCircle, Search as SearchIcon, Users } from 'lucide-react';
+import { Award, MessageCircle, Search as SearchIcon, Users } from 'lucide-react';
+
+const getKindLabel = (jenisNotif: string) => {
+  if (jenisNotif === 'chat') return 'CHAT';
+  if (jenisNotif === 'konsumen') return 'KONSUMEN';
+  if (jenisNotif === 'claim') return 'CLAIM';
+  return 'LAINNYA';
+};
+
+const getMessage = (n: NotificationItem) => {
+  if (n.jenis_notifikasi === 'chat') {
+    return `${n.chatting.pengirim?.name ?? 'Pengirim'} mengirim pesan ${n.chatting.pesan ? `: ${n.chatting.pesan}` : ''}`;
+  }
+  if (n.jenis_notifikasi === 'konsumen') {
+    return `Mitra berusaha menginputkan data Konsumen yang sudah ada. Konsumen dengan nama ${n.konsumen?.name ?? '-'} dan no. telp ${n.konsumen?.phone ?? n.phone ?? '-'}`;
+  }
+  if (n.jenis_notifikasi === 'claim') {
+    return `${n.user?.name} ingin Claim bonus ${n.target?.hadiah}`;
+  }
+
+  return '-';
+};
+
+const getTitle = (n: NotificationItem) => {
+  if (n.jenis_notifikasi === 'chat') return 'Pesan baru';
+  if (n.jenis_notifikasi === 'konsumen') return 'Notifikasi Konsumen';
+  if (n.jenis_notifikasi === 'claim') return 'Claim Bonus';
+  return '-';
+};
 
 const NotifikasiPage = memo(function NotifikasiPage() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
@@ -43,30 +71,34 @@ const NotifikasiPage = memo(function NotifikasiPage() {
     const isUnread = !n.is_read;
     const time = formatDate(n.created_at, 'dd MMMM yyyy, HH:mm');
 
-    const kindLabel = n.jenis_notifikasi === 'chat' ? 'CHAT' : 'KONSUMEN';
-    const message =
-      n.jenis_notifikasi === 'chat'
-        ? `${n.chatting.pengirim?.name ?? 'Pengirim'} mengirim pesan ${n.chatting.pesan ? `: ${n.chatting.pesan}` : ''}`
-        : `Mitra berusaha menginputkan data Konsumen yang sudah ada. Konsumen dengan nama ${n.konsumen?.name ?? '-'} dan no. telp ${n.konsumen?.phone ?? n.phone ?? '-'}`;
+    const kindLabel = getKindLabel(n.jenis_notifikasi);
+    const message = getMessage(n);
 
     return (
       <div
         key={n.id}
         className={`rounded-xl border p-4 shadow-sm ${!isUnread ? 'bg-gray-100 opacity-80 hover:opacity-100' : 'bg-white'}`}>
         <div className='flex items-start justify-between gap-4'>
-          {n.jenis_notifikasi == 'chat' ? (
+          {n.jenis_notifikasi === 'chat' && (
             <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-900'>
               <MessageCircle className='h-5 w-5 text-white' />
             </div>
-          ) : (
+          )}
+
+          {n.jenis_notifikasi === 'konsumen' && (
             <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-amber-900'>
               <Users className='h-5 w-5 text-white' />
             </div>
           )}
+
+          {n.jenis_notifikasi === 'claim' && (
+            <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-600'>
+              <Award className='h-5 w-5 text-white' />
+            </div>
+          )}
+
           <div className='flex-1'>
-            <h4 className='text-base font-semibold text-gray-900'>
-              {n.jenis_notifikasi === 'chat' ? 'Pesan baru' : 'Notifikasi Konsumen'}
-            </h4>
+            <h4 className='text-base font-semibold text-gray-900'>{getTitle(n)}</h4>
             <p className='mt-1 line-clamp-3 text-sm text-gray-700'>{message}</p>
             <div className='mt-2 flex items-center gap-3'>
               <Badge variant='outline' className='border-blue-600 text-xs text-blue-600'>
