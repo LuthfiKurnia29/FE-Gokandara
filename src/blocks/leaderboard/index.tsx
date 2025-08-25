@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { MemberFilterModal } from '@/blocks/konsumen/member-filter-modal';
 import { PageTitle } from '@/components/page-title';
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { leaderboardService } from '@/services/leaderboard';
 import { LeaderboardItem } from '@/types/leaderboard';
 import { createColumnHelper } from '@tanstack/react-table';
 
@@ -27,7 +28,25 @@ const getInitials = (name: string) =>
 const LeaderboardPage = memo(function LeaderboardPage() {
   const [memberFilterOpen, setMemberFilterOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ id: number; name: string } | null>(null);
-  const apiUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/leaderboard` : '/api/leaderboard';
+  // Use real backend endpoint
+  const apiUrl = '/leaderboard';
+  const [top3, setTop3] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+
+  useEffect(() => {
+    const fetchTop3 = async () => {
+      try {
+        const data = await leaderboardService.getTop3({
+          dateStart: dateRange.start,
+          dateEnd: dateRange.end
+        });
+        setTop3(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setTop3([]);
+      }
+    };
+    fetchTop3();
+  }, [dateRange.start, dateRange.end]);
 
   const handleClearFilter = () => setSelectedMember(null);
 
@@ -38,7 +57,7 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         header: () => <div className='w-full text-left'>Employee</div>,
         cell: ({ row }) => {
           const item = row.original;
-          const name = item.name || item.user?.name || '-';
+          const name = item.name || item.sales_name || item.user?.name || '-';
           const avatar = item.avatar_url || item.user?.avatar_url || 'https://github.com/shadcn.png';
           return (
             <div className='flex items-center gap-3'>
@@ -59,7 +78,8 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         },
         meta: { style: { minWidth: '240px', width: '32%' } }
       }),
-      columnHelper.accessor('leads', {
+      columnHelper.accessor((row) => row.leads ?? (row as any).total_leads ?? 0, {
+        id: 'leads',
         header: () => <div className='w-full text-center'>Leads</div>,
         cell: ({ getValue }) => (
           <div className='flex w-full justify-center'>
@@ -77,12 +97,14 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         cell: ({ getValue }) => <div className='w-full text-center font-medium'>{getValue()}%</div>,
         meta: { style: { minWidth: '100px', width: '14%' } }
       }),
-      columnHelper.accessor('units_sold', {
+      columnHelper.accessor((row) => row.units_sold ?? (row as any).total_goal ?? 0, {
+        id: 'units_sold',
         header: () => <div className='w-full text-center'>Unit Terjual</div>,
         cell: ({ getValue }) => <div className='w-full text-center font-medium'>{getValue()}</div>,
         meta: { style: { minWidth: '110px', width: '14%' } }
       }),
-      columnHelper.accessor('revenue', {
+      columnHelper.accessor((row) => row.revenue ?? (row as any).total_revenue ?? 0, {
+        id: 'revenue',
         header: () => <div className='w-full text-center'>Revenue</div>,
         cell: ({ getValue }) => {
           const n = Number(getValue() || 0);
@@ -102,49 +124,54 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         <DateRangePicker />
       </div>
 
-      {/* Top Sales Cards (fixed 3) */}
-      <div className='mb-6 flex justify-center gap-6'>
-        {[
-          { name: 'Nama Sales', leads: 23, target: '100%', unitTerjual: 8, revenue: '16,5M' },
-          { name: 'Nama Sales', leads: 23, target: '100%', unitTerjual: 8, revenue: '16,5M' },
-          { name: 'Nama Sales', leads: 23, target: '100%', unitTerjual: 8, revenue: '16,5M' }
-        ].map((sales, index) => (
-          <Card key={`top-card-${index}`} className='w-96 bg-white p-6 shadow-sm'>
-            <div className='mb-4 flex justify-center'>
-              <div className='flex h-20 w-20 items-center justify-center rounded-full bg-gray-300'>
-                <User className='h-10 w-10 text-white' />
-              </div>
-            </div>
-            <h3 className='mb-3 text-center text-lg font-semibold text-gray-900'>{sales.name}</h3>
-            <div className='mb-6 flex justify-center gap-4'>
-              <Phone className='h-5 w-5 text-gray-400' />
-              <MessageCircle className='h-5 w-5 text-gray-400' />
-              <Mail className='h-5 w-5 text-gray-400' />
-            </div>
-            <div className='mb-8 flex justify-center'>
-              <Button
-                variant='outline'
-                className='rounded-full border-blue-500 bg-transparent px-6 py-2 text-blue-500 hover:bg-blue-50'>
-                {sales.leads} Leads
-              </Button>
-            </div>
-            <div className='flex items-end justify-between'>
-              <div className='text-center'>
-                <div className='text-2xl font-bold text-gray-900'>{sales.target}</div>
-                <div className='text-xs tracking-wide text-gray-500 uppercase'>TARGET</div>
-              </div>
-              <div className='text-center'>
-                <div className='text-2xl font-bold text-gray-900'>{sales.unitTerjual}</div>
-                <div className='text-xs tracking-wide text-gray-500 uppercase'>UNIT TERJUAL</div>
-              </div>
-              <div className='text-center'>
-                <div className='text-2xl font-bold text-gray-900'>{sales.revenue}</div>
-                <div className='text-xs tracking-wide text-gray-500 uppercase'>REVENUE</div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {/* Top Sales Cards (Top 3 from API) */}
+      {top3.length > 0 && (
+        <div className='mb-6 flex justify-center gap-6'>
+          {top3.map((s, index) => {
+            const name = s.sales_name || s.name || '-';
+            const leads = s.total_leads ?? s.leads ?? 0;
+            const targetPct = Math.round(s.target_percentage ?? 0) + '%';
+            const units = s.total_goal ?? s.units_sold ?? 0;
+            const revenue = Number(s.total_revenue ?? s.revenue ?? 0).toLocaleString('id-ID');
+            return (
+              <Card key={`top-card-${index}`} className='w-96 bg-white p-6 shadow-sm'>
+                <div className='mb-4 flex justify-center'>
+                  <div className='flex h-20 w-20 items-center justify-center rounded-full bg-gray-300'>
+                    <User className='h-10 w-10 text-white' />
+                  </div>
+                </div>
+                <h3 className='mb-3 text-center text-lg font-semibold text-gray-900'>{name}</h3>
+                <div className='mb-6 flex justify-center gap-4'>
+                  <Phone className='h-5 w-5 text-gray-400' />
+                  <MessageCircle className='h-5 w-5 text-gray-400' />
+                  <Mail className='h-5 w-5 text-gray-400' />
+                </div>
+                <div className='mb-8 flex justify-center'>
+                  <Button
+                    variant='outline'
+                    className='rounded-full border-blue-500 bg-transparent px-6 py-2 text-blue-500 hover:bg-blue-50'>
+                    {leads} Leads
+                  </Button>
+                </div>
+                <div className='flex items-end justify-between'>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-gray-900'>{targetPct}</div>
+                    <div className='text-xs tracking-wide text-gray-500 uppercase'>TARGET</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-gray-900'>{units}</div>
+                    <div className='text-xs tracking-wide text-gray-500 uppercase'>UNIT TERJUAL</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-gray-900'>{revenue}</div>
+                    <div className='text-xs tracking-wide text-gray-500 uppercase'>REVENUE</div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <PaginateTable
         columns={columns}
@@ -152,7 +179,10 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         id='leaderboard-table'
         perPage={10}
         queryKey={['/leaderboard', selectedMember?.id?.toString() || 'all']}
-        payload={{ ...(selectedMember?.id ? { member_id: selectedMember.id } : {}) }}
+        payload={{
+          ...(selectedMember?.id ? { member_id: selectedMember.id } : {}),
+          ...(dateRange.start && dateRange.end ? { dateStart: dateRange.start, dateEnd: dateRange.end } : {})
+        }}
         Plugin={() => (
           <div className='flex items-center gap-2'>
             {selectedMember && (

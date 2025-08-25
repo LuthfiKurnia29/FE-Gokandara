@@ -10,15 +10,22 @@ export const leaderboardService = {
     search = '',
     member_id
   }: UseLeaderboardListParams = {}): Promise<LeaderboardResponse> => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      per: perPage.toString(),
-      ...(search && { search }),
-      ...(member_id && { member_id: member_id.toString() })
+    const response = await axios.get(`/leaderboard`, {
+      params: {
+        page,
+        per: perPage,
+        per_page: perPage,
+        search,
+        ...(member_id ? { member_id } : {})
+      }
     });
-
-    const response = await axios.get(`/leaderboard?${params}`);
     return response.data;
+  },
+
+  // Get top 3 leaderboard cards
+  getTop3: async (params?: { dateStart?: string; dateEnd?: string }) => {
+    const response = await axios.get(`/leaderboard/top-3`, { params });
+    return response.data as any[];
   }
 };
 

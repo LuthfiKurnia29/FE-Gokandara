@@ -175,6 +175,8 @@ const PaginateTable = memo(
                 search: debouncedSearch,
                 page,
                 per: Number(per),
+                // Mirror param for Laravel-style pagination
+                per_page: Number(per),
                 ...payload
               }
             })

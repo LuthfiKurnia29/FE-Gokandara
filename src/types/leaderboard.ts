@@ -22,6 +22,12 @@ export interface LeaderboardItem {
     phone?: string | null;
     avatar_url?: string | null;
   } | null;
+
+  // Optional backend alternative fields (Laravel controller aliases)
+  sales_name?: string;
+  total_leads?: number;
+  total_goal?: number;
+  total_revenue?: number;
 }
 
 export interface LeaderboardResponse {
