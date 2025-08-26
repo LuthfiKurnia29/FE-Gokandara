@@ -79,7 +79,7 @@ export default function KonsumenCard({ dashboardData }: ComponentWithDashboardPr
     const apiChartData = konsumenByProspekData.chart_data.map((item, index) => ({
       category: `prospek${index}`,
       value: parseFloat(item.percentage.replace('%', '')),
-      fill: `var(--color-prospek${index})`
+      fill: item.color // Use color directly from API
     }));
 
     // Create dynamic chart config based on API data
@@ -87,7 +87,7 @@ export default function KonsumenCard({ dashboardData }: ComponentWithDashboardPr
     konsumenByProspekData.chart_data.forEach((item, index) => {
       apiChartConfig[`prospek${index}`] = {
         label: item.name,
-        color: item.color || ['#2563eb', '#22c55e', '#f97316', '#d1d5db', '#8b5cf6'][index % 5]
+        color: item.color // Use color directly from API, no fallback
       };
     });
 
