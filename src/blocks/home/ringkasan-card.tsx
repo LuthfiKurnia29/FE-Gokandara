@@ -1,34 +1,67 @@
 'use client';
 
+import * as React from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ComponentWithDashboardProps } from '@/types/dashboard';
 
 import { Building2, MoreVertical, TrendingUp } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
-const chartData = [
-  { month: 'April', terjual: 45, dipesan: 20 },
-  { month: 'Mei', terjual: 35, dipesan: 25 },
-  { month: 'Juni', terjual: 40, dipesan: 30 },
-  { month: 'Juli', terjual: 25, dipesan: 22 },
-  { month: 'Agustus', terjual: 65, dipesan: 35 },
-  { month: 'September', terjual: 15, dipesan: 28 },
+// Fallback chart data when API data is not available
+const fallbackChartData = [
+  { month: 'April', terjual: 45, dipesan: 38 },
+  { month: 'Mei', terjual: 35, dipesan: 42 },
+  { month: 'Juni', terjual: 40, dipesan: 35 },
+  { month: 'Juli', terjual: 25, dipesan: 30 },
+  { month: 'Agustus', terjual: 65, dipesan: 58 },
+  { month: 'September', terjual: 15, dipesan: 22 },
   { month: 'Oktober', terjual: 45, dipesan: 40 },
-  { month: 'November', terjual: 35, dipesan: 32 }
+  { month: 'November', terjual: 35, dipesan: 38 }
 ];
 
 const chartConfig = {
   terjual: {
-    label: '00 Terjual',
+    label: 'Total Terjual',
     color: '#ef4444'
   },
   dipesan: {
-    label: '00 Dipesan',
+    label: 'Total Dipesan',
     color: '#22c55e'
   }
 } satisfies ChartConfig;
 
-export default function RingkasanCard() {
+export default function RingkasanCard({ dashboardData }: ComponentWithDashboardProps) {
+  // Get sales overview data from API
+  const salesData = dashboardData?.salesOverview?.data;
+  const isLoading = dashboardData?.isLoading.salesOverview;
+
+  // Get total terjual and dipesan values
+  const totalTerjual = salesData?.summary.total_terjual.value || 0;
+  const totalDipesan = salesData?.summary.total_dipesan.value || 0;
+  const percentageChange = salesData?.summary.total_terjual.percentage_change || '0,0%';
+
+  // Create chart data from API
+  const chartData = React.useMemo(() => {
+    if (!salesData?.chart.series || !salesData?.chart.months) {
+      return fallbackChartData;
+    }
+
+    const terjualData = salesData.chart.series.find((s) => s.name === 'Total Terjual')?.data || [];
+    const dipesanData = salesData.chart.series.find((s) => s.name === 'Total Dipesan')?.data || [];
+
+    return salesData.chart.months.map((month, index) => ({
+      month: month.substring(0, 3), // Get first 3 chars of month
+      terjual: terjualData[index] || 0,
+      dipesan: dipesanData[index] || 0
+    }));
+  }, [salesData]);
+
+  // Calculate Y-axis domain based on data
+  const maxValue = Math.max(...chartData.map((d) => d.terjual));
+  const yAxisMax = Math.ceil(maxValue * 1.2); // Add 20% padding
+
   return (
     <Card className='w-full border-gray-200 shadow-sm'>
       <CardContent className='space-y-4 p-4'>
@@ -41,42 +74,35 @@ export default function RingkasanCard() {
         </div>
 
         {/* Metrics Cards */}
-        <div className='grid grid-cols-1 gap-3 md:grid-cols-3'>
-          {/* Total Terjual Card */}
-          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
-            <div className='flex items-start gap-4'>
-              <div className='flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50'>
+        <div className='grid grid-cols-1 place-items-center gap-3 sm:grid-cols-2 lg:grid-cols-2'>
+          {/* Total Penjualan Card */}
+          <div className='w-full max-w-[350px] rounded-2xl border bg-white p-4 shadow-sm'>
+            <div className='flex items-center justify-center gap-4'>
+              <div className='flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border-2 border-red-200 bg-red-50'>
                 <Building2 className='h-8 w-8 text-red-500' />
               </div>
-              <div>
-                <p className='mb-1 text-sm text-gray-600'>Total Terjual</p>
-                <p className='text-2xl font-bold text-gray-900'>00 Unit</p>
+              <div className='text-center'>
+                <p className='mb-1 text-sm text-gray-600'>Total Penjualan</p>
+                <p className='text-xl font-bold text-gray-900'>
+                  {isLoading ? 'Loading...' : `Rp ${totalTerjual.toLocaleString('id-ID')}`}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Total Dipesan Card */}
-          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
-            <div className='flex items-start gap-4'>
-              <div className='flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-green-200 bg-green-50'>
+          <div className='w-full max-w-[350px] rounded-2xl border bg-white p-4 shadow-sm'>
+            <div className='flex items-center justify-center gap-4'>
+              <div className='flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border-2 border-green-200 bg-green-50'>
                 <Building2 className='h-8 w-8 text-green-500' />
               </div>
-              <div>
+              <div className='text-center'>
                 <p className='mb-1 text-sm text-gray-600'>Total Dipesan</p>
-                <p className='text-2xl font-bold text-gray-900'>00 Unit</p>
+                <p className='text-xl font-bold text-gray-900'>
+                  {isLoading ? 'Loading...' : `${totalDipesan.toLocaleString('id-ID')}`}
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Percentage Change */}
-          <div className='rounded-2xl border bg-white p-4 shadow-sm'>
-            <div className='flex items-center gap-3'>
-              <div className='text-3xl font-bold text-green-500'>0,0%</div>
-              <div className='flex h-8 w-8 items-center justify-center rounded-full bg-green-500'>
-                <TrendingUp className='h-4 w-4 text-white' />
-              </div>
-            </div>
-            <p className='mt-2 text-sm text-gray-600'>dibanding pekan terakhir</p>
           </div>
         </div>
 
@@ -106,19 +132,30 @@ export default function RingkasanCard() {
                   axisLine={false}
                   tickMargin={12}
                   tick={{ fontSize: 12, fill: '#9ca3af' }}
-                  domain={[0, 100]}
-                  ticks={[0, 25, 50, 75, 100]}
-                  tickFormatter={(value) => `${value}`}
+                  domain={[0, yAxisMax]}
+                  tickFormatter={(value) => `Rp ${Number(value).toLocaleString('id-ID')}`}
                 />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Area
-                  dataKey='dipesan'
-                  type='monotone'
-                  fill='#22c55e'
-                  fillOpacity={0.6}
-                  stroke='#22c55e'
-                  strokeWidth={3}
-                  stackId='a'
+                <ChartTooltip
+                  cursor={false}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className='rounded-lg border bg-white p-3 shadow-lg'>
+                          <p className='font-medium text-gray-900'>{`${label}`}</p>
+                          {payload.map((entry, index) => (
+                            <p key={index} className='text-sm' style={{ color: entry.color }}>
+                              {`${
+                                entry.name === 'Total Terjual'
+                                  ? `${entry.name}: Rp ${Number(entry.value).toLocaleString('id-ID')}`
+                                  : `${entry.name}: ${Number(entry.value).toLocaleString('id-ID')}`
+                              }`}
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Area
                   dataKey='terjual'
@@ -127,7 +164,16 @@ export default function RingkasanCard() {
                   fillOpacity={0.6}
                   stroke='#ef4444'
                   strokeWidth={3}
-                  stackId='b'
+                  name='Total Terjual'
+                />
+                <Area
+                  dataKey='dipesan'
+                  type='monotone'
+                  fill='#22c55e'
+                  fillOpacity={0.6}
+                  stroke='#22c55e'
+                  strokeWidth={3}
+                  name='Total Dipesan'
                 />
               </AreaChart>
             </ChartContainer>

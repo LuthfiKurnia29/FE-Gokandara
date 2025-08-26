@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ComponentWithDashboardProps } from '@/types/dashboard';
 
 interface CircularProgressProps {
   percentage: number;
@@ -72,7 +73,7 @@ function MetricCard({ title, value, target, percentage, color }: MetricCardProps
   );
 }
 
-export default function UnitMetrics() {
+export default function UnitMetrics({ dashboardData }: ComponentWithDashboardProps) {
   return (
     <div className='h-full w-full space-y-3'>
       <MetricCard title='Unit Terjual' value='65' target='Target 100/bulan' percentage={65} color='#F2335A' />

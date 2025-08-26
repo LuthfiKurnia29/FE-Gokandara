@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ComponentWithDashboardProps } from '@/types/dashboard';
 
 import { MoreHorizontal } from 'lucide-react';
 
@@ -14,7 +15,7 @@ const ProgressBar = React.memo(
     total,
     color,
     showUnit = false,
-    width = '100%',
+    percentage = 0,
     barHeight = 'h-2'
   }: {
     label: string;
@@ -22,20 +23,25 @@ const ProgressBar = React.memo(
     total: number;
     color: string;
     showUnit?: boolean;
-    width?: string;
+    percentage?: number;
     barHeight?: string;
   }) => {
+    const width = total > 0 ? `${Math.min((current / total) * 100, 100)}%` : '0%';
+
     return (
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
           <span className='text-[15px] font-medium text-gray-700'>{label}</span>
           <span className='text-[15px] font-medium text-gray-500'>
-            {current}/{total}
+            {current.toLocaleString()}/{total.toLocaleString()}
             {showUnit ? ' Unit' : ''}
           </span>
         </div>
         <div className={`w-full overflow-hidden rounded-full bg-gray-100 ${barHeight}`}>
-          <div className={`h-full rounded-full transition-all duration-300 ease-out ${color}`} style={{ width }} />
+          <div
+            className={`h-full rounded-full transition-all duration-300 ease-out`}
+            style={{ width, backgroundColor: color }}
+          />
         </div>
       </div>
     );
@@ -45,14 +51,36 @@ const ProgressBar = React.memo(
 ProgressBar.displayName = 'ProgressBar';
 
 // Properti Section
-export function PropertiSection() {
-  const propertiData = [
-    { label: 'HOONIAN Sigura-Gura', current: 0, total: 0, color: 'bg-red-400', width: '100%' },
-    { label: 'HOONIAN Bumi Palapa', current: 0, total: 0, color: 'bg-red-400', width: '30%' },
-    { label: 'HOONIAN Bunga Kosmea', current: 0, total: 0, color: 'bg-red-400', width: '25%' },
-    { label: 'HOONIAN Borobudur', current: 0, total: 0, color: 'bg-red-400', width: '40%' },
-    { label: 'RHUMA Arumba', current: 0, total: 0, color: 'bg-green-400', width: '100%' }
-  ];
+export function PropertiSection({ dashboardData }: ComponentWithDashboardProps) {
+  // Get transaksi by properti data from API
+  const transaksiByPropertiData = dashboardData?.transaksiByProperti?.data;
+  const isLoading = dashboardData?.isLoading.transaksiByProperti;
+
+  // Transform API data to component format
+  const propertiData = React.useMemo(() => {
+    if (!transaksiByPropertiData?.chart_data || transaksiByPropertiData.chart_data.length === 0) {
+      // Fallback data
+      return [
+        { label: 'HOONIAN Sigura-Gura', current: 0, total: 100, color: '#FF6384', percentage: 0 },
+        { label: 'HOONIAN Bumi Palapa', current: 0, total: 100, color: '#36A2EB', percentage: 0 },
+        { label: 'HOONIAN Bunga Kosmea', current: 0, total: 100, color: '#FFCE56', percentage: 0 },
+        { label: 'HOONIAN Borobudur', current: 0, total: 100, color: '#4BC0C0', percentage: 0 },
+        { label: 'RHUMA Arumba', current: 0, total: 100, color: '#9966FF', percentage: 0 }
+      ];
+    }
+
+    // Calculate total for percentage calculation
+    const totalTransaksi = transaksiByPropertiData.values.reduce((sum, value) => sum + value, 0);
+    const maxTransaksi = Math.max(...transaksiByPropertiData.values) || 100;
+
+    return transaksiByPropertiData.chart_data.map((item) => ({
+      label: item.name,
+      current: item.value,
+      total: maxTransaksi, // Use max value as total for visual comparison
+      color: item.color,
+      percentage: parseFloat(item.percentage.replace('%', ''))
+    }));
+  }, [transaksiByPropertiData]);
 
   return (
     <Card className='w-full border-gray-200 shadow-sm'>
@@ -61,9 +89,18 @@ export function PropertiSection() {
         <MoreHorizontal className='h-5 w-5 cursor-pointer text-gray-400 hover:text-gray-600' />
       </CardHeader>
       <CardContent className='space-y-4 pt-2'>
-        {propertiData.map((item, index) => (
-          <ProgressBar key={index} {...item} showUnit />
-        ))}
+        {isLoading
+          ? // Loading skeleton
+            Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className='space-y-3'>
+                <div className='flex items-center justify-between'>
+                  <div className='h-4 w-40 animate-pulse rounded bg-gray-300' />
+                  <div className='h-4 w-16 animate-pulse rounded bg-gray-300' />
+                </div>
+                <div className='h-2 w-full animate-pulse rounded-full bg-gray-300' />
+              </div>
+            ))
+          : propertiData.map((item, index) => <ProgressBar key={index} {...item} showUnit />)}
 
         {/* Map Visualization */}
         <div className='relative mt-6 h-[180px] overflow-hidden rounded-lg bg-gray-50'>
@@ -75,46 +112,54 @@ export function PropertiSection() {
               </pattern>
               <rect width='100%' height='100%' fill='url(#dots)' />
 
-              {/* Active region */}
+              {/* Active region - dynamic based on highest value */}
               <circle cx='200' cy='100' r='40' fill='#10b981' fillOpacity='0.2' />
               <circle cx='200' cy='100' r='30' fill='#10b981' fillOpacity='0.3' />
               <circle cx='200' cy='100' r='20' fill='#10b981' fillOpacity='0.4' />
 
-              {/* Data points */}
-              <g className='drop-shadow-sm'>
-                <circle cx='200' cy='100' r='15' fill='#10b981' />
-                <text x='200' y='105' textAnchor='middle' fill='white' className='text-xs font-bold'>
-                  224
-                </text>
-              </g>
+              {/* Dynamic Data points based on API data */}
+              {!isLoading &&
+                propertiData.slice(0, 5).map((item, index) => {
+                  const positions = [
+                    { x: 200, y: 100, r: 15 },
+                    { x: 100, y: 80, r: 12 },
+                    { x: 300, y: 90, r: 12 },
+                    { x: 150, y: 150, r: 10 },
+                    { x: 250, y: 140, r: 10 }
+                  ];
+                  const pos = positions[index] || { x: 200, y: 100, r: 10 };
+                  const isHighest = index === 0; // First item is usually highest
 
-              <g className='drop-shadow-sm'>
-                <circle cx='100' cy='80' r='12' fill='#6b7280' fillOpacity='0.8' />
-                <text x='100' y='84' textAnchor='middle' fill='white' className='text-[10px] font-bold'>
-                  532
-                </text>
-              </g>
+                  return (
+                    <g key={index} className='drop-shadow-sm'>
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={pos.r}
+                        fill={isHighest ? '#10b981' : item.color}
+                        fillOpacity={isHighest ? 1 : 0.8}
+                      />
+                      <text
+                        x={pos.x}
+                        y={pos.y + 4}
+                        textAnchor='middle'
+                        fill='white'
+                        className={index === 0 ? 'text-xs font-bold' : 'text-[10px] font-bold'}>
+                        {item.current}
+                      </text>
+                    </g>
+                  );
+                })}
 
-              <g className='drop-shadow-sm'>
-                <circle cx='300' cy='90' r='12' fill='#6b7280' fillOpacity='0.8' />
-                <text x='300' y='94' textAnchor='middle' fill='white' className='text-[10px] font-bold'>
-                  653
-                </text>
-              </g>
-
-              <g className='drop-shadow-sm'>
-                <circle cx='150' cy='150' r='10' fill='#6b7280' fillOpacity='0.8' />
-                <text x='150' y='153' textAnchor='middle' fill='white' className='text-[9px] font-bold'>
-                  567
-                </text>
-              </g>
-
-              <g className='drop-shadow-sm'>
-                <circle cx='250' cy='140' r='10' fill='#6b7280' fillOpacity='0.8' />
-                <text x='250' y='143' textAnchor='middle' fill='white' className='text-[9px] font-bold'>
-                  234
-                </text>
-              </g>
+              {/* Loading state for map */}
+              {isLoading && (
+                <g className='drop-shadow-sm'>
+                  <circle cx='200' cy='100' r='15' fill='#d1d5db' />
+                  <text x='200' y='105' textAnchor='middle' fill='white' className='text-xs font-bold'>
+                    --
+                  </text>
+                </g>
+              )}
             </svg>
           </div>
         </div>

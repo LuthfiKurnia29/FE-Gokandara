@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 
-const RealisasiCard = React.memo(() => {
+import { ComponentWithDashboardProps } from '@/types/dashboard';
+
+const RealisasiCard = React.memo(({ dashboardData }: ComponentWithDashboardProps) => {
   return (
     <div className='w-full bg-white p-4'>
       <div className='mb-4'>

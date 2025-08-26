@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer } from '@/components/ui/chart';
+import { ComponentWithDashboardProps } from '@/types/dashboard';
 
 import { Pie, PieChart } from 'recharts';
 
@@ -82,39 +83,59 @@ const StatCard = React.memo(
 
 StatCard.displayName = 'StatCard';
 
-export default function MetricCards() {
+export default function MetricCards({ dashboardData }: ComponentWithDashboardProps) {
   const router = useRouter();
 
   const handleFollowUpClick = () => {
     router.push('/kalender');
   };
 
+  // Extract data from dashboard API responses
+  const followUpTodayCount = dashboardData?.followUpToday?.count || 0;
+  const followUpTomorrowCount = dashboardData?.followUpTomorrow?.count || 0;
+  const newKonsumensCount = dashboardData?.newKonsumens?.count || 0;
+
+  // Calculate total konsumen prospek from konsumenByProspek data
+  const konsumenProspekCount = React.useMemo(() => {
+    if (!dashboardData?.konsumenByProspek?.data?.values) return 0;
+    return dashboardData.konsumenByProspek.data.values.reduce((sum, value) => sum + value, 0);
+  }, [dashboardData?.konsumenByProspek]);
+
+  // Calculate filled percentages based on some logic (you can adjust this)
+  const calculatePercentage = (value: number, max: number = 100) => {
+    return Math.min((value / max) * 100, 100);
+  };
+
   const stats = [
     {
       title: 'Follow Up Hari ini',
-      value: '00',
+      value: followUpTodayCount.toString().padStart(2, '0'),
       bgColor: 'bg-blue-500',
-      filledPercentage: 28,
-      onClick: handleFollowUpClick
+      filledPercentage: calculatePercentage(followUpTodayCount, 20), // Assume max 20 for demo
+      onClick: handleFollowUpClick,
+      isLoading: dashboardData?.isLoading.followUpToday
     },
     {
       title: 'Follow Up Besok',
-      value: '00',
+      value: followUpTomorrowCount.toString().padStart(2, '0'),
       bgColor: 'bg-green-500',
-      filledPercentage: 42,
-      onClick: handleFollowUpClick
+      filledPercentage: calculatePercentage(followUpTomorrowCount, 20), // Assume max 20 for demo
+      onClick: handleFollowUpClick,
+      isLoading: dashboardData?.isLoading.followUpTomorrow
     },
     {
       title: 'Konsumen Prospek',
-      value: '00',
+      value: konsumenProspekCount.toString().padStart(2, '0'),
       bgColor: 'bg-orange-500',
-      filledPercentage: 63
+      filledPercentage: calculatePercentage(konsumenProspekCount, 200), // Assume max 200 for demo
+      isLoading: dashboardData?.isLoading.konsumenByProspek
     },
     {
       title: 'Konsumen Baru',
-      value: '00',
+      value: newKonsumensCount.toString().padStart(2, '0'),
       bgColor: 'bg-slate-600',
-      filledPercentage: 23
+      filledPercentage: calculatePercentage(newKonsumensCount, 10), // Assume max 10 for demo
+      isLoading: dashboardData?.isLoading.newKonsumens
     }
   ];
 
@@ -124,9 +145,9 @@ export default function MetricCards() {
         <StatCard
           key={index}
           title={stat.title}
-          value={stat.value}
+          value={stat.isLoading ? '--' : stat.value}
           bgColor={stat.bgColor}
-          filledPercentage={stat.filledPercentage}
+          filledPercentage={stat.isLoading ? 0 : stat.filledPercentage}
           onClick={stat.onClick}
         />
       ))}

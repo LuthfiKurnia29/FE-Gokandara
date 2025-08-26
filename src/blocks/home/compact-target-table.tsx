@@ -1,6 +1,7 @@
 'use client';
 
 import { PaginateTable } from '@/components/paginate-table';
+import { ComponentWithDashboardProps } from '@/types/dashboard';
 import { TargetWithRelations } from '@/types/target';
 import { createColumnHelper } from '@tanstack/react-table';
 
@@ -92,7 +93,7 @@ const columns = [
 ];
 
 // Compact Target Table Component for Dashboard
-const CompactTargetTable = () => {
+const CompactTargetTable = ({ dashboardData }: ComponentWithDashboardProps) => {
   return (
     <PaginateTable
       columns={columns}
