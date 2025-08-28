@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer } from '@/components/ui/chart';
+import { useAnalisaFollowup } from '@/services/analisa';
 
 import { Pie, PieChart } from 'recharts';
 
@@ -12,12 +13,14 @@ const StatCard = React.memo(
     title,
     value,
     bgColor,
-    filledPercentage
+    filledPercentage,
+    isLoading = false
   }: {
     title: string;
     value: string;
     bgColor: string;
     filledPercentage: number;
+    isLoading?: boolean;
   }) => {
     const chartData = [
       { name: 'filled', value: filledPercentage, fill: bgColor },
@@ -37,7 +40,7 @@ const StatCard = React.memo(
       <Card className='relative h-[140px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-transform hover:scale-[1.02] hover:shadow-md'>
         <CardContent className='flex h-full items-center justify-between p-6'>
           <div className='flex flex-col justify-center'>
-            <div className='mb-1 text-[48px] leading-none font-bold text-gray-900'>{value}</div>
+            <div className='mb-1 text-[48px] leading-none font-bold text-gray-900'>{isLoading ? '...' : value}</div>
             <div className='max-w-[120px] text-sm font-medium text-gray-600'>{title}</div>
           </div>
           <div className='h-16 w-16 flex-shrink-0'>
@@ -65,30 +68,38 @@ const StatCard = React.memo(
 StatCard.displayName = 'StatCard';
 
 export const AnalysisMetricCards = () => {
+  // Get followup data for today and tomorrow
+  const followupToday = useAnalisaFollowup({ waktu: 'today' });
+  const followupTomorrow = useAnalisaFollowup({ waktu: 'tomorrow' });
+
   const stats = [
     {
       title: 'Follow Up Hari Ini',
-      value: '00',
+      value: followupToday.data?.count_data?.toString() || '00',
       bgColor: '#3b82f6',
-      filledPercentage: 30
+      filledPercentage: 30,
+      isLoading: followupToday.isLoading
     },
     {
       title: 'Follow Up Besok',
-      value: '00',
+      value: followupTomorrow.data?.count_data?.toString() || '00',
       bgColor: '#10b981',
-      filledPercentage: 40
+      filledPercentage: 40,
+      isLoading: followupTomorrow.isLoading
     },
     {
       title: 'Konsumen Prospek',
       value: '00',
       bgColor: '#f59e0b',
-      filledPercentage: 60
+      filledPercentage: 60,
+      isLoading: false
     },
     {
       title: 'Konsumen Baru',
       value: '00',
       bgColor: '#6b7280',
-      filledPercentage: 20
+      filledPercentage: 20,
+      isLoading: false
     }
   ];
 
@@ -101,6 +112,7 @@ export const AnalysisMetricCards = () => {
           value={stat.value}
           bgColor={stat.bgColor}
           filledPercentage={stat.filledPercentage}
+          isLoading={stat.isLoading}
         />
       ))}
     </div>
