@@ -332,7 +332,7 @@ const KonsumenPage = memo(function KonsumenPage() {
         containerClassName='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2'
         renderItem={renderItem}
         Plugin={() => (
-          <div className='flex items-center gap-2'>
+          <div className='flex flex-wrap items-center gap-2'>
             {/* Member Filter Button - Only show for Admin and Supervisor */}
             {canSeeFilterButton() && (
               <div className='flex items-center gap-2'>

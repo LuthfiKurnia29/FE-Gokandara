@@ -152,7 +152,7 @@ export const PesanForm = memo(function PesanForm({
   );
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-4'>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className='max-w-[380px] space-y-4 md:max-w-[unset]'>
       <div className='max-h-[600px] space-y-6 overflow-y-auto'>
         <div className='space-y-2'>
           <Label htmlFor='pesan'>Kirim Pesan Kepada *</Label>
