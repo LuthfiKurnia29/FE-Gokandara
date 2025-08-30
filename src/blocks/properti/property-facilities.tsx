@@ -31,12 +31,12 @@ export const PropertyFacilities = ({ property }: PropertyFacilitiesProps) => {
     <section className='mb-8'>
       <h2 className='mb-4 text-2xl font-bold text-gray-800'>Fasilitas</h2>
       <div className='grid grid-cols-5 gap-4'>
-        {facilities.map((facility, index) => (
-          <div key={index} className='flex items-center gap-2'>
+        {property?.fasilitas?.map((facility, index) => (
+          <div key={facility.nama_fasilitas} className='flex items-center gap-2'>
             <div className='flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-500'>
               <Check className='h-3 w-3 text-white' />
             </div>
-            <span className='text-sm text-gray-600'>{facility}</span>
+            <span className='text-sm text-gray-600'>{facility.nama_fasilitas}</span>
           </div>
         ))}
       </div>

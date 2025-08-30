@@ -142,7 +142,7 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
             <div className='col-span-3'>
               <PropertyHeader property={finalProperty} />
               <PropertyPriceSection property={finalProperty} />
-              <PropertySalesHistory property={finalProperty} />
+              {/* <PropertySalesHistory property={finalProperty} /> */}
             </div>
 
             {/* Middle and Right Columns Combined */}

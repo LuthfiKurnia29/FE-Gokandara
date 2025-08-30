@@ -71,6 +71,12 @@ export const propertyService = {
       });
     }
 
+    if (data.fasilitas && data.fasilitas.length > 0) {
+      data.fasilitas.forEach((fasilitas, index) => {
+        formData.append(`fasilitas[${index}][nama_fasilitas]`, fasilitas.nama_fasilitas);
+      });
+    }
+
     data.properti__gambars.forEach((file, index) => {
       formData.append(`properti__gambars[${index}]`, file);
     });
@@ -100,6 +106,12 @@ export const propertyService = {
         formData.append(`daftar_harga[${index}][tipe_id]`, harga.tipe_id.toString());
         formData.append(`daftar_harga[${index}][unit_id]`, harga.unit_id.toString());
         formData.append(`daftar_harga[${index}][harga]`, harga.harga.toString());
+      });
+    }
+
+    if (data.fasilitas && data.fasilitas.length > 0) {
+      data.fasilitas.forEach((fasilitas, index) => {
+        formData.append(`fasilitas[${index}][nama_fasilitas]`, fasilitas.nama_fasilitas);
       });
     }
 

@@ -27,6 +27,13 @@ const propertiSchema = z.object({
   lokasi: z.string().min(1, 'Lokasi harus diisi').max(255, 'Lokasi maksimal 255 karakter'),
   harga: z.string().optional(),
   properti__gambars: z.array(z.any()).optional(),
+  fasilitas: z
+    .array(
+      z.object({
+        nama_fasilitas: z.string().min(1, 'Nama fasilitas harus diisi').max(255, 'Nama fasilitas maksimal 255 karakter')
+      })
+    )
+    .optional(),
   daftar_harga: z
     .array(
       z.object({
@@ -113,6 +120,7 @@ export const PropertiForm = memo(function PropertiForm({
       lokasi: '',
       harga: '1',
       properti__gambars: [],
+      fasilitas: [],
       daftar_harga: []
     }
   });
@@ -120,6 +128,7 @@ export const PropertiForm = memo(function PropertiForm({
   const projectId = watch('project_id');
   const harga = watch('harga');
   const daftarHarga = watch('daftar_harga') || [];
+  const fasilitas = watch('fasilitas') || [];
 
   const handleAddDaftarHarga = () => {
     const currentDaftarHarga = daftarHarga || [];
@@ -132,6 +141,17 @@ export const PropertiForm = memo(function PropertiForm({
     setValue('daftar_harga', updatedDaftarHarga);
   };
 
+  const handleAddFasilitas = () => {
+    const currentFasilitas = fasilitas || [];
+    setValue('fasilitas', [...currentFasilitas, { nama_fasilitas: '' }]);
+  };
+
+  const handleRemoveFasilitas = (index: number) => {
+    const currentFasilitas = fasilitas || [];
+    const updatedFasilitas = currentFasilitas.filter((_, i) => i !== index);
+    setValue('fasilitas', updatedFasilitas);
+  };
+
   useEffect(() => {
     if (existingData && selectedId) {
       const formValues = {
@@ -142,6 +162,7 @@ export const PropertiForm = memo(function PropertiForm({
         lokasi: existingData.lokasi || '',
         harga: existingData.harga != null ? currency(existingData.harga) : '',
         properti__gambars: [],
+        fasilitas: existingData.fasilitas || [],
         daftar_harga: existingData.daftar_harga
           ? existingData.daftar_harga.map((item) => ({
               tipe_id: item.tipe_id.toString(),
@@ -165,6 +186,7 @@ export const PropertiForm = memo(function PropertiForm({
         lokasi: '',
         harga: '',
         properti__gambars: [],
+        fasilitas: [],
         daftar_harga: []
       });
       setUploadedFiles([]);
@@ -242,6 +264,7 @@ export const PropertiForm = memo(function PropertiForm({
         harga: hargaNumber,
         // FIXED: Send existing images as files if no new files uploaded
         properti__gambars: filesToSubmit,
+        fasilitas: data.fasilitas || [],
         daftar_harga: data.daftar_harga
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
@@ -262,6 +285,7 @@ export const PropertiForm = memo(function PropertiForm({
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
         properti__gambars: uploadedFiles.length > 0 ? uploadedFiles : [],
+        fasilitas: data.fasilitas || [],
         daftar_harga: data.daftar_harga
           ? data.daftar_harga.map((item) => ({
               tipe_id: parseInt(item.tipe_id),
@@ -270,6 +294,8 @@ export const PropertiForm = memo(function PropertiForm({
             }))
           : []
       };
+
+      console.log(submitData);
       onSubmit(submitData);
     }
   };
@@ -283,6 +309,7 @@ export const PropertiForm = memo(function PropertiForm({
       lokasi: '',
       harga: '',
       properti__gambars: [],
+      fasilitas: [],
       daftar_harga: []
     });
     setUploadedFiles([]);
@@ -474,6 +501,49 @@ export const PropertiForm = memo(function PropertiForm({
           ) : (
             <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
               <p className='text-sm text-gray-500'>Belum ada daftar harga</p>
+            </div>
+          )}
+        </div>
+
+        <div className='my-8 space-y-4'>
+          <div className='flex items-center justify-between'>
+            <Label>Fasilitas</Label>
+            <Button type='button' variant='outline' size='sm' onClick={handleAddFasilitas} disabled={isLoading}>
+              + Tambah Fasilitas
+            </Button>
+          </div>
+
+          {fasilitas && fasilitas.length > 0 ? (
+            <div className='space-y-4'>
+              {fasilitas.map((_, index) => (
+                <div key={`fasilitas_${index}`} className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                  <div className='space-y-2'>
+                    <Label>Nama Fasilitas *</Label>
+                    <div className='flex items-center gap-2'>
+                      <Input
+                        placeholder='Contoh: Kolam Renang'
+                        {...register(`fasilitas.${index}.nama_fasilitas`)}
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type='button'
+                        variant='destructive'
+                        size='icon'
+                        onClick={() => handleRemoveFasilitas(index)}
+                        disabled={isLoading}>
+                        <X className='h-4 w-4' />
+                      </Button>
+                    </div>
+                    {errors.fasilitas?.[index]?.nama_fasilitas && (
+                      <p className='text-sm text-red-600'>{errors.fasilitas[index]?.nama_fasilitas?.message}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className='rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center'>
+              <p className='text-sm text-gray-500'>Belum ada fasilitas</p>
             </div>
           )}
         </div>
