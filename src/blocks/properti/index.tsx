@@ -139,14 +139,14 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
         <CardContent className='p-6'>
           <div className='grid grid-cols-12 gap-6 pt-24'>
             {/* Left Column */}
-            <div className='col-span-3'>
+            <div className='col-span-12 lg:col-span-4 xl:col-span-3'>
               <PropertyHeader property={finalProperty} />
               <PropertyPriceSection property={finalProperty} />
               {/* <PropertySalesHistory property={finalProperty} /> */}
             </div>
 
             {/* Middle and Right Columns Combined */}
-            <div className='col-span-9'>
+            <div className='col-span-12 lg:col-span-8 xl:col-span-9'>
               <div className='w-full'>
                 <PropertyDescription property={finalProperty} />
                 <PropertyGallery property={finalProperty} />
