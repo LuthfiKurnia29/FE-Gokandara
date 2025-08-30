@@ -4,8 +4,11 @@ import {
   FollowupResponse,
   NewKonsumenResponse,
   RealisasiResponse,
+  RingkasanPenjualanItem,
   RingkasanPenjualanResponse,
+  StatistikPemesananItem,
   StatistikPemesananResponse,
+  StatistikPenjualanItem,
   StatistikPenjualanResponse,
   UseAnalisaParams
 } from '@/types/analisa';
@@ -29,16 +32,16 @@ export const analisaService = {
   },
 
   // Get statistik penjualan data
-  getStatistikPenjualan: async (params: AnalisaQueryParams = {}): Promise<StatistikPenjualanResponse> => {
-    const response = await axios.get<StatistikPenjualanResponse>('/get-statistik-penjualan', {
+  getStatistikPenjualan: async (params: AnalisaQueryParams = {}): Promise<StatistikPenjualanItem[]> => {
+    const response = await axios.get<StatistikPenjualanItem[]>('/get-statistik-penjualan', {
       params
     });
     return response.data;
   },
 
   // Get statistik pemesanan data
-  getStatistikPemesanan: async (params: AnalisaQueryParams = {}): Promise<StatistikPemesananResponse> => {
-    const response = await axios.get<StatistikPemesananResponse>('/get-statistik-pemesanan', {
+  getStatistikPemesanan: async (params: AnalisaQueryParams = {}): Promise<StatistikPemesananItem[]> => {
+    const response = await axios.get<StatistikPemesananItem[]>('/get-statistik-pemesanan', {
       params
     });
     return response.data;
@@ -53,8 +56,8 @@ export const analisaService = {
   },
 
   // Get ringkasan penjualan data
-  getRingkasanPenjualan: async (params: AnalisaQueryParams = {}): Promise<RingkasanPenjualanResponse> => {
-    const response = await axios.get<RingkasanPenjualanResponse>('/get-ringkasan-penjualan', {
+  getRingkasanPenjualan: async (params: AnalisaQueryParams = {}): Promise<RingkasanPenjualanItem[]> => {
+    const response = await axios.get<RingkasanPenjualanItem[]>('/get-ringkasan-penjualan', {
       params
     });
     return response.data;

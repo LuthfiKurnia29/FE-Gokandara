@@ -125,6 +125,29 @@ export const konsumenService = {
     return response.data;
   },
 
+  // Get new konsumen for dashboard
+  getNewKonsumen: async (): Promise<KonsumenData[]> => {
+    try {
+      const response = await axios.get<{ data: KonsumenData[] } | KonsumenData[]>('/get-new-konsumen');
+
+      // Handle different response formats
+      if (
+        response.data &&
+        typeof response.data === 'object' &&
+        'data' in response.data &&
+        Array.isArray(response.data.data)
+      ) {
+        return response.data.data; // Format: { data: [...] }
+      } else if (Array.isArray(response.data)) {
+        return response.data; // Format: [...]
+      } else {
+        return [];
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
   // Get konsumen by ID
   getKonsumenById: async (id: number): Promise<KonsumenData> => {
     try {
@@ -268,6 +291,17 @@ export const useAllKonsumen = () => {
     },
     staleTime: 60 * 1000, // 1 minute
     cacheTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
+export const useNewKonsumen = () => {
+  return useQuery({
+    queryKey: ['new-konsumen'],
+    queryFn: () => konsumenService.getNewKonsumen(),
+    staleTime: 30 * 1000, // 30 seconds
+    cacheTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000)
   });
 };
 

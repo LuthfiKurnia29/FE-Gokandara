@@ -32,9 +32,9 @@ export const AreaChartComponent = () => {
 
   // Transform API data to chart format
   const chartData = useMemo(() => {
-    if (!statistikData?.data) return [];
+    if (!statistikData) return [];
 
-    return statistikData.data.map((item) => ({
+    return statistikData.map((item) => ({
       period: item.periode,
       terjual: item.grand_total
     }));

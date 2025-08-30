@@ -23,6 +23,8 @@ import {
   useDashboardTransaksiByProperti
 } from '@/services/dashboard';
 
+import { RealisasiComponent } from '../analisa/realisasi';
+
 const HomePage = React.memo(() => {
   // Fetch all dashboard data using the new hooks
   const { data: followUpTodayData, isLoading: isLoadingFollowUpToday } = useDashboardFollowUpToday();
@@ -57,11 +59,11 @@ const HomePage = React.memo(() => {
       <MetricCards dashboardData={dashboardProps} />
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-        <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>
+        {/* <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>
           <CardContent className='pt-6'>
             <TotalOmzetCard />
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>
           <CardContent className='pt-6'>
@@ -85,44 +87,39 @@ const HomePage = React.memo(() => {
         </div>
 
         {/* Left Column - Realisasi and Customer Section */}
-        <div className='lg:col-span-4 xl:col-span-3'>
+        <div className='lg:col-span-5 xl:col-span-4'>
           <div className='space-y-4'>
             <Card className='border-gray-200 shadow-sm'>
               <CardContent className='p-0'>
-                <RealisasiCard dashboardData={dashboardProps} />
+                <RealisasiComponent />
               </CardContent>
             </Card>
-            <Card className='border-gray-200 shadow-sm'>
+            {/* <Card className='border-gray-200 shadow-sm'>
               <CardContent className='p-4'>
                 <CustomerSection dashboardData={dashboardProps} />
               </CardContent>
+            </Card> */}
+
+            <Card className='border-gray-200 shadow-sm'>
+              <CardContent className='p-4'>
+                <TopSalesCard dashboardData={dashboardProps} />
+              </CardContent>
             </Card>
+            <div className='mt-4'>
+              <Card className='border-gray-200 shadow-sm'>
+                <CardContent className='p-4'>
+                  <UnitMetrics dashboardData={dashboardProps} />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
         {/* Right Column - Properti Section and other components */}
-        <div className='lg:col-span-8 xl:col-span-9'>
+        <div className='lg:col-span-7 xl:col-span-8'>
           <div className='space-y-4'>
             <PropertiSection dashboardData={dashboardProps} />
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-12'>
-              <div className='md:col-span-12 xl:col-span-9'>
-                <RingkasanCard dashboardData={dashboardProps} />
-              </div>
-              <div className='md:col-span-12 xl:col-span-3'>
-                <Card className='border-gray-200 shadow-sm'>
-                  <CardContent className='p-4'>
-                    <TopSalesCard dashboardData={dashboardProps} />
-                  </CardContent>
-                </Card>
-                <div className='mt-4'>
-                  <Card className='border-gray-200 shadow-sm'>
-                    <CardContent className='p-4'>
-                      <UnitMetrics dashboardData={dashboardProps} />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
+            <RingkasanCard dashboardData={dashboardProps} />
           </div>
         </div>
       </div>

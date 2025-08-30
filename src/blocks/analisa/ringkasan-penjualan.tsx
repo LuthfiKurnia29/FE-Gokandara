@@ -7,15 +7,23 @@ import { ChartContainer } from '@/components/ui/chart';
 import { useAnalisaRingkasanPenjualan } from '@/services/analisa';
 
 import { MoreVertical } from 'lucide-react';
-import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 type TimePeriod = 'harian' | 'mingguan' | 'bulanan';
 
-const chartConfig = {
-  outer: { color: '#3b82f6' },
-  middle: { color: '#f97316' },
-  inner: { color: '#22c55e' },
-  center: { color: '#ef4444' }
+// Color mapping for prospect types
+const getProspectColor = (prospectName: string | null) => {
+  if (!prospectName) return '#6b7280'; // Gray for null prospect
+  switch (prospectName.toLowerCase()) {
+    case 'hot':
+      return '#ef4444'; // Red
+    case 'warm':
+      return '#f97316'; // Orange
+    case 'cold':
+      return '#3b82f6'; // Blue
+    default:
+      return '#6b7280';
+  }
 };
 
 export const RingkasanPenjualanComponent = () => {
@@ -31,64 +39,47 @@ export const RingkasanPenjualanComponent = () => {
   });
 
   // Transform API data to chart format and metrics
-  const { chartData, metrics } = useMemo(() => {
-    if (!ringkasanData?.data || ringkasanData.data.length === 0) {
+  const { chartData, metrics, totalSales } = useMemo(() => {
+    if (!ringkasanData || ringkasanData?.length === 0) {
       return {
-        chartData: [
-          { name: 'outer', value: 0, color: '#3b82f6' },
-          { name: 'middle', value: 0, color: '#f97316' },
-          { name: 'inner', value: 0, color: '#22c55e' },
-          { name: 'center', value: 0, color: '#ef4444' }
-        ],
-        metrics: [
-          { color: '#3b82f6', value: '0', label: 'No Data' },
-          { color: '#f97316', value: '0', label: 'No Data' },
-          { color: '#22c55e', value: '0', label: 'No Data' },
-          { color: '#ef4444', value: '0', label: 'No Data' }
-        ]
+        chartData: [],
+        metrics: [],
+        totalSales: 0
       };
     }
 
-    // Sort data by grand_total in descending order
-    const sortedData = [...ringkasanData.data].sort((a, b) => b.grand_total - a.grand_total);
-
-    // Take top 4 prospects for visualization
-    const top4Data = sortedData.slice(0, 4);
-
     // Calculate total for percentage calculation
-    const total = sortedData.reduce((sum, item) => sum + item.grand_total, 0);
+    const total = ringkasanData.reduce((sum, item) => sum + item.grand_total, 0);
 
-    // Create chart data with percentages
-    const chartData = top4Data.map((item, index) => {
+    // Create chart data with percentages and proper labels
+    const chartData = ringkasanData.map((item) => {
       const percentage = total > 0 ? Math.round((item.grand_total / total) * 100) : 0;
+      const prospectName = item.prospek?.name || 'Unknown';
+      const color = item.prospek?.color || getProspectColor(prospectName);
+
       return {
-        name: `prospek_${index + 1}`,
-        value: percentage,
-        color: ['#3b82f6', '#f97316', '#22c55e', '#ef4444'][index] || '#6b7280'
+        name: prospectName,
+        value: item.grand_total,
+        percentage: percentage,
+        color: color,
+        prospekId: item.prospek?.id
       };
     });
 
     // Create metrics with actual data
-    const metrics = top4Data.map((item, index) => {
-      const prospekName = item.prospek_id ? `Prospek ${item.prospek_id}` : 'Unknown';
+    const metrics = ringkasanData.map((item) => {
+      const prospectName = item.prospek?.name || 'Unknown';
+      const color = item.prospek?.color || getProspectColor(prospectName);
+
       return {
-        color: ['#3b82f6', '#f97316', '#22c55e', '#ef4444'][index] || '#6b7280',
+        color: color,
         value: item.grand_total.toLocaleString('id-ID'),
-        label: prospekName
+        label: prospectName,
+        percentage: total > 0 ? Math.round((item.grand_total / total) * 100) : 0
       };
     });
 
-    // Fill remaining slots if less than 4
-    while (metrics.length < 4) {
-      const index = metrics.length;
-      metrics.push({
-        color: ['#3b82f6', '#f97316', '#22c55e', '#ef4444'][index] || '#6b7280',
-        value: '0',
-        label: 'No Data'
-      });
-    }
-
-    return { chartData, metrics };
+    return { chartData, metrics, totalSales: total };
   }, [ringkasanData]);
 
   const tabs = [
@@ -96,6 +87,27 @@ export const RingkasanPenjualanComponent = () => {
     { id: 'mingguan' as TimePeriod, label: 'Mingguan' },
     { id: 'bulanan' as TimePeriod, label: 'Bulanan' }
   ];
+
+  // Custom tooltip for the pie chart
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className='rounded-lg border border-gray-200 bg-white p-3 shadow-lg'>
+          <p className='font-semibold text-gray-900'>{data.name}</p>
+          <p className='text-sm text-gray-600'>Total: Rp {data.value.toLocaleString('id-ID')}</p>
+          <p className='text-sm text-gray-600'>Percentage: {data.percentage}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const chartConfig = {
+    color: {
+      color: '#6b7280'
+    }
+  };
 
   return (
     <Card className='w-full rounded-2xl border border-gray-100 bg-white shadow-sm'>
@@ -133,85 +145,61 @@ export const RingkasanPenjualanComponent = () => {
           <div className='flex h-48 w-full items-center justify-center'>
             <div className='text-red-500'>Error loading data</div>
           </div>
+        ) : chartData.length === 0 ? (
+          <div className='flex h-48 w-full items-center justify-center'>
+            <div className='text-gray-500'>No data available</div>
+          </div>
         ) : (
-          <div className='flex items-center gap-8'>
-            {/* Multi-layer Circular Chart */}
+          <div className='flex flex-wrap items-center gap-8'>
+            {/* Pie Chart */}
             <div className='flex-shrink-0'>
-              <ChartContainer config={chartConfig} className='h-48 w-48'>
+              <ChartContainer className='h-64 w-64' config={chartConfig}>
                 <ResponsiveContainer width='100%' height='100%'>
                   <PieChart>
-                    {/* Outer ring - Blue */}
                     <Pie
-                      data={[{ value: chartData[0]?.value || 0 }, { value: 100 - (chartData[0]?.value || 0) }]}
+                      data={chartData}
                       dataKey='value'
                       cx='50%'
                       cy='50%'
-                      innerRadius={80}
-                      outerRadius={95}
-                      startAngle={90}
-                      endAngle={-270}
-                      strokeWidth={0}>
-                      <Cell fill={chartData[0]?.color || '#3b82f6'} />
-                      <Cell fill='#e5e7eb' />
-                    </Pie>
-                    {/* Middle ring - Orange */}
-                    <Pie
-                      data={[{ value: chartData[1]?.value || 0 }, { value: 100 - (chartData[1]?.value || 0) }]}
-                      dataKey='value'
-                      cx='50%'
-                      cy='50%'
-                      innerRadius={60}
-                      outerRadius={75}
-                      startAngle={90}
-                      endAngle={-270}
-                      strokeWidth={0}>
-                      <Cell fill={chartData[1]?.color || '#f97316'} />
-                      <Cell fill='#e5e7eb' />
-                    </Pie>
-                    {/* Inner ring - Green */}
-                    <Pie
-                      data={[{ value: chartData[2]?.value || 0 }, { value: 100 - (chartData[2]?.value || 0) }]}
-                      dataKey='value'
-                      cx='50%'
-                      cy='50%'
+                      outerRadius={80}
                       innerRadius={40}
-                      outerRadius={55}
-                      startAngle={90}
-                      endAngle={-270}
+                      paddingAngle={2}
                       strokeWidth={0}>
-                      <Cell fill={chartData[2]?.color || '#22c55e'} />
-                      <Cell fill='#e5e7eb' />
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
                     </Pie>
-                    {/* Center ring - Red */}
-                    <Pie
-                      data={[{ value: chartData[3]?.value || 0 }, { value: 100 - (chartData[3]?.value || 0) }]}
-                      dataKey='value'
-                      cx='50%'
-                      cy='50%'
-                      innerRadius={20}
-                      outerRadius={35}
-                      startAngle={90}
-                      endAngle={-270}
-                      strokeWidth={0}>
-                      <Cell fill={chartData[3]?.color || '#ef4444'} />
-                      <Cell fill='#e5e7eb' />
-                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                      verticalAlign='bottom'
+                      height={36}
+                      formatter={(value, entry: any) => <span className='text-sm text-gray-700'>{value}</span>}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
             </div>
 
             {/* Metrics Grid */}
-            <div className='grid flex-1 grid-cols-2 gap-6'>
+            <div className='grid grid-cols-2 gap-6'>
               {metrics.map((metric, index) => (
                 <div key={index} className='flex items-center gap-3'>
                   <div className='h-12 w-1 rounded-full' style={{ backgroundColor: metric.color }} />
                   <div>
-                    <div className='text-2xl font-bold text-gray-900'>{metric.value}</div>
+                    <div className='text-2xl font-bold text-gray-900'>Rp {metric.value}</div>
                     <div className='text-sm text-gray-500'>{metric.label}</div>
+                    <div className='text-xs text-gray-400'>{metric.percentage}%</div>
                   </div>
                 </div>
               ))}
+
+              {/* Total Sales Summary */}
+              <div className='col-span-2 mt-4 rounded-lg bg-gray-50 p-4'>
+                <div className='text-center'>
+                  <div className='mb-1 text-sm text-gray-500'>Total Penjualan</div>
+                  <div className='text-2xl font-bold text-gray-900'>Rp {totalSales.toLocaleString('id-ID')}</div>
+                </div>
+              </div>
             </div>
           </div>
         )}

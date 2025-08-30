@@ -1,5 +1,6 @@
 import { KonsumenData } from './konsumen';
 import { PenjualanWithRelations } from './penjualan';
+import { ProspekData } from './prospek';
 
 // Query parameters for Analisa API calls
 export interface AnalisaQueryParams {
@@ -63,7 +64,7 @@ export interface RealisasiResponse {
 
 // Ringkasan Penjualan Response
 export interface RingkasanPenjualanItem {
-  prospek_id: number | null;
+  prospek: ProspekData;
   grand_total: number;
   transaksis: PenjualanWithRelations[];
 }
