@@ -12,6 +12,34 @@ import type { NotificationItem } from '@/types/notification';
 
 import { Bell, Clock, MessageCircle, ShoppingCart, Users, X } from 'lucide-react';
 
+const getKindLabel = (jenisNotif: string) => {
+  if (jenisNotif === 'chat') return 'CHAT';
+  if (jenisNotif === 'konsumen') return 'KONSUMEN';
+  if (jenisNotif === 'claim') return 'CLAIM';
+  return 'LAINNYA';
+};
+
+const getMessage = (n: NotificationItem) => {
+  if (n.jenis_notifikasi === 'chat') {
+    return `${n.chatting.pengirim?.name ?? 'Pengirim'} mengirim pesan ${n.chatting.pesan ? `: ${n.chatting.pesan}` : ''}`;
+  }
+  if (n.jenis_notifikasi === 'konsumen') {
+    return `Mitra berusaha menginputkan data Konsumen yang sudah ada. Konsumen dengan nama ${n.konsumen?.name ?? '-'} dan no. telp ${n.konsumen?.phone ?? n.phone ?? '-'}`;
+  }
+  if (n.jenis_notifikasi === 'claim') {
+    return `${n.user?.name} ingin Claim bonus ${n.target?.hadiah}`;
+  }
+
+  return '-';
+};
+
+const getTitle = (n: NotificationItem) => {
+  if (n.jenis_notifikasi === 'chat') return 'Pesan baru';
+  if (n.jenis_notifikasi === 'konsumen') return 'Notifikasi Konsumen';
+  if (n.jenis_notifikasi === 'claim') return 'Claim Bonus';
+  return '-';
+};
+
 const NotificationDropdown = memo(function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const { data: notifCount = 0 } = useNotificationCount();
@@ -97,13 +125,10 @@ const NotificationDropdown = memo(function NotificationDropdown() {
         <div className='max-h-96 overflow-y-auto'>
           {notifications?.length ? (
             notifications.map((n: any, index: number) => {
-              const kind = (n?.jenis_notifikasi ?? n?.type) as string | undefined;
+              const kind = getKindLabel(n.jenis_notifikasi) as string | undefined;
               const isUnread = !n?.is_read || (n?.is_read as any) === 0 || (n?.is_read as any) === '0';
               const pengirim = n?.pengirim?.name ?? n?.chatting?.pengirim?.name ?? 'Pengirim';
-              const text =
-                kind === 'chat'
-                  ? `${pengirim} mengirim pesan${n?.message || n?.chatting?.pesan ? `: ${n?.message ?? n?.chatting?.pesan}` : ''}`
-                  : `Mitra berusaha menginputkan data Konsumen yang sudah ada. Konsumen dengan nama ${n?.konsumen?.name ?? '-'} dan no. telp ${n?.konsumen?.phone ?? n?.phone ?? '-'}`;
+              const text = getMessage(n);
 
               return (
                 <div key={n.id} className='border-b p-4 last:border-b-0 hover:bg-gray-50'>
@@ -111,7 +136,7 @@ const NotificationDropdown = memo(function NotificationDropdown() {
                     {renderIcon(n, index)}
                     <div className='min-w-0 flex-1'>
                       <p className='mb-2 text-sm text-gray-900'>
-                        <span className='font-medium'>Lorem ipsum</span> {text}
+                        <span className='font-medium'>{getTitle(n)}</span> {text}
                       </p>
                       <div className='flex items-center gap-2 text-xs text-gray-500'>
                         <Badge variant='secondary' className='bg-blue-50 text-blue-600 hover:bg-blue-50'>

@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState } from 'react';
 
+import { useIdleTimer } from '@/hooks/use-idle-timer';
 import { authService, useCurrentUser } from '@/services/auth';
 
 import { LoginScreen } from '../login-screen';
@@ -57,6 +58,50 @@ export const AuthProvider = memo(({ children }: { children: React.ReactNode }) =
       setIsLoggedIn(false);
     }
   };
+
+  const handleIdleLogout = () => {
+    handleLogout();
+    setTimeout(() => {
+      toast.error('Anda telah logout otomatis karena tidak ada aktivitas selama 1 jam');
+    }, 500);
+  };
+
+  // Initialize idle timer - 1 hour = 3600000 milliseconds
+  // Only run idle timer when user is logged in
+  // For development/testing, you can change timeout to a smaller value like 10000 (10 seconds)
+  const { isIdle, pause, resume, getRemainingTime } = useIdleTimer({
+    timeout: 3600000, // 1 hour (3600000ms)
+    onIdle: handleIdleLogout,
+    onActive: () => {
+      // Reset any idle state if needed
+      if (process.env.NODE_ENV === 'development') {
+        console.log('User activity detected, idle timer reset');
+      }
+    }
+  });
+
+  // Development helper to log remaining time
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && isLoggedIn && isClient) {
+      const interval = setInterval(() => {
+        const remaining = getRemainingTime();
+        if (remaining > 0) {
+          console.log(`Idle timer: ${Math.round(remaining / 1000)}s remaining`);
+        }
+      }, 30000); // Log every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, isClient, getRemainingTime]);
+
+  // Pause/resume idle timer based on login status
+  useEffect(() => {
+    if (isLoggedIn && isClient) {
+      resume();
+    } else {
+      pause();
+    }
+  }, [isLoggedIn, isClient, pause, resume]);
 
   // Minimal, konsisten loading state
   if (!isClient || isFetching) {
