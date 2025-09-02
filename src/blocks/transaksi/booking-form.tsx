@@ -76,7 +76,7 @@ const bookingSchema = z
   .superRefine((val, ctx) => {
     // Note: This validation will need to be updated based on the actual skema pembayaran data
     // For now, we'll keep the jangka_waktu validation for all cases
-    if (!val.jangka_waktu || String(val.jangka_waktu).trim() === '') {
+    if (val.skema_pembayaran_id == 1 && (!val.jangka_waktu || String(val.jangka_waktu).trim() === '')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Jangka waktu wajib diisi',
@@ -702,21 +702,23 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
                       <p className='text-xs text-red-500'>{(errors as any).skema_pembayaran_id.message as string}</p>
                     )}
                   </div>
-                  <div>
-                    <Label className='mb-1 block text-sm font-medium text-gray-700'>Jangka Waktu (bulan)</Label>
-                    <Input
-                      type='number'
-                      inputMode='numeric'
-                      min={1}
-                      placeholder='0'
-                      value={jangkaWaktu}
-                      onChange={(e) => setValue('jangka_waktu', e.target.value)}
-                      className='h-10'
-                    />
-                    {(errors as any) && (errors as any).jangka_waktu && (
-                      <p className='text-xs text-red-500'>{(errors as any).jangka_waktu.message as string}</p>
-                    )}
-                  </div>
+                  {watch('skema_pembayaran_id') == 1 && (
+                    <div>
+                      <Label className='mb-1 block text-sm font-medium text-gray-700'>Jangka Waktu (bulan)</Label>
+                      <Input
+                        type='number'
+                        inputMode='numeric'
+                        min={1}
+                        placeholder='0'
+                        value={jangkaWaktu}
+                        onChange={(e) => setValue('jangka_waktu', e.target.value)}
+                        className='h-10'
+                      />
+                      {(errors as any) && (errors as any).jangka_waktu && (
+                        <p className='text-xs text-red-500'>{(errors as any).jangka_waktu.message as string}</p>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <Label className='mb-1 block text-sm font-medium text-gray-700'>DP</Label>
                     <Input

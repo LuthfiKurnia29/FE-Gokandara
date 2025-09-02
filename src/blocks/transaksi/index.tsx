@@ -60,7 +60,7 @@ const columnHelper = createColumnHelper<PenjualanWithRelations>();
 let skemaPembayaranMap: Record<number, string> = {};
 
 const columns = [
-  columnHelper.accessor('id', {
+  columnHelper.accessor('no_transaksi', {
     header: 'Order ID',
     cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
     meta: { style: { width: '100px' } }

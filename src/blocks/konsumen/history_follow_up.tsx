@@ -194,14 +194,14 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
                           </div>
                           {item.catatan && <p className='mt-2 text-sm text-gray-600'>{item.catatan}</p>}
                         </div>
-                        <div className='ml-4 flex gap-2'>
+                        {/* <div className='ml-4 flex gap-2'>
                           <Button variant='outline' size='sm'>
                             Edit
                           </Button>
                           <Button variant='outline' size='sm' className='text-red-600 hover:text-red-700'>
                             Hapus
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </CardContent>
                   </Card>
