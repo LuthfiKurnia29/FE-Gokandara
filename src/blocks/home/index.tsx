@@ -52,8 +52,30 @@ const HomePage = React.memo(() => {
     );
   };
 
-  // Prepare filter parameters
-  const filterParams = selectedMemberId ? { created_id: selectedMemberId } : {};
+  // Prepare filter parameters based on user role
+  const getFilterParams = () => {
+    // If user is Admin/Supervisor and has selected a member filter, use that
+    if (canSeeFilterButton() && selectedMemberId) {
+      return { created_id: selectedMemberId };
+    }
+
+    // If user is Sales/Mitra/Telemarketing, automatically filter by their own data
+    if (
+      userRole === 'Sales' ||
+      userRole === 'Mitra' ||
+      userRole === 'Telemarketing' ||
+      userRoleId === 3 ||
+      userRoleId === 4
+    ) {
+      const userId = userData?.user?.id;
+      return userId ? { created_id: userId } : {};
+    }
+
+    // If user is Admin/Supervisor and no filter selected, show all data
+    return {};
+  };
+
+  const filterParams = getFilterParams();
 
   // Fetch all dashboard data using the new hooks with filter parameters
   const { data: followUpTodayData, isLoading: isLoadingFollowUpToday } = useDashboardFollowUpToday(filterParams);

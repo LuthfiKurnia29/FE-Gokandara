@@ -6,6 +6,7 @@ import { ClientContainer } from '@/calendar/components/client-container';
 import { useCalendar } from '@/calendar/contexts/calendar-context';
 import { IEvent, KonsumenFollowup } from '@/calendar/interfaces';
 import { TCalendarView, TEventColor } from '@/calendar/types';
+import { usePermissions } from '@/services/auth';
 import { useCalendarList } from '@/services/calendar';
 import { UserWithRelations } from '@/types/user';
 
@@ -23,11 +24,13 @@ import {
 const KalenderContainer = memo(function KalenderContainer({
   setEvents,
   setView,
-  setSelectedDate
+  setSelectedDate,
+  selectedMemberId
 }: {
   setEvents: (events: IEvent[]) => void;
   setView: (view: TCalendarView) => void;
   setSelectedDate: (date: Date) => void;
+  selectedMemberId?: number | null;
 }) {
   const { view, selectedDate } = useCalendar();
 
@@ -55,7 +58,47 @@ const KalenderContainer = memo(function KalenderContainer({
     setSelectedDate(selectedDate);
   }, [selectedDate, setSelectedDate]);
 
-  const { data: items, refetch } = useCalendarList({ startDay, endDay });
+  // Get current user data for role checking
+  const { getUserData } = usePermissions();
+  const userData = getUserData();
+  const userRole = userData?.roles?.[0]?.role?.name || '';
+  const userRoleId = userData?.roles?.[0]?.role_id || 0;
+  const userId = userData?.user?.id || 0;
+
+  // Determine sales_id filter based on user role
+  const getSalesIdFilter = () => {
+    // If Admin/Supervisor has selected a member filter, use that
+    if (
+      (userRole === 'Administrator' ||
+        userRole === 'Admin' ||
+        userRole === 'Supervisor' ||
+        userRoleId === 1 ||
+        userRoleId === 2) &&
+      selectedMemberId
+    ) {
+      return selectedMemberId;
+    }
+
+    // If user is Sales/Mitra/Telemarketing, automatically filter by their own data
+    if (
+      userRole === 'Sales' ||
+      userRole === 'Mitra' ||
+      userRole === 'Telemarketing' ||
+      userRoleId === 3 ||
+      userRoleId === 4
+    ) {
+      return userId;
+    }
+
+    // If Admin/Supervisor and no filter selected, show all data
+    return undefined;
+  };
+
+  const { data: items, refetch } = useCalendarList({
+    startDay,
+    endDay,
+    sales_id: getSalesIdFilter()
+  });
 
   useEffect(() => {
     if (!items) return;
@@ -75,7 +118,7 @@ const KalenderContainer = memo(function KalenderContainer({
 
     setEvents(events);
     setView(view);
-  }, [items, setEvents, setView, view]);
+  }, [items, setEvents, setView, view, selectedMemberId]);
 
   return <ClientContainer view={view} />;
 });

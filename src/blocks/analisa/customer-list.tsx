@@ -17,6 +17,10 @@ interface CustomerListComponentProps {
 export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListComponentProps) => {
   const { data: customerData, isLoading, error } = useAnalisaNewKonsumen(filterParams);
 
+  // Ensure customerData has the correct structure
+  const safeCustomerData =
+    customerData && typeof customerData === 'object' && 'data' in customerData ? customerData : { data: [] };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -56,7 +60,7 @@ export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListCo
   }
 
   // Show empty state
-  if (!customerData || customerData.data.length === 0) {
+  if (!safeCustomerData.data || safeCustomerData.data.length === 0) {
     return (
       <Card className='w-full rounded-2xl border border-gray-100 bg-white shadow-sm'>
         <CardHeader className='flex flex-row items-center justify-between pb-4'>
@@ -77,7 +81,7 @@ export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListCo
         <MoreVertical className='h-4 w-4 text-gray-600' />
       </CardHeader>
       <CardContent className='space-y-5 px-6 pb-6'>
-        {customerData.data.slice(0, 5).map((customer: KonsumenData, index: number) => (
+        {safeCustomerData.data.slice(0, 5).map((customer: KonsumenData, index: number) => (
           <div key={customer.id || index} className='flex items-center gap-4'>
             <Avatar className='h-12 w-12 flex-shrink-0'>
               <AvatarFallback className='bg-gray-400 text-base font-medium text-white'>
