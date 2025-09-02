@@ -26,16 +26,21 @@ const getProspectColor = (prospectName: string | null) => {
   }
 };
 
-export const RingkasanPenjualanComponent = () => {
+interface RingkasanPenjualanComponentProps {
+  filterParams?: { created_id?: number };
+}
+
+export const RingkasanPenjualanComponent = ({ filterParams = {} }: RingkasanPenjualanComponentProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('bulanan');
 
-  // Get ringkasan penjualan data based on selected period
+  // Get ringkasan penjualan data based on selected period with filter
   const {
     data: ringkasanData,
     isLoading,
     error
   } = useAnalisaRingkasanPenjualan({
-    filter: selectedPeriod
+    filter: selectedPeriod,
+    ...filterParams
   });
 
   // Transform API data to chart format and metrics

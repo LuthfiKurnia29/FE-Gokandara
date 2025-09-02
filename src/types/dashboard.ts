@@ -106,6 +106,7 @@ export interface TransaksiByPropertiResponse {
 // Dashboard query parameters
 export interface DashboardQueryParams {
   year?: number;
+  created_id?: number;
 }
 
 // Dashboard props interface for components
@@ -116,6 +117,7 @@ export interface DashboardProps {
   konsumenByProspek?: KonsumenByProspekResponse;
   salesOverview?: SalesOverviewResponse;
   transaksiByProperti?: TransaksiByPropertiResponse;
+  filterParams?: DashboardQueryParams;
   isLoading: {
     followUpToday: boolean;
     followUpTomorrow: boolean;

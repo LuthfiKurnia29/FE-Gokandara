@@ -18,16 +18,21 @@ const chartConfig = {
 
 type TimePeriod = 'harian' | 'mingguan' | 'bulanan';
 
-export const OrderChartComponent = () => {
+interface OrderChartComponentProps {
+  filterParams?: { created_id?: number };
+}
+
+export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('bulanan');
 
-  // Get statistik pemesanan data based on selected period
+  // Get statistik pemesanan data based on selected period with filter
   const {
     data: statistikData,
     isLoading,
     error
   } = useAnalisaStatistikPemesanan({
-    filter: selectedPeriod
+    filter: selectedPeriod,
+    ...filterParams
   });
 
   // Transform API data to chart format

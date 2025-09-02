@@ -5,13 +5,17 @@ import { memo } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useNewKonsumen } from '@/services/konsumen';
+import { useAnalisaNewKonsumen } from '@/services/analisa';
 import { KonsumenData } from '@/types/konsumen';
 
 import { MoreVertical, Plus } from 'lucide-react';
 
-export const CustomerListComponent = memo(() => {
-  const { data: customerData, isLoading, error } = useNewKonsumen();
+interface CustomerListComponentProps {
+  filterParams?: { created_id?: number };
+}
+
+export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListComponentProps) => {
+  const { data: customerData, isLoading, error } = useAnalisaNewKonsumen(filterParams);
 
   // Show loading state
   if (isLoading) {
@@ -52,7 +56,7 @@ export const CustomerListComponent = memo(() => {
   }
 
   // Show empty state
-  if (!customerData || customerData.length === 0) {
+  if (!customerData || customerData.data.length === 0) {
     return (
       <Card className='w-full rounded-2xl border border-gray-100 bg-white shadow-sm'>
         <CardHeader className='flex flex-row items-center justify-between pb-4'>
@@ -73,7 +77,7 @@ export const CustomerListComponent = memo(() => {
         <MoreVertical className='h-4 w-4 text-gray-600' />
       </CardHeader>
       <CardContent className='space-y-5 px-6 pb-6'>
-        {customerData.slice(0, 5).map((customer: KonsumenData, index: number) => (
+        {customerData.data.slice(0, 5).map((customer: KonsumenData, index: number) => (
           <div key={customer.id || index} className='flex items-center gap-4'>
             <Avatar className='h-12 w-12 flex-shrink-0'>
               <AvatarFallback className='bg-gray-400 text-base font-medium text-white'>

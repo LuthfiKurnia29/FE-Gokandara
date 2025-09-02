@@ -94,6 +94,9 @@ const columns = [
 
 // Compact Target Table Component for Dashboard
 const CompactTargetTable = ({ dashboardData }: ComponentWithDashboardProps) => {
+  // Extract filter parameters from dashboard data context
+  const filterParams = dashboardData?.filterParams || {};
+
   return (
     <PaginateTable
       columns={columns}
@@ -101,7 +104,7 @@ const CompactTargetTable = ({ dashboardData }: ComponentWithDashboardProps) => {
       id='target-dashboard'
       perPage={10}
       queryKey={['/target', 'dashboard']}
-      payload={{ include: 'role' }}
+      payload={{ ...filterParams, include: 'role' }}
       Plugin={() => null} // No plugin/button
     />
   );

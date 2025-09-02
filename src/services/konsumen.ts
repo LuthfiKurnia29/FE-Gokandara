@@ -111,13 +111,14 @@ export const useProspekList = () => {
 export const konsumenService = {
   // Konsumen fetch service
   getKonsumen: async (params: UseKonsumenListParams = {}): Promise<KonsumenResponse> => {
-    const { search = '', page = 1, per_page = 12 } = params;
+    const { search = '', page = 1, per_page = 12, created_id } = params;
 
     const response = await axios.get<KonsumenResponse>('/konsumen', {
       params: {
         search,
         page,
         per_page,
+        ...(created_id && { created_id }),
         with: 'prospek,project,refrensi' // Load relations
       }
     });
@@ -126,9 +127,11 @@ export const konsumenService = {
   },
 
   // Get new konsumen for dashboard
-  getNewKonsumen: async (): Promise<KonsumenData[]> => {
+  getNewKonsumen: async (params: UseKonsumenListParams = {}): Promise<KonsumenData[]> => {
     try {
-      const response = await axios.get<{ data: KonsumenData[] } | KonsumenData[]>('/get-new-konsumen');
+      const response = await axios.get<{ data: KonsumenData[] } | KonsumenData[]>('/get-new-konsumen', {
+        params
+      });
 
       // Handle different response formats
       if (
@@ -294,10 +297,10 @@ export const useAllKonsumen = () => {
   });
 };
 
-export const useNewKonsumen = () => {
+export const useNewKonsumen = (params: UseKonsumenListParams = {}) => {
   return useQuery({
-    queryKey: ['new-konsumen'],
-    queryFn: () => konsumenService.getNewKonsumen(),
+    queryKey: ['new-konsumen', params],
+    queryFn: () => konsumenService.getNewKonsumen(params),
     staleTime: 30 * 1000, // 30 seconds
     cacheTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,

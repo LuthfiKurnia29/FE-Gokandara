@@ -79,4 +79,5 @@ export interface UseKonsumenListParams {
   search?: string;
   page?: number;
   per_page?: number;
+  created_id?: number;
 }

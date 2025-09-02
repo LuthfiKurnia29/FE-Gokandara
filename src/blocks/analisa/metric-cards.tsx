@@ -67,10 +67,14 @@ const StatCard = React.memo(
 
 StatCard.displayName = 'StatCard';
 
-export const AnalysisMetricCards = () => {
-  // Get followup data for today and tomorrow
-  const followupToday = useAnalisaFollowup({ waktu: 'today' });
-  const followupTomorrow = useAnalisaFollowup({ waktu: 'tomorrow' });
+interface AnalysisMetricCardsProps {
+  filterParams?: { created_id?: number };
+}
+
+export const AnalysisMetricCards = ({ filterParams = {} }: AnalysisMetricCardsProps) => {
+  // Get followup data for today and tomorrow with filter
+  const followupToday = useAnalisaFollowup({ waktu: 'today', ...filterParams });
+  const followupTomorrow = useAnalisaFollowup({ waktu: 'tomorrow', ...filterParams });
 
   const stats = [
     {

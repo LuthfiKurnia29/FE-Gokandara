@@ -6,14 +6,18 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getRealisasi } from '@/services/realisasi';
 import { useQuery } from '@tanstack/react-query';
 
-const RealisasiComponent = React.memo(() => {
+interface RealisasiComponentProps {
+  filterParams?: { created_id?: number };
+}
+
+const RealisasiComponent = React.memo(({ filterParams = {} }: RealisasiComponentProps) => {
   const {
     data: realisasiData,
     isLoading,
     error
   } = useQuery({
-    queryKey: ['realisasi'],
-    queryFn: getRealisasi
+    queryKey: ['realisasi', filterParams],
+    queryFn: () => getRealisasi(filterParams)
   });
 
   const calculateProgress = (current: number, target: number): number => {

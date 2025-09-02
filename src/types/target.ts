@@ -68,5 +68,6 @@ export interface UseTargetListParams {
   perPage?: number;
   search?: string;
   role_id?: number;
+  created_id?: number;
   include?: string[];
 }

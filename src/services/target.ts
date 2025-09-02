@@ -16,6 +16,7 @@ export const targetService = {
     perPage = 10,
     search = '',
     role_id,
+    created_id,
     include
   }: UseTargetListParams = {}): Promise<TargetResponse> => {
     const params = new URLSearchParams({
@@ -23,6 +24,7 @@ export const targetService = {
       per_page: perPage.toString(),
       ...(search && { search }),
       ...(role_id && { role_id: role_id.toString() }),
+      ...(created_id && { created_id: created_id.toString() }),
       ...(include && include.length > 0 && { include: include.join(',') })
     });
 
@@ -68,11 +70,18 @@ export const targetService = {
 };
 
 // Query hooks
-export const useTargetList = ({ page = 1, perPage = 10, search = '', role_id, include }: UseTargetListParams = {}) => {
+export const useTargetList = ({
+  page = 1,
+  perPage = 10,
+  search = '',
+  role_id,
+  created_id,
+  include
+}: UseTargetListParams = {}) => {
   return useQuery({
-    queryKey: ['/target', { page, perPage, search, role_id, include }],
+    queryKey: ['/target', { page, perPage, search, role_id, created_id, include }],
     queryFn: (): Promise<TargetResponse> => {
-      return targetService.getList({ page, perPage, search, role_id, include });
+      return targetService.getList({ page, perPage, search, role_id, created_id, include });
     }
   });
 };

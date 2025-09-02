@@ -18,16 +18,21 @@ const chartConfig = {
 
 type TimePeriod = 'harian' | 'mingguan' | 'bulanan';
 
-export const AreaChartComponent = () => {
+interface AreaChartComponentProps {
+  filterParams?: { created_id?: number };
+}
+
+export const AreaChartComponent = ({ filterParams = {} }: AreaChartComponentProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('bulanan');
 
-  // Get statistik penjualan data based on selected period
+  // Get statistik penjualan data based on selected period with filter
   const {
     data: statistikData,
     isLoading,
     error
   } = useAnalisaStatistikPenjualan({
-    filter: selectedPeriod
+    filter: selectedPeriod,
+    ...filterParams
   });
 
   // Transform API data to chart format
