@@ -5,6 +5,8 @@ import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFollowUpHistoryByKonsumen } from '@/services/konsumen';
+import { FollowUpHistoryItem } from '@/types/followUpHistory';
 import { KonsumenData } from '@/types/konsumen';
 
 import { Calendar, Clock, MapPin, Phone, User } from 'lucide-react';
@@ -17,65 +19,18 @@ interface HistoryFollowUpProps {
 export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose }: HistoryFollowUpProps) {
   if (!konsumen) return null;
 
-  // Mock data untuk history follow up (akan diganti dengan data dari backend nanti)
-  const followUpHistory = [
-    {
-      id: 1,
-      tanggal: '2024-12-25T14:30:00',
-      materi: 'Penawaran unit A1',
-      status: 'Scheduled',
-      catatan: 'Konsumen tertarik dengan unit A1, akan follow up untuk penawaran detail'
-    },
-    {
-      id: 2,
-      tanggal: '2024-12-20T10:00:00',
-      materi: 'Kunjungan ke lokasi',
-      status: 'Completed',
-      catatan: 'Konsumen sudah mengunjungi lokasi properti, memberikan feedback positif'
-    },
-    {
-      id: 3,
-      tanggal: '2024-12-15T16:45:00',
-      materi: 'Presentasi produk',
-      status: 'Completed',
-      catatan: 'Memberikan presentasi lengkap tentang properti dan fasilitas'
-    },
-    {
-      id: 4,
-      tanggal: '2024-12-10T09:15:00',
-      materi: 'Telepon follow up',
-      status: 'Completed',
-      catatan: 'Menghubungi konsumen untuk konfirmasi jadwal kunjungan ke lokasi properti'
-    },
-    {
-      id: 5,
-      tanggal: '2024-12-05T13:20:00',
-      materi: 'Email penawaran',
-      status: 'Completed',
-      catatan: 'Mengirim email penawaran lengkap dengan brosur dan spesifikasi unit'
-    },
-    {
-      id: 6,
-      tanggal: '2024-12-01T11:30:00',
-      materi: 'Meeting awal',
-      status: 'Completed',
-      catatan: 'Pertemuan pertama dengan konsumen, menjelaskan overview proyek dan unit yang tersedia'
-    },
-    {
-      id: 7,
-      tanggal: '2024-11-28T15:45:00',
-      materi: 'WhatsApp follow up',
-      status: 'Completed',
-      catatan: 'Follow up via WhatsApp untuk mengingatkan jadwal meeting yang sudah dijadwalkan'
-    },
-    {
-      id: 8,
-      tanggal: '2024-11-25T10:00:00',
-      materi: 'Konsultasi finansial',
-      status: 'Completed',
-      catatan: 'Memberikan konsultasi tentang skema pembayaran dan ketersediaan unit sesuai budget'
-    }
-  ];
+  // Get follow-up history from API
+  const { data: followUpHistoryData, isLoading, error } = useFollowUpHistoryByKonsumen(konsumen.id);
+
+  // Transform API data to match component expectations
+  const followUpHistory =
+    followUpHistoryData?.data?.map((item: FollowUpHistoryItem) => ({
+      id: item.id,
+      tanggal: item.followup_date,
+      materi: item.followup_note,
+      status: item.status === 1 ? 'Completed' : item.status === 0 ? 'Scheduled' : 'Cancelled',
+      catatan: item.followup_result
+    })) || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -159,12 +114,25 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
           <div className='space-y-4'>
             <div className='flex items-center justify-between'>
               <h3 className='text-lg font-medium text-gray-900'>Riwayat Follow Up</h3>
-              <Button size='sm' className='bg-orange-500 text-white hover:bg-orange-600'>
-                + Tambah Follow Up
-              </Button>
             </div>
 
-            {followUpHistory.length === 0 ? (
+            {/* Loading State */}
+            {Boolean(isLoading) ? (
+              <Card className='border-dashed border-gray-300 bg-gray-50'>
+                <CardContent className='flex flex-col items-center justify-center py-8'>
+                  <div className='h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent'></div>
+                  <h3 className='mt-2 text-sm font-medium text-gray-900'>Memuat riwayat follow up...</h3>
+                </CardContent>
+              </Card>
+            ) : error ? (
+              <Card className='border-dashed border-red-300 bg-red-50'>
+                <CardContent className='flex flex-col items-center justify-center py-8'>
+                  <Clock className='h-12 w-12 text-red-400' />
+                  <h3 className='mt-2 text-sm font-medium text-red-900'>Gagal memuat riwayat follow up</h3>
+                  <p className='mt-1 text-sm text-red-500'>Silakan coba lagi nanti</p>
+                </CardContent>
+              </Card>
+            ) : followUpHistory.length === 0 ? (
               <Card className='border-dashed border-gray-300 bg-gray-50'>
                 <CardContent className='flex flex-col items-center justify-center py-8'>
                   <Clock className='h-12 w-12 text-gray-400' />
@@ -174,27 +142,28 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
               </Card>
             ) : (
               <div className='space-y-3 pb-6'>
-                {followUpHistory.map((item) => (
-                  <Card key={item.id} className='border border-gray-200 shadow-sm'>
-                    <CardContent className='p-4'>
-                      <div className='flex items-start justify-between'>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2'>
-                            <h4 className='font-medium text-gray-900'>{item.materi}</h4>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
-                                item.status
-                              )}`}>
-                              {item.status}
-                            </span>
+                {followUpHistory.map(
+                  (item: { id: number; tanggal: string; materi: string; status: string; catatan: string }) => (
+                    <Card key={item.id} className='border border-gray-200 shadow-sm'>
+                      <CardContent className='p-4'>
+                        <div className='flex items-start justify-between'>
+                          <div className='flex-1'>
+                            <div className='flex items-center gap-2'>
+                              <h4 className='font-medium text-gray-900'>{item.materi}</h4>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                                  item.status
+                                )}`}>
+                                {item.status}
+                              </span>
+                            </div>
+                            <div className='mt-1 flex items-center gap-2 text-sm text-gray-600'>
+                              <Calendar className='h-4 w-4' />
+                              <span>{formatDateTime(item.tanggal)}</span>
+                            </div>
+                            {item.catatan && <p className='mt-2 text-sm text-gray-600'>{item.catatan}</p>}
                           </div>
-                          <div className='mt-1 flex items-center gap-2 text-sm text-gray-600'>
-                            <Calendar className='h-4 w-4' />
-                            <span>{formatDateTime(item.tanggal)}</span>
-                          </div>
-                          {item.catatan && <p className='mt-2 text-sm text-gray-600'>{item.catatan}</p>}
-                        </div>
-                        {/* <div className='ml-4 flex gap-2'>
+                          {/* <div className='ml-4 flex gap-2'>
                           <Button variant='outline' size='sm'>
                             Edit
                           </Button>
@@ -202,10 +171,11 @@ export const HistoryFollowUp = memo(function HistoryFollowUp({ konsumen, onClose
                             Hapus
                           </Button>
                         </div> */}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
               </div>
             )}
           </div>

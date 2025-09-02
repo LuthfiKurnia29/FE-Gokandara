@@ -1,4 +1,5 @@
 import axios from '@/lib/axios';
+import { FollowUpHistoryResponse } from '@/types/followUpHistory';
 import {
   CreateKonsumenData,
   KonsumenApiResponse,
@@ -259,6 +260,16 @@ export const konsumenService = {
   // Delete konsumen
   deleteKonsumen: async (id: number): Promise<void> => {
     await axios.delete(`/konsumen/${id}`);
+  },
+
+  // Get follow-up history by konsumen ID
+  getFollowUpHistoryByKonsumen: async (konsumenId: number): Promise<FollowUpHistoryResponse> => {
+    const response = await axios.get<FollowUpHistoryResponse>('/list-follow-up-by-konsumen', {
+      params: {
+        konsumen_id: konsumenId
+      }
+    });
+    return response.data;
   }
 };
 
@@ -345,5 +356,17 @@ export const useDeleteKonsumen = () => {
       // Invalidate and refetch konsumen list
       queryClient.invalidateQueries({ queryKey: ['/konsumen'] });
     }
+  });
+};
+
+// Hook for getting follow-up history by konsumen ID
+export const useFollowUpHistoryByKonsumen = (konsumenId: number | null) => {
+  return useQuery({
+    queryKey: ['/list-followup-by-konsumen', konsumenId],
+    queryFn: () => konsumenService.getFollowUpHistoryByKonsumen(konsumenId!),
+    enabled: !!konsumenId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true
   });
 };
