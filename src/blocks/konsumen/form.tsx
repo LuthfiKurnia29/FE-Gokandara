@@ -339,6 +339,18 @@ export const KonsumenForm = memo(function KonsumenForm({
 
   const masterDataError = getMasterDataErrorMessage();
 
+  useEffect(() => {
+    if (errors.ktp_number || errors.phone || errors.name || errors.address || errors.description) {
+      setActiveTab('basic');
+    }
+    if (errors.refrensi_id || errors.kesiapan_dana || errors.prospek_id) {
+      setActiveTab('preferensi');
+    }
+    if (errors.project_id || errors.materi_fu_1 || errors.tgl_fu_1 || errors.materi_fu_2 || errors.tgl_fu_2) {
+      setActiveTab('followup');
+    }
+  }, [errors]);
+
   return (
     <div className='flex h-full w-full flex-col'>
       <form onSubmit={handleSubmit(onFormSubmit)} className='flex h-full w-full flex-col'>
@@ -538,7 +550,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                             allowMultiple={false}
                             maxFiles={1}
                             disabled={isLoading}
-                            initialFiles={existingData?.gambar_url ? [existingData.gambar_url] : []}
+                            initialFiles={existingData?.gambar_url ? [existingData.gambar_url] : uploadedFiles}
                           />
                           {errors.gambar && <p className='text-sm text-red-600'>{errors.gambar.message}</p>}
                           {!selectedId && uploadedFiles.length === 0 && (
