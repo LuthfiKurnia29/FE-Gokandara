@@ -26,6 +26,7 @@ import {
   useDashboardSalesOverview,
   useDashboardTransaksiByProperti
 } from '@/services/dashboard';
+import { useDashboardTop3Leaderboard } from '@/services/leaderboard';
 
 import { RealisasiComponent } from '../analisa/realisasi';
 import { Filter, X } from 'lucide-react';
@@ -87,6 +88,7 @@ const HomePage = React.memo(() => {
   const { data: salesOverviewData, isLoading: isLoadingSalesOverview } = useDashboardSalesOverview(filterParams);
   const { data: transaksiByPropertiData, isLoading: isLoadingTransaksiByProperti } =
     useDashboardTransaksiByProperti(filterParams);
+  const { isLoading: isLoadingTopSales } = useDashboardTop3Leaderboard(filterParams);
 
   // Pass dashboard data to components via props
   const dashboardProps = {
@@ -103,7 +105,8 @@ const HomePage = React.memo(() => {
       newKonsumens: isLoadingNewKonsumens,
       konsumenByProspek: isLoadingKonsumenByProspek,
       salesOverview: isLoadingSalesOverview,
-      transaksiByProperti: isLoadingTransaksiByProperti
+      transaksiByProperti: isLoadingTransaksiByProperti,
+      topSales: isLoadingTopSales
     }
   };
 

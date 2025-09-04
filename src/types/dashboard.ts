@@ -107,6 +107,8 @@ export interface TransaksiByPropertiResponse {
 export interface DashboardQueryParams {
   year?: number;
   created_id?: number;
+  dateStart?: string;
+  dateEnd?: string;
 }
 
 // Dashboard props interface for components
@@ -125,6 +127,7 @@ export interface DashboardProps {
     konsumenByProspek: boolean;
     salesOverview: boolean;
     transaksiByProperti: boolean;
+    topSales: boolean;
   };
 }
 

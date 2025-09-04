@@ -30,6 +30,19 @@ export interface LeaderboardItem {
   total_revenue?: number;
 }
 
+// Top 3 Leaderboard data structure based on API response
+export interface Top3LeaderboardItem {
+  sales_id: number;
+  sales_name: string;
+  sales_email: string;
+  sales_nip: string;
+  total_target: number;
+  total_goal: number;
+  total_revenue: number;
+  total_leads: number;
+  target_percentage: number;
+}
+
 export interface LeaderboardResponse {
   current_page: number;
   data: LeaderboardItem[];
