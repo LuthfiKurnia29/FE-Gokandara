@@ -13,7 +13,7 @@ import RealisasiCard from '@/blocks/home/realisasi-card';
 import RingkasanCard from '@/blocks/home/ringkasan-card';
 import TopSalesCard from '@/blocks/home/top-sales-card';
 import TotalOmzetCard from '@/blocks/home/total-omzet-card';
-import UnitMetrics from '@/blocks/home/unit-metrics';
+// import UnitMetrics from '@/blocks/home/unit-metrics';
 import { PageTitle } from '@/components/page-title';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -193,13 +193,13 @@ const HomePage = React.memo(() => {
                 <TopSalesCard dashboardData={dashboardProps} />
               </CardContent>
             </Card>
-            <div className='mt-4'>
+{/*             <div className='mt-4'>
               <Card className='border-gray-200 shadow-sm'>
                 <CardContent className='p-4'>
                   <UnitMetrics dashboardData={dashboardProps} />
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
           </div>
         </div>
 
