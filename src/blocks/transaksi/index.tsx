@@ -303,7 +303,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   };
 
   const canUpdateToNegotiation = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Pending';
+    return (canChangeStatus() || userRoleId === 2) && currentStatus === 'Pending';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
@@ -551,7 +551,7 @@ const PenjualanPage = memo(function PenjualanPage() {
   };
 
   const canUpdateToNegotiation = (currentStatus: string) => {
-    return canChangeStatus() && currentStatus === 'Pending';
+    return (canChangeStatus() || userRoleId === 2) && currentStatus === 'Pending';
   };
 
   const canUpdateToApproved = (currentStatus: string) => {
