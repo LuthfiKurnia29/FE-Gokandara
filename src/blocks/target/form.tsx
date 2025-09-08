@@ -123,8 +123,8 @@ export const TargetForm = memo(function TargetForm({ target, onSubmit, onCancel,
   const handleSubmit = (data: TargetFormData) => {
     const submitData: CreateTargetData = {
       role_id: data.role_id,
-      tanggal_awal: data.tanggal_awal,
-      tanggal_akhir: data.tanggal_akhir,
+      tanggal_awal: moment(data.tanggal_awal).format('YYYY-MM-DD HH:mm:ss'),
+      tanggal_akhir: moment(data.tanggal_akhir).format('YYYY-MM-DD HH:mm:ss'),
       min_penjualan: uncurrency(data.min_penjualan),
       hadiah: data.hadiah
     };
