@@ -267,9 +267,7 @@ const KonsumenPage = memo(function KonsumenPage() {
                       variant='destructive'>
                       <Trash className='mr-2 h-4 w-4' />
                       {userRole.toLowerCase() === 'sales' ||
-                      userRole.toLowerCase() === 'supervisor' ||
-                      userRoleId === 3 ||
-                      userRoleId === 2
+                      userRoleId === 3
                         ? 'Ajukan Hapus'
                         : 'Delete'}
                     </DropdownMenuItem>
