@@ -482,6 +482,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                         Nomor Telepon *
                       </Label>
                       <Input
+                        type="number"
                         id='phone'
                         {...register('phone')}
                         className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
