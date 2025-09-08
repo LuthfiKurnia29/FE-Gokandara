@@ -298,9 +298,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     return (
       userRole === 'Administrator' ||
       userRole === 'Admin' ||
-      userRole === 'Supervisor' ||
-      userRoleId === 1 ||
-      userRoleId === 2
+      userRoleId === 1
     );
   };
 
