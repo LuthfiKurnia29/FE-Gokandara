@@ -536,9 +536,7 @@ const PenjualanPage = memo(function PenjualanPage() {
     return (
       userRole === 'Administrator' ||
       userRole === 'Admin' ||
-      userRole === 'Supervisor' ||
-      userRoleId === 1 ||
-      userRoleId === 2
+      userRoleId === 1
     );
   };
 
@@ -547,8 +545,10 @@ const PenjualanPage = memo(function PenjualanPage() {
       userRole === 'Administrator' ||
       userRole === 'Admin' ||
       userRole === 'Supervisor' ||
+      userRole === 'Telemarketing' ||
       userRoleId === 1 ||
-      userRoleId === 2
+      userRoleId === 2 ||
+      userRoleId === 5
     );
   };
 
