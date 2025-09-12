@@ -16,6 +16,7 @@ export interface UserData {
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
+  enc_pw?: string;
 }
 
 // Enhanced interface with optional relations
