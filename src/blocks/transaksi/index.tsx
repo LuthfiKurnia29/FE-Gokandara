@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
-import { usePermissions } from '@/services/auth';
+import { useCurrentUser, usePermissions } from '@/services/auth';
 import {
   useCreatePenjualan,
   useDeletePenjualan,
@@ -295,11 +295,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const userId = userData?.user?.id || 0;
 
   const canChangeStatus = () => {
-    return (
-      userRole === 'Administrator' ||
-      userRole === 'Admin' ||
-      userRoleId === 1
-    );
+    return userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1;
   };
 
   const canUpdateToNegotiation = (currentStatus: string) => {
@@ -531,11 +527,7 @@ const PenjualanPage = memo(function PenjualanPage() {
   const userId = userData?.user?.id || 0;
 
   const canChangeStatus = () => {
-    return (
-      userRole === 'Administrator' ||
-      userRole === 'Admin' ||
-      userRoleId === 1
-    );
+    return userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1;
   };
 
   const canSeeFilterButton = () => {
@@ -645,6 +637,19 @@ const PenjualanPage = memo(function PenjualanPage() {
 
   const isFormLoading = createPenjualan.isPending;
 
+  // Get current user to check role
+  const { data: currentUser } = useCurrentUser();
+
+  // Check if current user is Telemarketing
+  const isTelemarketing = useMemo(() => {
+    if (!currentUser?.roles) return false;
+    // Check if user has Telemarketing role based on roles array
+    return currentUser.roles.some(
+      (userRole) =>
+        userRole.role.name.toLowerCase() === 'telemarketing' || userRole.role.code.toLowerCase() === 'telemarketing'
+    );
+  }, [currentUser]);
+
   return (
     <section className='p-4'>
       <PageTitle title='Penjualan' />
@@ -663,7 +668,7 @@ const PenjualanPage = memo(function PenjualanPage() {
           ...(selectedMemberId && { created_id: selectedMemberId })
         }}
         Plugin={() => (
-          <div className='flex items-center gap-2'>
+          <div className='flex flex-wrap items-center justify-end gap-2'>
             {canSeeFilterButton() && (
               <div className='flex items-center gap-2'>
                 {selectedMemberId && (
@@ -684,10 +689,12 @@ const PenjualanPage = memo(function PenjualanPage() {
                 </Button>
               </div>
             )}
-            <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
-              <Plus />
-              Tambah Transaksi
-            </Button>
+            {!isTelemarketing && (
+              <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+                <Plus />
+                Tambah Transaksi
+              </Button>
+            )}
           </div>
         )}
       />

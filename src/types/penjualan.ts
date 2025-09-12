@@ -33,6 +33,7 @@ export interface PenjualanData {
   status: PenjualanStatus;
   created_at: string;
   updated_at: string;
+  created_id: number;
 }
 
 // Enhanced interface with optional relations

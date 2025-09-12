@@ -1,15 +1,17 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCurrentUser } from '@/services/auth';
 import { useAllKonsumen } from '@/services/konsumen';
 import { useAllTipe, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti, usePropertyById } from '@/services/properti';
+import { useSpvSalesUsers } from '@/services/user';
 import { KonsumenData } from '@/types/konsumen';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +24,8 @@ import { z } from 'zod';
 const transaksiSchema = z.object({
   konsumen_id: z.string().min(1, 'Konsumen harus dipilih'),
   properti_id: z.string().min(1, 'Properti harus dipilih'),
-  tipe_id: z.string().min(1, 'Tipe harus dipilih')
+  tipe_id: z.string().min(1, 'Tipe harus dipilih'),
+  created_id: z.string()
 });
 
 type TransaksiFormData = z.infer<typeof transaksiSchema> & {
@@ -50,7 +53,7 @@ const PropertyTypeModal = ({
 
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
-  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
+  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe(selectedProperti?.id);
 
   const { data: transactionData, isLoading: isLoadingTransaction } = usePenjualanById(selectedId || null, [
     'konsumen',
@@ -80,7 +83,8 @@ const PropertyTypeModal = ({
       konsumen_id: transactionData?.konsumen_id?.toString() || '',
       properti_id: transactionData?.properti_id?.toString() || '',
       tipe_id: transactionData?.tipe_id?.toString() || '',
-      diskon: transactionData?.diskon?.toString() || ''
+      diskon: transactionData?.diskon?.toString() || '',
+      created_id: transactionData?.created_id?.toString() || ''
     },
     mode: 'onChange'
   });
@@ -89,6 +93,7 @@ const PropertyTypeModal = ({
   const propertiId = watch('properti_id');
   const tipeId = watch('tipe_id');
   const isPropertiLocked = Boolean(defaultPropertiId);
+  const createdId = watch('created_id');
 
   // Preselect property when invoked from property page
   useEffect(() => {
@@ -191,7 +196,8 @@ const PropertyTypeModal = ({
       properti_id: propertiId,
       tipe_id: typeId || tipeId,
       diskon: '',
-      status: 'Negotiation' as const
+      status: 'Negotiation' as const,
+      created_id: createdId
     };
 
     if (onProceedToBooking) {
@@ -209,6 +215,30 @@ const PropertyTypeModal = ({
       selected: selectedType === tipe.id.toString()
     };
   });
+
+  const { data: currentUser } = useCurrentUser();
+
+  // Check if current user is Telemarketing
+  const isAdmin = useMemo(() => {
+    if (!currentUser?.roles) return false;
+    // Check if user has Telemarketing role based on roles array
+    return currentUser.roles.some(
+      (userRole) => userRole.role.name.toLowerCase() === 'admin' || userRole.role.code.toLowerCase() === 'adm'
+    );
+  }, [currentUser]);
+
+  const { data: spvSalesUsers, isLoading: isLoadingSpvSales, error: errorSpvSales } = useSpvSalesUsers();
+
+  // Safe options mapping for SPV/Sales users
+  const safeSpvSalesOptions = useMemo(() => {
+    if (!spvSalesUsers?.data || !Array.isArray(spvSalesUsers.data)) return [];
+    return spvSalesUsers.data
+      .filter((user) => user && user.id && user.name)
+      .map((user) => ({
+        value: user.id.toString(),
+        label: user.name
+      }));
+  }, [spvSalesUsers]);
 
   if (selectedId && isLoadingTransaction) {
     return (
@@ -256,6 +286,25 @@ const PropertyTypeModal = ({
         </div>
 
         <div className='px-4 pb-4'>
+          {/* Pengampu field - Only for Admin role */}
+          {isAdmin && (
+            <div className='space-y-2'>
+              <Label htmlFor='pengampu' className='font-medium text-gray-900'>
+                Pengampu *
+              </Label>
+              <Select
+                options={safeSpvSalesOptions}
+                value={createdId}
+                onChange={(value) => setValue('created_id', value as string)}
+                placeholder={isLoadingSpvSales ? 'Loading...' : 'Pilih pengampu'}
+                className='h-12 border-gray-300 focus:border-teal-500 focus:ring-teal-500'
+                disabled={isLoadingSpvSales}
+              />
+              {/* Hidden input to ensure form registration */}
+              <input type='hidden' {...register('created_id')} value={createdId || ''} />
+              {errors.created_id && <p className='text-sm text-red-600'>{errors.created_id.message}</p>}
+            </div>
+          )}
           <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
             <div className='space-y-1'>
               <Label htmlFor='konsumen' className='text-sm'>

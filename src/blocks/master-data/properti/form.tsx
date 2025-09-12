@@ -26,6 +26,10 @@ const propertiSchema = z.object({
   kelebihan: z.string().min(1, 'Kelebihan harus diisi').max(255, 'Kelebihan maksimal 255 karakter'),
   lokasi: z.string().min(1, 'Lokasi harus diisi').max(255, 'Lokasi maksimal 255 karakter'),
   harga: z.string().optional(),
+  // Multiple select fields
+  unit_ids: z.array(z.string()).optional(),
+  tipe_ids: z.array(z.string()).optional(),
+  blok_ids: z.array(z.string()).optional(),
   properti__gambars: z.array(z.any()).optional(),
   fasilitas: z
     .array(
@@ -119,6 +123,9 @@ export const PropertiForm = memo(function PropertiForm({
       kelebihan: '',
       lokasi: '',
       harga: '1',
+      unit_ids: [],
+      tipe_ids: [],
+      blok_ids: [],
       properti__gambars: [],
       fasilitas: [],
       daftar_harga: []
@@ -129,6 +136,9 @@ export const PropertiForm = memo(function PropertiForm({
   const harga = watch('harga');
   const daftarHarga = watch('daftar_harga') || [];
   const fasilitas = watch('fasilitas') || [];
+  const unitIds = watch('unit_ids') || [];
+  const tipeIds = watch('tipe_ids') || [];
+  const blokIds = watch('blok_ids') || [];
 
   const handleAddDaftarHarga = () => {
     const currentDaftarHarga = daftarHarga || [];
@@ -161,6 +171,9 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: existingData.kelebihan || '',
         lokasi: existingData.lokasi || '',
         harga: existingData.harga != null ? currency(existingData.harga) : '',
+        unit_ids: existingData.unit_ids ? existingData.unit_ids.map((id: number) => id.toString()) : [],
+        tipe_ids: existingData.tipe_ids ? existingData.tipe_ids.map((id: number) => id.toString()) : [],
+        blok_ids: existingData.blok_ids ? existingData.blok_ids.map((id: number) => id.toString()) : [],
         properti__gambars: [],
         fasilitas: existingData.fasilitas || [],
         daftar_harga: existingData.daftar_harga
@@ -185,6 +198,9 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: '',
         lokasi: '',
         harga: '',
+        unit_ids: [],
+        tipe_ids: [],
+        blok_ids: [],
         properti__gambars: [],
         fasilitas: [],
         daftar_harga: []
@@ -262,6 +278,9 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
+        unit_ids: data.unit_ids ? data.unit_ids.map((id) => parseInt(id)) : [],
+        tipe_ids: data.tipe_ids ? data.tipe_ids.map((id) => parseInt(id)) : [],
+        blok_ids: data.blok_ids ? data.blok_ids.map((id) => parseInt(id)) : [],
         // FIXED: Send existing images as files if no new files uploaded
         properti__gambars: filesToSubmit,
         fasilitas: data.fasilitas || [],
@@ -284,6 +303,9 @@ export const PropertiForm = memo(function PropertiForm({
         kelebihan: data.kelebihan.trim(),
         lokasi: data.lokasi.trim(),
         harga: hargaNumber,
+        unit_ids: data.unit_ids ? data.unit_ids.map((id) => parseInt(id)) : [],
+        tipe_ids: data.tipe_ids ? data.tipe_ids.map((id) => parseInt(id)) : [],
+        blok_ids: data.blok_ids ? data.blok_ids.map((id) => parseInt(id)) : [],
         properti__gambars: uploadedFiles.length > 0 ? uploadedFiles : [],
         fasilitas: data.fasilitas || [],
         daftar_harga: data.daftar_harga
@@ -308,6 +330,9 @@ export const PropertiForm = memo(function PropertiForm({
       kelebihan: '',
       lokasi: '',
       harga: '',
+      unit_ids: [],
+      tipe_ids: [],
+      blok_ids: [],
       properti__gambars: [],
       fasilitas: [],
       daftar_harga: []
@@ -367,7 +392,7 @@ export const PropertiForm = memo(function PropertiForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
-      <div className='max-h-[680px] overflow-y-auto'>
+      <div className='max-h-[600px] overflow-y-auto'>
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
           <div className='space-y-2'>
             <Label htmlFor='project_id'>Proyek *</Label>
@@ -426,6 +451,51 @@ export const PropertiForm = memo(function PropertiForm({
             />
             {errors.harga && <p className='text-sm text-red-600'>{errors.harga.message}</p>}
           </div> */}
+        </div>
+
+        {/* Multiple Select Fields */}
+        <div className='my-8 space-y-4'>
+          <h3 className='text-lg font-semibold'>Master Data Terkait</h3>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+            <div className='space-y-2'>
+              <Label>Unit</Label>
+              <Select
+                options={safeUnitOptions}
+                value={unitIds}
+                onChange={(value) => setValue('unit_ids', value as string[])}
+                placeholder={isLoadingUnit ? 'Loading...' : 'Pilih Unit'}
+                disabled={isLoadingUnit || isLoading}
+                multiple={true}
+              />
+              {errors.unit_ids && <p className='text-sm text-red-600'>{errors.unit_ids.message}</p>}
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Tipe</Label>
+              <Select
+                options={safeTipeOptions}
+                value={tipeIds}
+                onChange={(value) => setValue('tipe_ids', value as string[])}
+                placeholder={isLoadingTipe ? 'Loading...' : 'Pilih Tipe'}
+                disabled={isLoadingTipe || isLoading}
+                multiple={true}
+              />
+              {errors.tipe_ids && <p className='text-sm text-red-600'>{errors.tipe_ids.message}</p>}
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Blok</Label>
+              <Select
+                options={safeBlokOptions}
+                value={blokIds}
+                onChange={(value) => setValue('blok_ids', value as string[])}
+                placeholder={isLoadingBlok ? 'Loading...' : 'Pilih Blok'}
+                disabled={isLoadingBlok || isLoading}
+                multiple={true}
+              />
+              {errors.blok_ids && <p className='text-sm text-red-600'>{errors.blok_ids.message}</p>}
+            </div>
+          </div>
         </div>
 
         <div className='my-8 space-y-4'>

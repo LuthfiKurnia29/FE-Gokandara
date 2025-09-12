@@ -81,6 +81,24 @@ export const propertyService = {
       formData.append(`properti__gambars[${index}]`, file);
     });
 
+    if (data.unit_ids && data.unit_ids.length > 0) {
+      data.unit_ids.forEach((unit_id, index) => {
+        formData.append(`unit_ids[${index}]`, unit_id.toString());
+      });
+    }
+
+    if (data.tipe_ids && data.tipe_ids.length > 0) {
+      data.tipe_ids.forEach((tipe_id, index) => {
+        formData.append(`tipe_ids[${index}]`, tipe_id.toString());
+      });
+    }
+
+    if (data.blok_ids && data.blok_ids.length > 0) {
+      data.blok_ids.forEach((blok_id, index) => {
+        formData.append(`blok_ids[${index}]`, blok_id.toString());
+      });
+    }
+
     const response = await axios.post<PropertyApiResponse>('/properti', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -119,6 +137,24 @@ export const propertyService = {
     if (data.properti__gambars && data.properti__gambars.length > 0) {
       data.properti__gambars.forEach((file, index) => {
         formData.append(`properti__gambars[${index}]`, file);
+      });
+    }
+
+    if (data.unit_ids && data.unit_ids.length > 0) {
+      data.unit_ids.forEach((unit_id, index) => {
+        formData.append(`unit_ids[${index}]`, unit_id.toString());
+      });
+    }
+
+    if (data.tipe_ids && data.tipe_ids.length > 0) {
+      data.tipe_ids.forEach((tipe_id, index) => {
+        formData.append(`tipe_ids[${index}]`, tipe_id.toString());
+      });
+    }
+
+    if (data.blok_ids && data.blok_ids.length > 0) {
+      data.blok_ids.forEach((blok_id, index) => {
+        formData.append(`blok_ids[${index}]`, blok_id.toString());
       });
     }
 

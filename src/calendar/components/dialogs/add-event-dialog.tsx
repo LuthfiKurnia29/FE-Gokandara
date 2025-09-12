@@ -131,7 +131,10 @@ export function AddEventDialog({ children, startDate, startTime, defaultKonsumen
         </DialogHeader>
 
         <Form {...form}>
-          <form id='event-form' onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4 py-4'>
+          <form
+            id='event-form'
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='grid max-h-[500px] gap-4 overflow-y-auto py-4'>
             <FormField
               control={form.control}
               name='konsumen_id'

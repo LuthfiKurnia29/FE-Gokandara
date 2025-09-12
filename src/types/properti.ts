@@ -7,6 +7,9 @@ export interface PropertyData {
   kelebihan: string;
   lokasi: string;
   harga: number;
+  unit_ids?: number[];
+  tipe_ids?: number[];
+  blok_ids?: number[];
   created_at: string;
   updated_at: string;
   // Relations (optional when included)
@@ -72,6 +75,9 @@ export interface CreatePropertyData {
   kelebihan: string;
   lokasi: string;
   harga: number;
+  unit_ids?: number[];
+  tipe_ids?: number[];
+  blok_ids?: number[];
   properti__gambars: File[];
   daftar_harga?: PricingOption[]; // New optional field for multiple pricing options
   fasilitas?: Array<{
@@ -86,6 +92,9 @@ export interface UpdatePropertyData {
   kelebihan?: string;
   lokasi?: string;
   harga?: number;
+  unit_ids?: number[];
+  tipe_ids?: number[];
+  blok_ids?: number[];
   properti__gambars?: File[];
   daftar_harga?: PricingOption[];
   fasilitas?: Array<{

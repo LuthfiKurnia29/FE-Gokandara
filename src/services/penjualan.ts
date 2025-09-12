@@ -153,18 +153,30 @@ export const penjualanService = {
     return response.data.data || response.data || [];
   },
 
-  getAllBlok: async (): Promise<MasterDataItem[]> => {
-    const response = await axios.get('/all-blok');
+  getAllBlok: async (propertiId?: number): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-blok', {
+      params: {
+        properti_id: propertiId
+      }
+    });
     return response.data.data || response.data || [];
   },
 
-  getAllTipe: async (): Promise<MasterDataItem[]> => {
-    const response = await axios.get('/all-tipe');
+  getAllTipe: async (propertiId?: number): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-tipe', {
+      params: {
+        properti_id: propertiId
+      }
+    });
     return response.data.data || response.data || [];
   },
 
-  getAllUnit: async (): Promise<MasterDataItem[]> => {
-    const response = await axios.get('/all-unit');
+  getAllUnit: async (propertiId?: number): Promise<MasterDataItem[]> => {
+    const response = await axios.get('/all-unit', {
+      params: {
+        properti_id: propertiId
+      }
+    });
     return response.data.data || response.data || [];
   }
 };
@@ -227,28 +239,28 @@ export const useAllProperti = () => {
   });
 };
 
-export const useAllBlok = () => {
+export const useAllBlok = (propertiId?: number) => {
   return useQuery({
     queryKey: ['/all-blok'],
-    queryFn: penjualanService.getAllBlok,
+    queryFn: () => penjualanService.getAllBlok(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };
 
-export const useAllTipe = () => {
+export const useAllTipe = (propertiId?: number) => {
   return useQuery({
     queryKey: ['/all-tipe'],
-    queryFn: penjualanService.getAllTipe,
+    queryFn: () => penjualanService.getAllTipe(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
   });
 };
 
-export const useAllUnit = () => {
+export const useAllUnit = (propertiId?: number) => {
   return useQuery({
     queryKey: ['/all-unit'],
-    queryFn: penjualanService.getAllUnit,
+    queryFn: () => penjualanService.getAllUnit(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
   });
