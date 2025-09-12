@@ -112,9 +112,9 @@ const BookingForm = ({ initialData, selectedId, onBack, onSubmit }: BookingFormP
   // Fetch master data from APIs
   const { data: konsumenOptions = [], isLoading: isLoadingKonsumen } = useAllKonsumen();
   const { data: propertiOptions = [], isLoading: isLoadingProperti } = useAllProperti();
-  const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok();
-  const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit();
-  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe();
+  const { data: blokOptions = [], isLoading: isLoadingBlok } = useAllBlok(selectedProperti?.id);
+  const { data: unitOptions = [], isLoading: isLoadingUnit } = useAllUnit(selectedProperti?.id);
+  const { data: tipeOptions = [], isLoading: isLoadingTipe } = useAllTipe(selectedProperti?.id);
   const { data: skemaPembayaranOptions = [] } = useAllSkemaPembayaran();
 
   // Fetch transaction data by ID for editing
