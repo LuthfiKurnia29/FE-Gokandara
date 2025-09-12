@@ -140,6 +140,19 @@ export const PropertiForm = memo(function PropertiForm({
   const tipeIds = watch('tipe_ids') || [];
   const blokIds = watch('blok_ids') || [];
 
+  const safeTipeHargaOptions = tipeOptions
+    .filter((tipe) => tipeIds.includes(tipe.id.toString()))
+    .map((tipe) => ({
+      value: tipe.id.toString(),
+      label: tipe.name
+    }));
+  const safeUnitHargaOptions = unitOptions
+    .filter((unit) => unitIds.includes(unit.id.toString()))
+    .map((unit) => ({
+      value: unit.id.toString(),
+      label: unit.name
+    }));
+
   const handleAddDaftarHarga = () => {
     const currentDaftarHarga = daftarHarga || [];
     setValue('daftar_harga', [...currentDaftarHarga, { tipe_id: '', unit_id: '', harga: '' }]);
@@ -518,7 +531,7 @@ export const PropertiForm = memo(function PropertiForm({
                   <div className='space-y-2'>
                     <Label>Tipe *</Label>
                     <Select
-                      options={safeTipeOptions}
+                      options={safeTipeHargaOptions}
                       value={watch(`daftar_harga.${index}.tipe_id`)}
                       onChange={(value) => setValue(`daftar_harga.${index}.tipe_id`, value as string)}
                       placeholder='Pilih Tipe'
@@ -532,7 +545,7 @@ export const PropertiForm = memo(function PropertiForm({
                   <div className='space-y-2'>
                     <Label>Unit *</Label>
                     <Select
-                      options={safeUnitOptions}
+                      options={safeUnitHargaOptions}
                       value={watch(`daftar_harga.${index}.unit_id`)}
                       onChange={(value) => setValue(`daftar_harga.${index}.unit_id`, value as string)}
                       placeholder='Pilih Unit'
