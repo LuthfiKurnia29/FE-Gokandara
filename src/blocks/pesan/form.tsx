@@ -165,7 +165,12 @@ export const PesanForm = memo(function PesanForm({
             queryKey={['/user']}
             payload={{
               include: 'role',
-              roles: currentUser?.roles?.[0]?.role.name == 'Admin' ? ['Supervisor', 'Sales'] : ['Sales']
+              roles:
+                currentUser?.roles?.[0]?.role.name == 'Admin'
+                  ? ['Supervisor', 'Sales']
+                  : currentUser?.roles?.[0]?.role.name == 'Mitra'
+                    ? ['Admin']
+                    : ['Sales']
             }}
             massSelect={selectedUserId}
             onChangeMassSelect={setSelectedUserId}
