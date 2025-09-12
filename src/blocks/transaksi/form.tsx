@@ -11,7 +11,7 @@ import { useCurrentUser } from '@/services/auth';
 import { useAllKonsumen } from '@/services/konsumen';
 import { useAllTipe, usePenjualanById } from '@/services/penjualan';
 import { useAllProperti, usePropertyById } from '@/services/properti';
-import { useSpvSalesUsers } from '@/services/user';
+import { useSpvSalesMitraUsers } from '@/services/user';
 import { KonsumenData } from '@/types/konsumen';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -227,7 +227,7 @@ const PropertyTypeModal = ({
     );
   }, [currentUser]);
 
-  const { data: spvSalesUsers, isLoading: isLoadingSpvSales, error: errorSpvSales } = useSpvSalesUsers();
+  const { data: spvSalesUsers, isLoading: isLoadingSpvSales, error: errorSpvSales } = useSpvSalesMitraUsers();
 
   // Safe options mapping for SPV/Sales users
   const safeSpvSalesOptions = useMemo(() => {
