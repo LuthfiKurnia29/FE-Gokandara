@@ -211,7 +211,7 @@ const PropertyTypeModal = ({
       id: tipe.id.toString(),
       name: tipe.name,
       price: price,
-      features: ['Lorem ipsum dolor sit amet', 'Lorem ipsum dolor sit amet'],
+      features: [],
       selected: selectedType === tipe.id.toString()
     };
   });
