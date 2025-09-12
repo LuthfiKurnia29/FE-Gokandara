@@ -241,7 +241,7 @@ export const useAllProperti = () => {
 
 export const useAllBlok = (propertiId?: number) => {
   return useQuery({
-    queryKey: ['/all-blok'],
+    queryKey: propertiId ? ['/all-blok', propertiId] : ['/all-blok'],
     queryFn: () => penjualanService.getAllBlok(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
@@ -250,7 +250,7 @@ export const useAllBlok = (propertiId?: number) => {
 
 export const useAllTipe = (propertiId?: number) => {
   return useQuery({
-    queryKey: ['/all-tipe'],
+    queryKey: propertiId ? ['/all-tipe', propertiId] : ['/all-tipe'],
     queryFn: () => penjualanService.getAllTipe(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
@@ -259,7 +259,7 @@ export const useAllTipe = (propertiId?: number) => {
 
 export const useAllUnit = (propertiId?: number) => {
   return useQuery({
-    queryKey: ['/all-unit'],
+    queryKey: propertiId ? ['/all-unit', propertiId] : ['/all-unit'],
     queryFn: () => penjualanService.getAllUnit(propertiId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000 // 10 minutes
