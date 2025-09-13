@@ -59,222 +59,6 @@ const columnHelper = createColumnHelper<PenjualanWithRelations>();
 // Mapping from skema_pembayaran_id to skema name, updated inside component via hook
 let skemaPembayaranMap: Record<number, string> = {};
 
-const columns = [
-  columnHelper.accessor('no_transaksi', {
-    header: 'Order ID',
-    cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
-    meta: { style: { width: '100px' } }
-  }),
-  columnHelper.accessor((row) => (row as any).no_transaksi ?? '-', {
-    id: 'no_transaksi',
-    header: 'No. Transaksi',
-    cell: ({ getValue }) => {
-      const val = getValue() as number | string;
-      return <span className='font-mono text-sm'>{val}</span>;
-    },
-    meta: { style: { width: '140px' } }
-  }),
-  columnHelper.accessor('created_at', {
-    header: 'Waktu',
-    cell: ({ getValue }) => {
-      const date = new Date(getValue());
-      return (
-        <div className='flex flex-col'>
-          <span className='text-sm font-medium'>
-            {date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-          </span>
-          <span className='text-muted-foreground text-xs'>
-            {date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-      );
-    },
-    meta: { style: { width: '120px' } }
-  }),
-  columnHelper.accessor('konsumen.name', {
-    header: 'Konsumen',
-    cell: ({ row, getValue }) => {
-      const konsumen = row.original.konsumen;
-      return (
-        <div className='flex flex-col'>
-          <span className='font-medium'>{getValue() || konsumen?.name || '-'}</span>
-          {konsumen?.email && <span className='text-muted-foreground text-xs'>{konsumen.email}</span>}
-        </div>
-      );
-    },
-    meta: { style: { minWidth: '180px' } }
-  }),
-  columnHelper.display({
-    id: 'properti',
-    header: 'Properti',
-    cell: ({ row }) => {
-      const properti = row.original.properti;
-      return (
-        <div className='flex flex-col'>
-          <span className='font-medium'>{properti?.lokasi || '-'}</span>
-          {properti?.luas_bangunan && properti?.luas_tanah && (
-            <span className='text-muted-foreground text-xs'>
-              {properti.luas_bangunan}/{properti.luas_tanah}
-            </span>
-          )}
-        </div>
-      );
-    },
-    meta: { style: { minWidth: '180px' } }
-  }),
-  columnHelper.display({
-    id: 'lokasi',
-    header: 'Lokasi',
-    cell: ({ row }) => {
-      const properti = row.original.properti;
-      return <span className='text-sm'>{properti?.lokasi || '-'}</span>;
-    },
-    meta: { style: { minWidth: '200px' } }
-  }),
-  columnHelper.display({
-    id: 'harga_sebelum_diskon',
-    header: 'Harga (Sebelum Diskon)',
-    cell: ({ row }) => {
-      const properti = row.original.properti;
-      const diskon = row.original.diskon;
-      const tipeDiskon = row.original.tipe_diskon;
-      const grandTotal = row.original.grand_total;
-
-      // Calculate base price from grand_total and discount
-      let basePrice = grandTotal;
-      if (diskon && diskon > 0) {
-        if (tipeDiskon === 'percent') {
-          const discountPercent = Math.min(diskon, 100);
-          basePrice = grandTotal / (1 - discountPercent / 100);
-        } else if (tipeDiskon === 'fixed') {
-          basePrice = grandTotal + diskon;
-        }
-      }
-
-      return (
-        <div className='flex flex-col'>
-          <span className='font-medium text-green-600'>{formatRupiah(basePrice)}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '150px' } }
-  }),
-  columnHelper.display({
-    id: 'harga_sesudah_diskon',
-    header: 'Harga (Sesudah Diskon)',
-    cell: ({ row }) => {
-      const grandTotal = row.original.grand_total;
-
-      return (
-        <div className='flex flex-col'>
-          <span className='font-bold text-green-600'>{formatRupiah(grandTotal)}</span>
-        </div>
-      );
-    },
-    meta: { style: { width: '150px' } }
-  }),
-  columnHelper.accessor((row) => (row as any).skema_pembayaran_id ?? '-', {
-    id: 'skema_pembayaran_id',
-    header: 'Skema Pembayaran',
-    cell: ({ getValue }) => {
-      const skemaId = getValue() as number | '-';
-
-      if (skemaId === '-') {
-        return <Badge className='rounded-full bg-gray-500 px-3 py-2 text-white hover:bg-gray-600'>-</Badge>;
-      }
-
-      const skemaName = skemaPembayaranMap[Number(skemaId)] || `Skema ${skemaId}`;
-
-      // Default styling for all skema pembayaran
-      const style = 'bg-emerald-500 text-white hover:bg-emerald-600';
-
-      return <Badge className={`rounded-full px-3 py-2 ${style}`}>{skemaName}</Badge>;
-    },
-    meta: { style: { width: '160px' } }
-  }),
-  columnHelper.accessor('unit.name', {
-    header: 'Unit',
-    cell: ({ row, getValue }) => {
-      const unit = row.original.unit;
-      return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
-    },
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.display({
-    id: 'sales',
-    header: 'Sales',
-    cell: ({ row }) => {
-      return <span className='text-muted-foreground'>-</span>;
-    },
-    meta: { style: { width: '100px' } }
-  }),
-  columnHelper.accessor('blok.name', {
-    header: 'Blok',
-    cell: ({ row, getValue }) => {
-      const blok = row.original.blok;
-      return <span className='font-medium'>{getValue() || blok?.name || '-'}</span>;
-    },
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('tipe.name', {
-    header: 'Tipe',
-    cell: ({ row, getValue }) => {
-      const tipe = row.original.tipe;
-      return <span className='font-medium'>{getValue() || tipe?.name || '-'}</span>;
-    },
-    meta: { style: { width: '80px' } }
-  }),
-  columnHelper.accessor('status', {
-    header: 'Status',
-    cell: ({ getValue }) => {
-      const status = getValue();
-      const getStatusStyle = () => {
-        switch (status) {
-          case 'Approved':
-            return 'bg-green-500 text-white hover:bg-green-600';
-          case 'Pending':
-            return 'bg-orange-500 text-white hover:bg-orange-600';
-          case 'Negotiation':
-            return 'bg-blue-500 text-white hover:bg-blue-600';
-          case 'Rejected':
-            return 'bg-red-500 text-white hover:bg-red-600';
-          default:
-            return 'bg-gray-500 text-white hover:bg-gray-600';
-        }
-      };
-
-      const getStatusIcon = () => {
-        switch (status) {
-          case 'Approved':
-            return <CheckCircle className='h-3 w-3' />;
-          case 'Pending':
-            return <Clock className='h-3 w-3' />;
-          case 'Negotiation':
-            return <MessageSquare className='h-3 w-3' />;
-          case 'Rejected':
-            return <X className='h-3 w-3' />;
-          default:
-            return null;
-        }
-      };
-
-      return (
-        <Badge className={`text ${getStatusStyle()} flex items-center gap-1 rounded-full px-3 py-2`}>
-          {getStatusIcon()}
-          {status}
-        </Badge>
-      );
-    },
-    meta: { style: { width: '120px' } }
-  }),
-  columnHelper.display({
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => <ActionCell row={row} />,
-    meta: { style: { width: '80px' } }
-  })
-];
-
 const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const queryClient = useQueryClient();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
@@ -649,6 +433,226 @@ const PenjualanPage = memo(function PenjualanPage() {
         userRole.role.name.toLowerCase() === 'telemarketing' || userRole.role.code.toLowerCase() === 'telemarketing'
     );
   }, [currentUser]);
+
+  const columns = [
+    columnHelper.accessor('no_transaksi', {
+      header: 'Order ID',
+      cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
+      meta: { style: { width: '100px' } }
+    }),
+    columnHelper.accessor((row) => (row as any).no_transaksi ?? '-', {
+      id: 'no_transaksi',
+      header: 'No. Transaksi',
+      cell: ({ getValue }) => {
+        const val = getValue() as number | string;
+        return <span className='font-mono text-sm'>{val}</span>;
+      },
+      meta: { style: { width: '140px' } }
+    }),
+    columnHelper.accessor('created_at', {
+      header: 'Waktu',
+      cell: ({ getValue }) => {
+        const date = new Date(getValue());
+        return (
+          <div className='flex flex-col'>
+            <span className='text-sm font-medium'>
+              {date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
+            <span className='text-muted-foreground text-xs'>
+              {date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        );
+      },
+      meta: { style: { width: '120px' } }
+    }),
+    columnHelper.accessor('konsumen.name', {
+      header: 'Konsumen',
+      cell: ({ row, getValue }) => {
+        const konsumen = row.original.konsumen;
+        return (
+          <div className='flex flex-col'>
+            <span className='font-medium'>{getValue() || konsumen?.name || '-'}</span>
+            {konsumen?.email && <span className='text-muted-foreground text-xs'>{konsumen.email}</span>}
+          </div>
+        );
+      },
+      meta: { style: { minWidth: '180px' } }
+    }),
+    columnHelper.display({
+      id: 'properti',
+      header: 'Properti',
+      cell: ({ row }) => {
+        const properti = row.original.properti;
+        return (
+          <div className='flex flex-col'>
+            <span className='font-medium'>{properti?.lokasi || '-'}</span>
+            {properti?.luas_bangunan && properti?.luas_tanah && (
+              <span className='text-muted-foreground text-xs'>
+                {properti.luas_bangunan}/{properti.luas_tanah}
+              </span>
+            )}
+          </div>
+        );
+      },
+      meta: { style: { minWidth: '180px' } }
+    }),
+    columnHelper.display({
+      id: 'lokasi',
+      header: 'Lokasi',
+      cell: ({ row }) => {
+        const properti = row.original.properti;
+        return <span className='text-sm'>{properti?.lokasi || '-'}</span>;
+      },
+      meta: { style: { minWidth: '200px' } }
+    }),
+    columnHelper.display({
+      id: 'harga_sebelum_diskon',
+      header: 'Harga (Sebelum Diskon)',
+      cell: ({ row }) => {
+        const properti = row.original.properti;
+        const diskon = row.original.diskon;
+        const tipeDiskon = row.original.tipe_diskon;
+        const grandTotal = row.original.grand_total;
+
+        // Calculate base price from grand_total and discount
+        let basePrice = grandTotal;
+        if (diskon && diskon > 0) {
+          if (tipeDiskon === 'percent') {
+            const discountPercent = Math.min(diskon, 100);
+            basePrice = grandTotal / (1 - discountPercent / 100);
+          } else if (tipeDiskon === 'fixed') {
+            basePrice = grandTotal + diskon;
+          }
+        }
+
+        return (
+          <div className='flex flex-col'>
+            <span className='font-medium text-green-600'>{formatRupiah(basePrice)}</span>
+          </div>
+        );
+      },
+      meta: { style: { width: '150px' } }
+    }),
+    columnHelper.display({
+      id: 'harga_sesudah_diskon',
+      header: 'Harga (Sesudah Diskon)',
+      cell: ({ row }) => {
+        const grandTotal = row.original.grand_total;
+
+        return (
+          <div className='flex flex-col'>
+            <span className='font-bold text-green-600'>{formatRupiah(grandTotal)}</span>
+          </div>
+        );
+      },
+      meta: { style: { width: '150px' } }
+    }),
+    columnHelper.accessor((row) => (row as any).skema_pembayaran_id ?? '-', {
+      id: 'skema_pembayaran_id',
+      header: 'Skema Pembayaran',
+      cell: ({ getValue }) => {
+        const skemaId = getValue() as number | '-';
+
+        if (skemaId === '-') {
+          return <Badge className='rounded-full bg-gray-500 px-3 py-2 text-white hover:bg-gray-600'>-</Badge>;
+        }
+
+        const skemaName = skemaPembayaranMap[Number(skemaId)] || `Skema ${skemaId}`;
+
+        // Default styling for all skema pembayaran
+        const style = 'bg-emerald-500 text-white hover:bg-emerald-600';
+
+        return <Badge className={`rounded-full px-3 py-2 ${style}`}>{skemaName}</Badge>;
+      },
+      meta: { style: { width: '160px' } }
+    }),
+    columnHelper.accessor('unit.name', {
+      header: 'Unit',
+      cell: ({ row, getValue }) => {
+        const unit = row.original.unit;
+        return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
+      },
+      meta: { style: { width: '80px' } }
+    }),
+    columnHelper.display({
+      id: 'sales',
+      header: 'Sales',
+      cell: ({ row }) => {
+        return <span className='text-muted-foreground'>-</span>;
+      },
+      meta: { style: { width: '100px' } }
+    }),
+    columnHelper.accessor('blok.name', {
+      header: 'Blok',
+      cell: ({ row, getValue }) => {
+        const blok = row.original.blok;
+        return <span className='font-medium'>{getValue() || blok?.name || '-'}</span>;
+      },
+      meta: { style: { width: '80px' } }
+    }),
+    columnHelper.accessor('tipe.name', {
+      header: 'Tipe',
+      cell: ({ row, getValue }) => {
+        const tipe = row.original.tipe;
+        return <span className='font-medium'>{getValue() || tipe?.name || '-'}</span>;
+      },
+      meta: { style: { width: '80px' } }
+    }),
+    columnHelper.accessor('status', {
+      header: 'Status',
+      cell: ({ getValue }) => {
+        const status = getValue();
+        const getStatusStyle = () => {
+          switch (status) {
+            case 'Approved':
+              return 'bg-green-500 text-white hover:bg-green-600';
+            case 'Pending':
+              return 'bg-orange-500 text-white hover:bg-orange-600';
+            case 'Negotiation':
+              return 'bg-blue-500 text-white hover:bg-blue-600';
+            case 'Rejected':
+              return 'bg-red-500 text-white hover:bg-red-600';
+            default:
+              return 'bg-gray-500 text-white hover:bg-gray-600';
+          }
+        };
+
+        const getStatusIcon = () => {
+          switch (status) {
+            case 'Approved':
+              return <CheckCircle className='h-3 w-3' />;
+            case 'Pending':
+              return <Clock className='h-3 w-3' />;
+            case 'Negotiation':
+              return <MessageSquare className='h-3 w-3' />;
+            case 'Rejected':
+              return <X className='h-3 w-3' />;
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <Badge className={`text ${getStatusStyle()} flex items-center gap-1 rounded-full px-3 py-2`}>
+            {getStatusIcon()}
+            {status}
+          </Badge>
+        );
+      },
+      meta: { style: { width: '120px' } }
+    }),
+    ...(!isTelemarketing
+      ? [
+          columnHelper.display({
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => <ActionCell row={row} />,
+            meta: { style: { width: '80px' } }
+          })
+        ]
+      : [])
+  ];
 
   return (
     <section className='p-4'>
