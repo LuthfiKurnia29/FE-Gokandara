@@ -145,6 +145,14 @@ const LeaderboardPage = memo(function LeaderboardPage() {
     []
   );
 
+  const payload = useMemo(
+    () => ({
+      ...(selectedMember?.id ? { member_id: selectedMember.id } : {}),
+      ...(dateRange.start && dateRange.end ? { dateStart: dateRange.start, dateEnd: dateRange.end } : {})
+    }),
+    [selectedMember?.id, dateRange.start, dateRange.end]
+  );
+
   return (
     <section className='p-4'>
       <div className='mb-4 flex items-center justify-between'>
@@ -206,11 +214,8 @@ const LeaderboardPage = memo(function LeaderboardPage() {
         url={apiUrl}
         id='leaderboard-table'
         perPage={10}
-        queryKey={['/leaderboard', selectedMember?.id?.toString() || 'all']}
-        payload={{
-          ...(selectedMember?.id ? { member_id: selectedMember.id } : {}),
-          ...(dateRange.start && dateRange.end ? { dateStart: dateRange.start, dateEnd: dateRange.end } : {})
-        }}
+        queryKey={['/leaderboard', selectedMember?.id?.toString() || 'all', payload]}
+        payload={payload}
         Plugin={() => (
           <div className='flex items-center gap-2'>
             {selectedMember && (

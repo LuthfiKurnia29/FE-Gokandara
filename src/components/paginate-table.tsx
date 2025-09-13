@@ -58,7 +58,7 @@ interface PaginateTableProps<TData> {
   massSelectField?: string;
   Plugin?: () => ReactNode;
   grouped?: boolean;
-  queryKey?: string[];
+  queryKey?: any[];
   perPage?: number;
   // When used inside another <form>, avoid nested <form> to prevent hydration errors
   searchIsForm?: boolean;
