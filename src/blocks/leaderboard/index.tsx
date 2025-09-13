@@ -32,6 +32,34 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   const apiUrl = '/leaderboard';
   const [top3, setTop3] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [endDate, setEndDate] = useState<Date>(new Date(2025, 0, 7));
+
+  // Convert dates to string format for API
+  const formatDateForAPI = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Handle date range change
+  const handleDateRangeChange = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+    setDateRange({
+      start: formatDateForAPI(start),
+      end: formatDateForAPI(end)
+    });
+  };
+
+  // Initialize date range on component mount
+  useEffect(() => {
+    setDateRange({
+      start: formatDateForAPI(startDate),
+      end: formatDateForAPI(endDate)
+    });
+  }, []);
 
   useEffect(() => {
     const fetchTop3 = async () => {
@@ -121,7 +149,7 @@ const LeaderboardPage = memo(function LeaderboardPage() {
     <section className='p-4'>
       <div className='mb-4 flex items-center justify-between'>
         <PageTitle title='Leaderboard' />
-        <DateRangePicker />
+        <DateRangePicker startDate={startDate} endDate={endDate} onChange={handleDateRangeChange} />
       </div>
 
       {/* Top Sales Cards (Top 3 from API) */}

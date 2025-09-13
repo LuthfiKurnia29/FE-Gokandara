@@ -4,7 +4,12 @@ import * as React from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer } from '@/components/ui/chart';
-import { useAnalisaFollowup } from '@/services/analisa';
+import {
+  useDashboardFollowUpToday,
+  useDashboardFollowUpTomorrow,
+  useDashboardKonsumenByProspek,
+  useDashboardNewKonsumens
+} from '@/services/dashboard';
 
 import { Pie, PieChart } from 'recharts';
 
@@ -72,38 +77,58 @@ interface AnalysisMetricCardsProps {
 }
 
 export const AnalysisMetricCards = ({ filterParams = {} }: AnalysisMetricCardsProps) => {
-  // Get followup data for today and tomorrow with filter
-  const followupToday = useAnalisaFollowup({ waktu: 'today', ...filterParams });
-  const followupTomorrow = useAnalisaFollowup({ waktu: 'tomorrow', ...filterParams });
+  // Use dashboard hooks instead of analisa hooks to match home page data
+  const { data: followUpTodayData, isLoading: isLoadingFollowUpToday } = useDashboardFollowUpToday(filterParams);
+  const { data: followUpTomorrowData, isLoading: isLoadingFollowUpTomorrow } =
+    useDashboardFollowUpTomorrow(filterParams);
+  const { data: newKonsumensData, isLoading: isLoadingNewKonsumens } = useDashboardNewKonsumens(filterParams);
+  const { data: konsumenByProspekData, isLoading: isLoadingKonsumenByProspek } =
+    useDashboardKonsumenByProspek(filterParams);
+
+  // Extract data from dashboard API responses (same as home page)
+  const followUpTodayCount = followUpTodayData?.count || 0;
+  const followUpTomorrowCount = followUpTomorrowData?.count || 0;
+  const newKonsumensCount = newKonsumensData?.count || 0;
+
+  // Calculate total konsumen prospek from konsumenByProspek data (same as home page)
+  const konsumenProspekCount = React.useMemo(() => {
+    if (!konsumenByProspekData?.data?.values) return 0;
+    return konsumenByProspekData.data.values.reduce((sum, value) => sum + value, 0);
+  }, [konsumenByProspekData]);
+
+  // Calculate filled percentages based on some logic (same as home page)
+  const calculatePercentage = (value: number, max: number = 100) => {
+    return Math.min((value / max) * 100, 100);
+  };
 
   const stats = [
     {
       title: 'Follow Up Hari Ini',
-      value: followupToday.data?.count_data?.toString() || '00',
+      value: isLoadingFollowUpToday ? '...' : followUpTodayCount.toString().padStart(2, '0'),
       bgColor: '#3b82f6',
-      filledPercentage: 30,
-      isLoading: followupToday.isLoading
+      filledPercentage: calculatePercentage(followUpTodayCount, 20), // Assume max 20 for demo
+      isLoading: isLoadingFollowUpToday
     },
     {
       title: 'Follow Up Besok',
-      value: followupTomorrow.data?.count_data?.toString() || '00',
+      value: isLoadingFollowUpTomorrow ? '...' : followUpTomorrowCount.toString().padStart(2, '0'),
       bgColor: '#10b981',
-      filledPercentage: 40,
-      isLoading: followupTomorrow.isLoading
+      filledPercentage: calculatePercentage(followUpTomorrowCount, 20), // Assume max 20 for demo
+      isLoading: isLoadingFollowUpTomorrow
     },
     {
       title: 'Konsumen Prospek',
-      value: '00',
+      value: isLoadingKonsumenByProspek ? '...' : konsumenProspekCount.toString().padStart(2, '0'),
       bgColor: '#f59e0b',
-      filledPercentage: 60,
-      isLoading: false
+      filledPercentage: calculatePercentage(konsumenProspekCount, 200), // Assume max 200 for demo
+      isLoading: isLoadingKonsumenByProspek
     },
     {
       title: 'Konsumen Baru',
-      value: '00',
+      value: isLoadingNewKonsumens ? '...' : newKonsumensCount.toString().padStart(2, '0'),
       bgColor: '#6b7280',
-      filledPercentage: 20,
-      isLoading: false
+      filledPercentage: calculatePercentage(newKonsumensCount, 10), // Assume max 10 for demo
+      isLoading: isLoadingNewKonsumens
     }
   ];
 

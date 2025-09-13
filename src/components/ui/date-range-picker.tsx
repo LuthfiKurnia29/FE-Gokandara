@@ -11,12 +11,40 @@ import { ChevronDown } from 'lucide-react';
 
 interface DateRangePickerProps {
   className?: string;
+  startDate?: Date;
+  endDate?: Date;
+  onChange?: (startDate: Date, endDate: Date) => void;
 }
 
-export const DateRangePicker = memo(function DateRangePicker({ className }: DateRangePickerProps) {
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
-  const [endDate, setEndDate] = useState<Date>(new Date(2025, 0, 7));
+export const DateRangePicker = memo(function DateRangePicker({
+  className,
+  startDate: controlledStartDate,
+  endDate: controlledEndDate,
+  onChange
+}: DateRangePickerProps) {
+  const [internalStartDate, setInternalStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [internalEndDate, setInternalEndDate] = useState<Date>(new Date(2025, 0, 7));
   const [isOpen, setIsOpen] = useState(false);
+
+  // Use controlled values if provided, otherwise use internal state
+  const startDate = controlledStartDate || internalStartDate;
+  const endDate = controlledEndDate || internalEndDate;
+
+  const handleStartDateChange = (date: Date) => {
+    if (onChange) {
+      onChange(date, endDate);
+    } else {
+      setInternalStartDate(date);
+    }
+  };
+
+  const handleEndDateChange = (date: Date) => {
+    if (onChange) {
+      onChange(startDate, date);
+    } else {
+      setInternalEndDate(date);
+    }
+  };
 
   const formatDate = (date: Date) => {
     const day = date.getDate().toString().padStart(2, '0');
@@ -44,8 +72,13 @@ export const DateRangePicker = memo(function DateRangePicker({ className }: Date
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0' align='start'>
         <div className='flex'>
-          <Calendar mode='single' selected={startDate} onSelect={(date) => date && setStartDate(date)} initialFocus />
-          <Calendar mode='single' selected={endDate} onSelect={(date) => date && setEndDate(date)} />
+          <Calendar
+            mode='single'
+            selected={startDate}
+            onSelect={(date) => date && handleStartDateChange(date)}
+            initialFocus
+          />
+          <Calendar mode='single' selected={endDate} onSelect={(date) => date && handleEndDateChange(date)} />
         </div>
       </PopoverContent>
     </Popover>
