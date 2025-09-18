@@ -401,7 +401,7 @@ export const KonsumenForm = memo(function KonsumenForm({
           </CardHeader>
 
           {/* Scrollable Content Area */}
-          <CardContent className='flex-1 px-6 pt-4' style={{ overflow: 'auto', minHeight: 0, maxHeight: 'calc(60vh)' }}>
+          <CardContent className='flex-1 px-6 pt-4' style={{ overflow: 'auto', height: '100%', maxHeight: '50vh' }}>
             {/* Master Data Error Display */}
             {masterDataError && (
               <div className='mb-4 rounded-lg border border-red-200 bg-red-50 p-4'>
