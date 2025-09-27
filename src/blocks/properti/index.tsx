@@ -12,8 +12,8 @@ import { PropertySalesHistory } from '@/blocks/properti/property-sales-history';
 import { PropertySlider } from '@/blocks/properti/property-slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePropertyById } from '@/services/properti';
-import { useAllProperti } from '@/services/properti';
+import { useProjekById, getProjekGambars } from '@/services/projek';
+import { useQuery } from '@tanstack/react-query';
 import { PropertyData } from '@/types/properti';
 
 interface PropertyContentProps {
@@ -21,23 +21,35 @@ interface PropertyContentProps {
 }
 
 export const PropertyContent = memo(function PropertyContent({ propertyId }: PropertyContentProps) {
-  // Get project name from all properties (like sidebar)
-  const { data: allProperties = [] } = useAllProperti();
-  const propertyFromList = allProperties.find((p) => p.id === parseInt(propertyId));
+  const projekId = parseInt(propertyId);
 
-  // Get detailed data including images from property by ID
-  const { data: propertyById, isLoading, error } = usePropertyById(parseInt(propertyId), ['projek', 'properti_gambar']);
+  const { data: projek, isLoading, error } = useProjekById(projekId || null);
 
-  // Combine data: project name from list, detailed data from byId
-  const finalProperty = propertyById
+  const { data: projekImages = [] } = useQuery({
+    queryKey: ['/projek', projekId, 'gambars'],
+    queryFn: () => getProjekGambars(projekId),
+    enabled: !!projekId
+  });
+
+  const finalProperty: PropertyData | any = projek
     ? {
-        ...propertyById,
-        // Use project name from all properties if available (like sidebar)
-        projek: propertyFromList?.projek || propertyById.projek
+        id: projek.id,
+        projek: { id: projek.id, name: projek.name },
+        lokasi: (projek as any)?.alamat || '-',
+        harga: (projek as any)?.harga || 0,
+        properti_gambar: Array.isArray(projekImages)
+          ? projekImages.map((img: any) => ({
+              id: img.id ?? 0,
+              properti_id: projek.id,
+              image: img.gambar_url || img.image_url || img.image || '',
+              image_url: img.gambar_url || img.image_url || img.image || '',
+              created_at: '',
+              updated_at: ''
+            }))
+          : []
       }
-    : propertyFromList;
+    : null;
 
-  // Extract images from property data
   const propertyImages = useMemo(() => {
     if (!finalProperty?.properti_gambar || !Array.isArray(finalProperty.properti_gambar)) {
       return [];
@@ -45,22 +57,21 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
 
     return finalProperty.properti_gambar
       .map((img: any) => {
-        // Handle different image URL formats from API
-        return img.image_url || img.image || '';
+        const url = img.gambar_url || img.image_url || img.image || '';
+        if (!url) return '';
+        return typeof url === 'string' && url.startsWith('http')
+          ? url
+          : `${process.env.NEXT_PUBLIC_API_URL ?? ''}${url}`;
       })
-      .filter(Boolean); // Remove empty strings
+      .filter(Boolean);
   }, [finalProperty?.properti_gambar]);
 
-  // Fallback image if no images available
   const fallbackImage = 'https://placehold.co/1920x400/09bd3c/ffffff?text=No+Image+Available';
 
-  // Use property images or fallback
   const sliderImages = propertyImages.length > 0 ? propertyImages : [fallbackImage];
 
-  // Thumbnail image (first image or fallback)
   const thumbnailImage = propertyImages.length > 0 ? propertyImages[0] : fallbackImage;
 
-  // Show loading skeleton
   if (!finalProperty && isLoading) {
     return (
       <div className='flex-1 overflow-auto p-6'>
@@ -90,17 +101,14 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
     );
   }
 
-  // Show error state
   if (!finalProperty && error) {
     return (
       <div className='flex-1 overflow-auto p-6'>
         <Card className='w-full bg-white shadow-sm'>
           <CardContent className='p-6'>
             <div className='text-center'>
-              <h2 className='text-xl font-semibold text-red-600'>Error Loading Property</h2>
-              <p className='mt-2 text-gray-600'>
-                {error instanceof Error ? error.message : 'Failed to load property data'}
-              </p>
+              <h2 className='text-xl font-semibold text-red-600'>Error Loading Project</h2>
+              <p className='mt-2 text-gray-600'>{error instanceof Error ? error.message : 'Failed to load project data'}</p>
             </div>
           </CardContent>
         </Card>
@@ -108,19 +116,14 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
     );
   }
 
-  // Show property content
   return (
     <div className='flex-1 overflow-auto p-6'>
       <Card className='w-full bg-white shadow-sm'>
-        {/* Hero Section with Overlapping Thumbnail */}
         <div className='relative'>
           <div className='mx-auto h-[600px] w-[96%] overflow-hidden p-0'>
             <PropertySlider images={sliderImages} property={finalProperty} />
           </div>
-
-          {/* Overlapping Section */}
           <div className='relative'>
-            {/* Overlapping Thumbnail */}
             <div className='absolute bottom-15 left-[90px] translate-y-1/2'>
               <div className='h-[220px] w-[200px] overflow-hidden rounded-2xl border-4 border-white bg-white shadow-lg'>
                 <div
@@ -138,14 +141,11 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
 
         <CardContent className='p-6'>
           <div className='grid grid-cols-12 gap-6 pt-24'>
-            {/* Left Column */}
             <div className='col-span-12 lg:col-span-4 xl:col-span-3'>
               <PropertyHeader property={finalProperty} />
               <PropertyPriceSection property={finalProperty} />
-              {/* <PropertySalesHistory property={finalProperty} /> */}
             </div>
 
-            {/* Middle and Right Columns Combined */}
             <div className='col-span-12 lg:col-span-8 xl:col-span-9'>
               <div className='w-full'>
                 <PropertyDescription property={finalProperty} />
@@ -161,7 +161,6 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
   );
 });
 
-// Export all property components
 export { PropertyDescription } from './property-description';
 export { PropertyFacilities } from './property-facilities';
 export { PropertyGallery } from './property-gallery';

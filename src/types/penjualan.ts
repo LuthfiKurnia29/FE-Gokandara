@@ -14,6 +14,10 @@ export interface PropertyData {
   kelebihan: string;
   lokasi: string;
   harga: number;
+  projek?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface PenjualanData {

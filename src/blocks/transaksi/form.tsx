@@ -340,7 +340,7 @@ const PropertyTypeModal = ({
           </div>
         </div>
 
-        {Boolean(selectedProperti?.id)  && (
+        {Boolean(selectedProperti?.id) && (
           <div className='px-4 pb-4'>
             {isLoadingTipe ? (
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

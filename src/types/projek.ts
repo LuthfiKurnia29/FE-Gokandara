@@ -16,6 +16,21 @@ export interface ProjekApiResponse {
 
 export interface CreateProjekData {
   name: string;
+  alamat?: string;
+  jumlah_kavling?: number;
+  tipe?: Array<{
+    name: string;
+    luas_tanah: number;
+    luas_bangunan: number;
+    jumlah_unit: number;
+    harga: number;
+    jenis_pembayaran_ids: number[];
+  }>;
+  fasilitas?: Array<{
+    name: string;
+    luas: number;
+  }>;
+  gambars?: File[];
 }
 
 export interface UseProjekListParams {

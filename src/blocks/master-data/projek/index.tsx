@@ -5,7 +5,7 @@ import { memo, useState } from 'react';
 import { PageTitle } from '@/components/page-title';
 import { PaginateTable } from '@/components/paginate-table';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +13,14 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
-import { createProjek, deleteProjek, getAllProjek, updateProjek } from '@/services/projek';
+import { createProjek, getAllProjek, updateProjek } from '@/services/projek';
+import { getProjek } from '@/services/projek';
 import { CreateProjekData, ProjekData } from '@/types/projek';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
-import { ProjekForm } from './form';
+import TambahProjekWizard from './tambah-projek-wizard';
 import { MoreHorizontal, Pencil, Plus, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -54,10 +55,38 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   const [openForm, setOpenForm] = useState(false);
   const [selectedData, setSelectedData] = useState<ProjekData | null>(null);
+  const [initialWizardData, setInitialWizardData] = useState<any>(null);
 
   const handleEdit = (data: ProjekData) => {
     setSelectedData(data);
+    setInitialWizardData({ projectName: data.name });
     setOpenForm(true);
+    getProjek(data.id)
+      .then((detail: any) => {
+        const tipeArr = Array.isArray(detail?.tipe) ? detail.tipe : [];
+        const facilitiesArr = Array.isArray(detail?.fasilitas) ? detail.fasilitas : [];
+        setInitialWizardData({
+          projectName: detail?.name ?? data.name ?? '',
+          address: detail?.alamat ?? '',
+          jumlahKavling: detail?.jumlah_kavling != null ? String(detail.jumlah_kavling) : '',
+          types: tipeArr.map((t: any) => ({
+            name: t?.name ?? '',
+            luasTanah: t?.luas_tanah != null ? String(t.luas_tanah) : '',
+            luasBangunan: t?.luas_bangunan != null ? String(t.luas_bangunan) : '',
+            jumlahUnit: t?.jumlah_unit != null ? String(t.jumlah_unit) : ''
+          })),
+          prices: tipeArr.map((t: any) => ({
+            tipe: t?.name ?? '',
+            jenis: Array.isArray(t?.jenis_pembayaran_ids) ? t.jenis_pembayaran_ids.map((id: number) => String(id)) : [],
+            harga: t?.harga != null ? String(t.harga) : ''
+          })),
+          facilities: facilitiesArr.map((f: any) => ({
+            name: f?.name ?? '',
+            luas: f?.luas != null ? String(f.luas) : ''
+          }))
+        });
+      })
+      .catch(() => {});
   };
 
   const handleDeleteProjek = async (data: ProjekData) => {
@@ -69,11 +98,41 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     setSelectedData(null);
   };
 
-  const handleFormSubmit = async (data: CreateProjekData) => {
+  const handleWizardSubmit = async (data: {
+    projectName: string;
+    address?: string;
+    jumlahKavling?: string;
+    types?: any[];
+    prices?: any[];
+    facilities?: any[];
+  }) => {
+    if (!selectedData) return;
     try {
-      if (selectedData) {
-        await updateProjek(selectedData.id, data);
-      }
+      const tipePayload = (data.types ?? []).map((t, idx) => {
+        const p = (data.prices ?? [])[idx] ?? { jenis: [], harga: '' };
+        return {
+          name: t.name ?? '',
+          luas_tanah: Number(t.luasTanah) || 0,
+          luas_bangunan: Number(t.luasBangunan) || 0,
+          jumlah_unit: Number(t.jumlahUnit) || 0,
+          harga: Number(p.harga) || 0,
+          jenis_pembayaran_ids: ((p.jenis ?? []) as string[]).map((v) => Number(v))
+        };
+      });
+
+      const fasilitasPayload = (data.facilities ?? []).map((f) => ({
+        name: f.name ?? '',
+        luas: Number(f.luas) || 0
+      }));
+
+      await updateProjek(selectedData.id, {
+        name: data.projectName,
+        alamat: data.address,
+        jumlah_kavling: data.jumlahKavling ? Number(data.jumlahKavling) : undefined,
+        tipe: tipePayload,
+        fasilitas: fasilitasPayload
+      });
+
       handleCloseForm();
       queryClient.invalidateQueries({ queryKey: ['/projek'] });
     } catch (error: any) {
@@ -102,16 +161,13 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       </DropdownMenu>
 
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
-          <DialogHeader>
-            <DialogTitle>Edit Projek</DialogTitle>
-            <DialogDescription>Edit data projek di form berikut.</DialogDescription>
-          </DialogHeader>
-          <ProjekForm
-            selectedId={selectedData?.id ?? null}
-            onSubmit={handleFormSubmit}
+        <DialogContent className='w-[98vw] p-0 sm:max-w-[50rem]'>
+          <TambahProjekWizard
             onCancel={handleCloseForm}
+            onSubmit={handleWizardSubmit}
             isLoading={false}
+            title='Edit Projek'
+            initialData={initialWizardData}
           />
         </DialogContent>
       </Dialog>
@@ -133,9 +189,42 @@ const ProjekPage = memo(function ProjekPage() {
   const handleCreate = () => setOpenForm(true);
   const handleCloseForm = () => setOpenForm(false);
 
-  const handleFormSubmit = async (data: CreateProjekData) => {
+  const handleWizardSubmit = async (data: {
+    projectName: string;
+    address?: string;
+    jumlahKavling?: string;
+    types?: any[];
+    prices?: any[];
+    facilities?: any[];
+    gambars?: File[];
+  }) => {
     try {
-      await createMutation.mutateAsync(data);
+      const tipePayload = (data.types ?? []).map((t, idx) => {
+        const p = (data.prices ?? [])[idx] ?? { jenis: [], harga: '' };
+        return {
+          name: t.name ?? '',
+          luas_tanah: Number(t.luasTanah) || 0,
+          luas_bangunan: Number(t.luasBangunan) || 0,
+          jumlah_unit: Number(t.jumlahUnit) || 0,
+          harga: Number(p.harga) || 0,
+          jenis_pembayaran_ids: ((p.jenis ?? []) as string[]).map((v) => Number(v))
+        };
+      });
+
+      const fasilitasPayload = (data.facilities ?? []).map((f) => ({
+        name: f.name ?? '',
+        luas: Number(f.luas) || 0
+      }));
+
+      await createMutation.mutateAsync({
+        name: data.projectName,
+        alamat: data.address,
+        jumlah_kavling: data.jumlahKavling ? Number(data.jumlahKavling) : undefined,
+        tipe: tipePayload,
+        fasilitas: fasilitasPayload,
+        gambars: data.gambars && data.gambars.length > 0 ? data.gambars : undefined
+      });
+
       handleCloseForm();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Terjadi error!');
@@ -159,15 +248,10 @@ const ProjekPage = memo(function ProjekPage() {
         )}
       />
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
-          <DialogHeader>
-            <DialogTitle>Tambah Projek</DialogTitle>
-            <DialogDescription>Isi form berikut untuk menambah projek baru.</DialogDescription>
-          </DialogHeader>
-          <ProjekForm
-            selectedId={null}
-            onSubmit={handleFormSubmit}
+        <DialogContent className='w-[98vw] p-0 sm:max-w-[50rem]'>
+          <TambahProjekWizard
             onCancel={handleCloseForm}
+            onSubmit={handleWizardSubmit}
             isLoading={createMutation.isPending}
           />
         </DialogContent>

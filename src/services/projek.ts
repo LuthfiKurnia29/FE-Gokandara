@@ -14,8 +14,51 @@ export const getProjek = async (id: number): Promise<ProjekData> => {
   return data.data || data;
 };
 
+export const getTipesByProjek = async (id: number): Promise<any[]> => {
+  const { data } = await axios.get(`/projek/${id}/tipes`);
+  return data.data || data;
+};
+
 export const createProjek = async (payload: CreateProjekData) => {
-  return axios.post('/projek', payload);
+  const formData = new FormData();
+
+  formData.append('name', payload.name);
+  if (payload.alamat) formData.append('alamat', payload.alamat);
+  if (payload.jumlah_kavling !== undefined && payload.jumlah_kavling !== null) {
+    formData.append('jumlah_kavling', String(payload.jumlah_kavling));
+  }
+
+  if (payload.tipe && payload.tipe.length > 0) {
+    payload.tipe.forEach((t, i) => {
+      if (t.name !== undefined) formData.append(`tipe[${i}][name]`, t.name);
+      formData.append(`tipe[${i}][luas_tanah]`, String(t.luas_tanah ?? 0));
+      formData.append(`tipe[${i}][luas_bangunan]`, String(t.luas_bangunan ?? 0));
+      formData.append(`tipe[${i}][jumlah_unit]`, String(t.jumlah_unit ?? 0));
+      formData.append(`tipe[${i}][harga]`, String(t.harga ?? 0));
+      if (t.jenis_pembayaran_ids && t.jenis_pembayaran_ids.length > 0) {
+        t.jenis_pembayaran_ids.forEach((id, j) => {
+          formData.append(`tipe[${i}][jenis_pembayaran_ids][${j}]`, String(id));
+        });
+      }
+    });
+  }
+
+  if (payload.fasilitas && payload.fasilitas.length > 0) {
+    payload.fasilitas.forEach((f, i) => {
+      if (f.name !== undefined) formData.append(`fasilitas[${i}][name]`, f.name);
+      formData.append(`fasilitas[${i}][luas]`, String(f.luas ?? 0));
+    });
+  }
+
+  if (payload.gambars && payload.gambars.length > 0) {
+    payload.gambars.forEach((file) => {
+      formData.append('gambars[]', file);
+    });
+  }
+
+  return axios.post('/projek', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 };
 
 export const updateProjek = async (id: number, payload: CreateProjekData) => {
@@ -26,7 +69,25 @@ export const deleteProjek = async (id: number) => {
   return axios.delete(`/projek/${id}`);
 };
 
-// Custom hooks untuk react-query
+export const getProjekGambars = async (id: number): Promise<any[]> => {
+  const { data } = await axios.get(`/projek/${id}/gambars`);
+  return data.data || data;
+};
+
+export const uploadProjekGambars = async (id: number, files: File[]): Promise<any> => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('gambars[]', file);
+  });
+  return axios.post(`/projek/${id}/gambars`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const deleteProjekGambar = async (id: number): Promise<any> => {
+  return axios.delete(`/projek-gambar/${id}`);
+};
+
 export const useCreateProjek = () => {
   return useMutation({
     mutationFn: createProjek,
@@ -54,7 +115,6 @@ export const useDeleteProjek = () => {
   });
 };
 
-// Query hooks
 export const useProjekById = (id: number | null) => {
   return useQuery({
     queryKey: ['/projek', 'by-id', id],
@@ -63,7 +123,7 @@ export const useProjekById = (id: number | null) => {
       return getProjek(id);
     },
     enabled: id !== null && id !== undefined,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000
   });
 };

@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { authService, useCurrentUser } from '@/services/auth';
 import { useTransaksiTotalCount } from '@/services/penjualan';
-import { useAllProperti } from '@/services/properti';
+import { useAllProjects } from '@/services/properti';
 import { type MenuItem, permissionUtils } from '@/stores/menu-item';
 
 import { Button } from './ui/button';
@@ -177,29 +177,25 @@ const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.Elem
   const pathname = usePathname();
   const [isOpen, setIsOpen] = React.useState(false);
   const { state, toggleSidebar } = useSidebar();
-  const { data: properties = [], isLoading } = useAllProperti();
+  const { data: projects = [], isLoading } = useAllProjects();
 
-  // Check if any property is active - use exact path matching
-  const isChildActive = properties.some((property) => pathname === `/properti/${property.id}`);
+  const isChildActive = pathname.startsWith('/properti/');
 
-  // Parent is active when child is active, but dropdown visibility is controlled by isOpen
   const isActive = isChildActive;
 
   const IconComponent = icon;
 
-  // Effect to open dropdown when child becomes active
   React.useEffect(() => {
     if (isChildActive) {
       setIsOpen(true);
     }
-  }, [isChildActive]); // Run when isChildActive changes
+  }, [isChildActive]);
 
   const handleToggleDropdown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsOpen(!isOpen);
 
-    // Only expand sidebar if it's collapsed
     if (state === 'collapsed') {
       toggleSidebar();
     }
@@ -207,7 +203,6 @@ const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.Elem
 
   return (
     <SidebarMenuItem>
-      {/* Parent Menu Button */}
       <SidebarMenuButton
         tooltip={title}
         onClick={handleToggleDropdown}
@@ -223,7 +218,6 @@ const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.Elem
         {isOpen ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
       </SidebarMenuButton>
 
-      {/* Dynamic Property Items */}
       {isOpen && state === 'expanded' && (
         <ul className='mt-1 space-y-1 pl-8'>
           {isLoading ? (
@@ -233,18 +227,15 @@ const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.Elem
                 <span className='text-sm text-[#a3a3a3]'>Loading...</span>
               </div>
             </SidebarMenuItem>
-          ) : properties.length > 0 ? (
-            properties.map((property) => {
-              // Use exact path matching instead of startsWith to avoid conflicts
-              const isItemActive = pathname === `/properti/${property.id}`;
-              const displayName = property.projek?.name
-                ? `${property.projek.name} – ${property.lokasi}`
-                : `Properti ${property.id} – ${property.lokasi}`;
+          ) : projects.length > 0 ? (
+            projects.map((project) => {
+              const isItemActive = pathname === `/properti/${project.id}`;
+              const displayName = project.name;
 
               return (
-                <SidebarMenuItem key={`property-${property.id}`}>
+                <SidebarMenuItem key={`project-${project.id}`}>
                   <Link
-                    href={`/properti/${property.id}`}
+                    href={`/properti/${project.id}`}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-lg px-2 py-2 transition-colors',
                       isItemActive ? 'text-[#FF9900]' : 'text-[#a3a3a3] hover:text-[#FF9900]'
@@ -260,7 +251,7 @@ const DynamicPropertyDropdown = React.memo(({ icon, title }: { icon?: React.Elem
           ) : (
             <SidebarMenuItem>
               <div className='flex w-full items-center gap-2 rounded-lg px-2 py-2'>
-                <span className='text-sm text-[#a3a3a3]'>No properties found</span>
+                <span className='text-sm text-[#a3a3a3]'>No projects found</span>
               </div>
             </SidebarMenuItem>
           )}

@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from 'react';
 
+import { AddTransaksiModal } from '@/blocks/transaksi/add-transaksi-modal';
 import BookingForm from '@/blocks/transaksi/booking-form';
 import PropertyTypeModal from '@/blocks/transaksi/form';
 import { MemberFilterModal } from '@/blocks/transaksi/member-filter-modal';
@@ -21,6 +22,7 @@ import { useCurrentUser, usePermissions } from '@/services/auth';
 import {
   useCreatePenjualan,
   useDeletePenjualan,
+  usePenjualanById,
   useUpdatePenjualan,
   useUpdatePenjualanStatus
 } from '@/services/penjualan';
@@ -33,6 +35,7 @@ import MetricsSection from './metric-section';
 import {
   CheckCircle,
   Clock,
+  Eye,
   Filter,
   History,
   MessageSquare,
@@ -103,6 +106,19 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [formData, setFormData] = useState<any>(null);
 
+  const [openDetail, setOpenDetail] = useState<boolean>(false);
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const { data: detail, isFetching: isLoadingDetail } = usePenjualanById(detailId, [
+    'konsumen',
+    'properti',
+    'blok',
+    'tipe',
+    'unit',
+    'projeks',
+    'skemaPembayaran',
+    'createdBy'
+  ]);
+
   const handleEdit = (penjualan: PenjualanWithRelations) => {
     if (penjualan.status === 'Approved' || penjualan.status === 'Rejected') {
       toast.warning('Transaksi dengan status Approved/Rejected tidak dapat diedit.');
@@ -110,6 +126,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     }
     setSelectedId(penjualan.id);
     setOpenForm(true);
+  };
+
+  const handleShowDetail = (penjualan: PenjualanWithRelations) => {
+    setDetailId(penjualan.id);
+    setOpenDetail(true);
   };
 
   const handleDeletePenjualan = async (penjualan: PenjualanWithRelations) => {
@@ -203,6 +224,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
+          <DropdownMenuItem onClick={() => handleShowDetail(row.original)}>
+            <Eye className='mr-2 h-4 w-4' />
+            Detail
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleEdit(row.original)}
             disabled={updatePenjualan.isPending || ['Approved', 'Rejected'].includes(row.original.status)}>
@@ -253,7 +278,6 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Property Type Selection Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           <DialogHeader>
@@ -270,7 +294,6 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         </DialogContent>
       </Dialog>
 
-      {/* Booking Form Dialog */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
         <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           <DialogHeader>
@@ -289,6 +312,171 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[900px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
+          <DialogHeader>
+            <DialogTitle>Detail Transaksi</DialogTitle>
+            <DialogDescription>Ringkasan data transaksi</DialogDescription>
+          </DialogHeader>
+
+          {!detail || isLoadingDetail ? (
+            <div className='py-8 text-center text-sm text-gray-600'>Memuat detail transaksi...</div>
+          ) : (
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>No. Transaksi</span>
+                  <span className='font-mono text-sm font-medium'>#{detail.no_transaksi ?? '-'}</span>
+                </div>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Status</span>
+                  <span className='text-sm font-medium'>{detail.status}</span>
+                </div>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Konsumen</span>
+                  <span className='text-sm font-medium'>
+                    {detail.konsumen?.name || (detail as any)?.konsumen?.nama || '-'}
+                  </span>
+                </div>
+                {(detail.konsumen as any)?.email && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Email</span>
+                    <span className='text-sm'>{(detail.konsumen as any)?.email}</span>
+                  </div>
+                )}
+                {(detail.konsumen as any)?.telepon && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Telepon</span>
+                    <span className='text-sm'>{(detail.konsumen as any)?.telepon}</span>
+                  </div>
+                )}
+                {((detail as any)?.projeks || detail.properti) && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Projek</span>
+                    <span className='text-sm font-medium'>
+                      {(detail as any)?.projeks?.nama || detail.properti?.lokasi || '-'}
+                    </span>
+                  </div>
+                )}
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Tipe</span>
+                  <span className='text-sm font-medium'>{(detail as any)?.tipe?.nama || detail.tipe?.name || '-'}</span>
+                </div>
+                {detail.blok?.name && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Blok</span>
+                    <span className='text-sm font-medium'>{detail.blok?.name}</span>
+                  </div>
+                )}
+                {detail.unit?.name && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Unit</span>
+                    <span className='text-sm font-medium'>{detail.unit?.name}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className='space-y-2'>
+                {(detail as any)?.kavling_dipesan !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Kavling Dipesan</span>
+                    <span className='text-sm font-medium'>{(detail as any)?.kavling_dipesan}</span>
+                  </div>
+                )}
+                {detail.diskon !== null && detail.diskon !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Diskon</span>
+                    <span className='text-sm font-medium'>
+                      {detail.tipe_diskon === 'percent'
+                        ? `${detail.diskon}%`
+                        : formatRupiah(Number(detail.diskon || 0))}
+                      {detail.tipe_diskon ? ` (${detail.tipe_diskon})` : ''}
+                    </span>
+                  </div>
+                )}
+                {(detail as any)?.kelebihan_tanah !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Kelebihan Tanah</span>
+                    <span className='text-sm font-medium'>{(detail as any)?.kelebihan_tanah}</span>
+                  </div>
+                )}
+                {(detail as any)?.harga_per_meter !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Harga per Meter</span>
+                    <span className='text-sm font-bold text-green-600'>
+                      {formatRupiah(Number((detail as any)?.harga_per_meter || 0))}
+                    </span>
+                  </div>
+                )}
+                {(detail as any)?.harga !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Harga</span>
+                    <span className='text-sm font-bold text-green-600'>
+                      {formatRupiah(Number((detail as any)?.harga || (detail.properti as any)?.harga || 0))}
+                    </span>
+                  </div>
+                )}
+                {detail.dp !== null && detail.dp !== undefined && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>DP</span>
+                    <span className='text-sm font-bold text-green-600'>{formatRupiah(Number(detail.dp || 0))}</span>
+                  </div>
+                )}
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Grand Total</span>
+                  <span className='text-sm font-bold text-green-600'>
+                    {formatRupiah(Number(detail.grand_total || 0))}
+                  </span>
+                </div>
+                {(detail as any)?.skemaPembayaran?.nama && (
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Skema Pembayaran</span>
+                    <span className='text-sm font-medium'>{(detail as any)?.skemaPembayaran?.nama}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className='col-span-1 mt-4 grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-2'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Dibuat</span>
+                  <span className='text-sm'>
+                    {detail.created_at
+                      ? new Date(detail.created_at).toLocaleString('id-ID', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })
+                      : '-'}
+                  </span>
+                </div>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-gray-500'>Diperbarui</span>
+                  <span className='text-sm'>
+                    {detail.updated_at
+                      ? new Date(detail.updated_at).toLocaleString('id-ID', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })
+                      : '-'}
+                  </span>
+                </div>
+                {(detail as any)?.createdBy?.name && (
+                  <div className='flex items-center justify-between md:col-span-2'>
+                    <span className='text-sm text-gray-500'>Dibuat Oleh</span>
+                    <span className='text-sm font-medium'>{(detail as any)?.createdBy?.name}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <DeleteConfirmDialog />
     </>
   );
@@ -298,6 +486,7 @@ const PenjualanPage = memo(function PenjualanPage() {
   const queryClient = useQueryClient();
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [showBookingForm, setShowBookingForm] = useState<boolean>(false);
+  const [showAddTransaksi, setShowAddTransaksi] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
@@ -480,29 +669,20 @@ const PenjualanPage = memo(function PenjualanPage() {
       meta: { style: { minWidth: '180px' } }
     }),
     columnHelper.display({
-      id: 'properti',
-      header: 'Properti',
-      cell: ({ row }) => {
-        const properti = row.original.properti;
-        return (
-          <div className='flex flex-col'>
-            <span className='font-medium'>{properti?.lokasi || '-'}</span>
-            {properti?.luas_bangunan && properti?.luas_tanah && (
-              <span className='text-muted-foreground text-xs'>
-                {properti.luas_bangunan}/{properti.luas_tanah}
-              </span>
-            )}
-          </div>
-        );
-      },
-      meta: { style: { minWidth: '180px' } }
-    }),
-    columnHelper.display({
       id: 'lokasi',
       header: 'Lokasi',
       cell: ({ row }) => {
         const properti = row.original.properti;
         return <span className='text-sm'>{properti?.lokasi || '-'}</span>;
+      },
+      meta: { style: { minWidth: '200px' } }
+    }),
+    columnHelper.display({
+      id: 'projek',
+      header: 'Projek',
+      cell: ({ row }) => {
+        const projekName = ((row.original as any)?.projeks?.nama) || row.original.properti?.projek?.name || '-';
+        return <span className='text-sm'>{projekName}</span>;
       },
       meta: { style: { minWidth: '200px' } }
     }),
@@ -567,14 +747,6 @@ const PenjualanPage = memo(function PenjualanPage() {
       },
       meta: { style: { width: '160px' } }
     }),
-    columnHelper.accessor('unit.name', {
-      header: 'Unit',
-      cell: ({ row, getValue }) => {
-        const unit = row.original.unit;
-        return <span className='font-medium'>{getValue() || unit?.name || '-'}</span>;
-      },
-      meta: { style: { width: '80px' } }
-    }),
     columnHelper.display({
       id: 'sales',
       header: 'Sales',
@@ -582,14 +754,6 @@ const PenjualanPage = memo(function PenjualanPage() {
         return <span className='text-muted-foreground'>-</span>;
       },
       meta: { style: { width: '100px' } }
-    }),
-    columnHelper.accessor('blok.name', {
-      header: 'Blok',
-      cell: ({ row, getValue }) => {
-        const blok = row.original.blok;
-        return <span className='font-medium'>{getValue() || blok?.name || '-'}</span>;
-      },
-      meta: { style: { width: '80px' } }
     }),
     columnHelper.accessor('tipe.name', {
       header: 'Tipe',
@@ -668,7 +832,7 @@ const PenjualanPage = memo(function PenjualanPage() {
         perPage={10}
         queryKey={['/list-transaksi', selectedMemberId?.toString() || 'all']}
         payload={{
-          include: 'konsumen,properti,blok,tipe,unit',
+          include: 'konsumen,properti,blok,tipe,unit,projeks',
           ...(selectedMemberId && { created_id: selectedMemberId })
         }}
         Plugin={() => (
@@ -694,7 +858,7 @@ const PenjualanPage = memo(function PenjualanPage() {
               </div>
             )}
             {!isTelemarketing && (
-              <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+              <Button onClick={() => setShowAddTransaksi(true)} disabled={isFormLoading} className='text-white'>
                 <Plus />
                 Tambah Transaksi
               </Button>
@@ -744,6 +908,25 @@ const PenjualanPage = memo(function PenjualanPage() {
         onOpenChange={setShowMemberFilter}
         onSelectMember={handleSelectMember}
       />
+
+      <AddTransaksiModal open={showAddTransaksi} onOpenChange={setShowAddTransaksi} />
+
+      {/* Property Type Selection Dialog */}
+      <Dialog open={openForm} onOpenChange={setOpenForm}>
+        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
+          <DialogHeader>
+            <DialogTitle>Edit Data Transaksi</DialogTitle>
+            <DialogDescription>Edit data transaksi yang sudah ada di form berikut.</DialogDescription>
+          </DialogHeader>
+
+          <PropertyTypeModal
+            onClose={handleCloseForm}
+            selectedId={selectedId}
+            onSubmit={handleFormSubmit}
+            onProceedToBooking={handleProceedToBooking}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 });

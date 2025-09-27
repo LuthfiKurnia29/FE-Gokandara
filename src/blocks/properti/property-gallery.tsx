@@ -29,10 +29,13 @@ export const PropertyGallery = ({ property }: PropertyGalleryProps) => {
 
     return property.properti_gambar
       .map((img: any) => {
-        // Handle different image URL formats from API
-        return img.image_url || img.image || '';
+        const url = img.gambar_url || img.image_url || img.image || '';
+        if (!url) return '';
+        return typeof url === 'string' && url.startsWith('http')
+          ? url
+          : `${process.env.NEXT_PUBLIC_API_URL ?? ''}${url}`;
       })
-      .filter(Boolean); // Remove empty strings
+      .filter(Boolean);
   }, [property?.properti_gambar]);
 
   // Fallback images if no property images available
