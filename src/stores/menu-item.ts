@@ -135,26 +135,26 @@ const menuItems: MenuItem[] = [
         url: '/master-data/projek',
         icon: FileChartLine
       },
-      {
-        title: 'Blok',
-        url: '/master-data/blok',
-        icon: Shapes
-      },
-      {
-        title: 'Tipe',
-        url: '/master-data/tipe',
-        icon: Tag
-      },
-      {
-        title: 'Unit',
-        url: '/master-data/unit',
-        icon: SquaresUnite
-      },
-      {
-        title: 'Properti',
-        url: '/master-data/properti',
-        icon: Building
-      },
+      //   {
+      //     title: 'Blok',
+      //     url: '/master-data/blok',
+      //     icon: Shapes
+      //   },
+      //   {
+      //     title: 'Tipe',
+      //     url: '/master-data/tipe',
+      //     icon: Tag
+      //   },
+      //   {
+      //     title: 'Unit',
+      //     url: '/master-data/unit',
+      //     icon: SquaresUnite
+      //   },
+      //   {
+      //     title: 'Properti',
+      //     url: '/master-data/properti',
+      //     icon: Building
+      //   },
       {
         title: 'Skema Pembayaran',
         url: '/master-data/skema-pembayaran',

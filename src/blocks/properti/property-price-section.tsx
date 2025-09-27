@@ -10,6 +10,7 @@ import { useCreatePenjualan } from '@/services/penjualan';
 import { CreatePenjualanData, UpdatePenjualanData } from '@/types/penjualan';
 import { PropertyData } from '@/types/properti';
 
+import { AddTransaksiModal } from '../transaksi/add-transaksi-modal';
 import { toast } from 'react-toastify';
 
 interface PropertyPriceSectionProps {
@@ -77,41 +78,7 @@ export const PropertyPriceSection = ({ property }: PropertyPriceSectionProps) =>
         Pemesanan
       </Button>
 
-      <Dialog
-        open={open}
-        onOpenChange={(v) => {
-          setOpen(v);
-          if (!v) {
-            setShowBookingForm(false);
-            setFormData(null);
-          }
-        }}>
-        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
-          <DialogHeader>
-            <DialogTitle>Tambah Data Transaksi</DialogTitle>
-            <DialogDescription>
-              Isi form berikut untuk menambahkan data transaksi baru ke dalam sistem.
-            </DialogDescription>
-          </DialogHeader>
-          {!showBookingForm ? (
-            <PropertyTypeModal
-              onClose={() => setOpen(false)}
-              selectedId={null}
-              defaultPropertiId={property?.id ?? ''}
-              onProceedToBooking={handleProceedToBooking}
-            />
-          ) : (
-            formData && (
-              <BookingForm
-                initialData={formData}
-                selectedId={selectedId}
-                onBack={handleBackToTypeSelection}
-                onSubmit={handleFormSubmit}
-              />
-            )
-          )}
-        </DialogContent>
-      </Dialog>
+      <AddTransaksiModal open={open} onOpenChange={setOpen} />
     </div>
   );
 };
