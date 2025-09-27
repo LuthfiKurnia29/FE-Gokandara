@@ -1,3 +1,6 @@
+import { User } from './auth';
+import { ProjekData } from './projek';
+
 export type PenjualanStatus = 'Pending' | 'Negotiation' | 'Approved' | 'Rejected';
 
 // PropertyData interface matching the seeder structure
@@ -38,6 +41,8 @@ export interface PenjualanData {
   created_at: string;
   updated_at: string;
   created_id: number;
+  harga_asli: number;
+  created_by: User;
 }
 
 // Enhanced interface with optional relations
@@ -47,6 +52,7 @@ export interface PenjualanWithRelations extends PenjualanData {
   blok?: import('./blok').BlokData;
   tipe?: import('./tipe').TipeData;
   unit?: import('./unit').UnitData;
+  projek?: ProjekData;
 }
 
 export interface PenjualanResponse {

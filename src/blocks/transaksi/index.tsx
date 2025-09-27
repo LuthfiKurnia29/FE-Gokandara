@@ -672,8 +672,8 @@ const PenjualanPage = memo(function PenjualanPage() {
       id: 'lokasi',
       header: 'Lokasi',
       cell: ({ row }) => {
-        const properti = row.original.properti;
-        return <span className='text-sm'>{properti?.lokasi || '-'}</span>;
+        const projek = row.original.projek;
+        return <span className='text-sm'>{projek?.address || '-'}</span>;
       },
       meta: { style: { minWidth: '200px' } }
     }),
@@ -681,34 +681,18 @@ const PenjualanPage = memo(function PenjualanPage() {
       id: 'projek',
       header: 'Projek',
       cell: ({ row }) => {
-        const projekName = ((row.original as any)?.projeks?.nama) || row.original.properti?.projek?.name || '-';
+        const projekName = (row.original as any)?.projek?.name || row.original.properti?.projek?.name || '-';
         return <span className='text-sm'>{projekName}</span>;
       },
       meta: { style: { minWidth: '200px' } }
     }),
     columnHelper.display({
-      id: 'harga_sebelum_diskon',
+      id: 'harga_asli',
       header: 'Harga (Sebelum Diskon)',
       cell: ({ row }) => {
-        const properti = row.original.properti;
-        const diskon = row.original.diskon;
-        const tipeDiskon = row.original.tipe_diskon;
-        const grandTotal = row.original.grand_total;
-
-        // Calculate base price from grand_total and discount
-        let basePrice = grandTotal;
-        if (diskon && diskon > 0) {
-          if (tipeDiskon === 'percent') {
-            const discountPercent = Math.min(diskon, 100);
-            basePrice = grandTotal / (1 - discountPercent / 100);
-          } else if (tipeDiskon === 'fixed') {
-            basePrice = grandTotal + diskon;
-          }
-        }
-
         return (
           <div className='flex flex-col'>
-            <span className='font-medium text-green-600'>{formatRupiah(basePrice)}</span>
+            <span className='font-medium text-green-600'>{formatRupiah(row.original.harga_asli)}</span>
           </div>
         );
       },
@@ -751,7 +735,7 @@ const PenjualanPage = memo(function PenjualanPage() {
       id: 'sales',
       header: 'Sales',
       cell: ({ row }) => {
-        return <span className='text-muted-foreground'>-</span>;
+        return <span className='text-muted-foreground'>{row.original.created_by?.name}</span>;
       },
       meta: { style: { width: '100px' } }
     }),

@@ -1,6 +1,7 @@
 export interface ProjekData {
   id: number;
   name: string;
+  address: string;
 }
 
 // Laravel API response format
