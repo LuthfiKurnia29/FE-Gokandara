@@ -18,7 +18,7 @@ export const PropertyHeader = ({ property }: PropertyHeaderProps) => {
       <h1 className='mb-1 text-center text-[24px] font-bold text-[#0C0C0C]'>{displayName}</h1>
 
       <p className='mt-4 text-center text-sm leading-[1.5] text-[#737B8B]'>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Jumlah Kavling: {property?.jumlah_kavling}
       </p>
 
       {/* Social Media Icons */}

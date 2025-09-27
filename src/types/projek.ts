@@ -2,6 +2,15 @@ export interface ProjekData {
   id: number;
   name: string;
   address: string;
+  gambars: ProjekGambar[];
+}
+
+export interface ProjekGambar {
+  id: number;
+  projek_id: number;
+  gambar: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Laravel API response format

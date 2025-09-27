@@ -70,7 +70,7 @@ export const deleteProjek = async (id: number) => {
 };
 
 export const getProjekGambars = async (id: number): Promise<any[]> => {
-  const { data } = await axios.get(`/projek/${id}/gambars`);
+  const { data } = await axios.get(`/projek/${id}/images`);
   return data.data || data;
 };
 

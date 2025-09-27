@@ -29,7 +29,7 @@ export const PropertyGallery = ({ property }: PropertyGalleryProps) => {
 
     return property.properti_gambar
       .map((img: any) => {
-        const url = img.gambar_url || img.image_url || img.image || '';
+        const url = img.image || '';
         if (!url) return '';
         return typeof url === 'string' && url.startsWith('http')
           ? url

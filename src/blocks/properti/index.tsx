@@ -12,9 +12,9 @@ import { PropertySalesHistory } from '@/blocks/properti/property-sales-history';
 import { PropertySlider } from '@/blocks/properti/property-slider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProjekById, getProjekGambars } from '@/services/projek';
-import { useQuery } from '@tanstack/react-query';
+import { getProjekGambars, useProjekById } from '@/services/projek';
 import { PropertyData } from '@/types/properti';
+import { useQuery } from '@tanstack/react-query';
 
 interface PropertyContentProps {
   propertyId: string;
@@ -37,6 +37,8 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
         projek: { id: projek.id, name: projek.name },
         lokasi: (projek as any)?.alamat || '-',
         harga: (projek as any)?.harga || 0,
+        jumlah_kavling: (projek as any)?.jumlah_kavling || 0,
+        fasilitas: (projek as any)?.fasilitas || [],
         properti_gambar: Array.isArray(projekImages)
           ? projekImages.map((img: any) => ({
               id: img.id ?? 0,
@@ -108,7 +110,9 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
           <CardContent className='p-6'>
             <div className='text-center'>
               <h2 className='text-xl font-semibold text-red-600'>Error Loading Project</h2>
-              <p className='mt-2 text-gray-600'>{error instanceof Error ? error.message : 'Failed to load project data'}</p>
+              <p className='mt-2 text-gray-600'>
+                {error instanceof Error ? error.message : 'Failed to load project data'}
+              </p>
             </div>
           </CardContent>
         </Card>

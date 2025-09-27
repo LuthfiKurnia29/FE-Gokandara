@@ -6,10 +6,12 @@ export interface PropertyData {
   luas_tanah: string;
   kelebihan: string;
   lokasi: string;
+  alamat: string;
   harga: number;
   unit_ids?: number[];
   tipe_ids?: number[];
   blok_ids?: number[];
+  jumlah_kavling: number;
   created_at: string;
   updated_at: string;
   // Relations (optional when included)
@@ -19,7 +21,8 @@ export interface PropertyData {
   };
   properti_gambar?: PropertyImage[]; // ← Sesuaikan dengan response API (1 underscore)
   fasilitas?: {
-    nama_fasilitas: string;
+    name: string;
+    luas: string;
   }[];
   daftar_harga?: {
     tipe_id: number;
