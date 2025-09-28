@@ -605,7 +605,7 @@ export const PropertiForm = memo(function PropertiForm({
                     <div className='flex items-center gap-2'>
                       <Input
                         placeholder='Contoh: Kolam Renang'
-                        {...register(`fasilitas.${index}.nama_fasilitas`)}
+                        {...register(`fasilitas.${index}.name`)}
                         disabled={isLoading}
                       />
                       <Button
@@ -617,8 +617,8 @@ export const PropertiForm = memo(function PropertiForm({
                         <X className='h-4 w-4' />
                       </Button>
                     </div>
-                    {errors.fasilitas?.[index]?.nama_fasilitas && (
-                      <p className='text-sm text-red-600'>{errors.fasilitas[index]?.nama_fasilitas?.message}</p>
+                    {errors.fasilitas?.[index]?.name && (
+                      <p className='text-sm text-red-600'>{errors.fasilitas[index]?.name?.message}</p>
                     )}
                   </div>
                 </div>
