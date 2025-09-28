@@ -129,7 +129,7 @@ export const propertyService = {
 
     if (data.fasilitas && data.fasilitas.length > 0) {
       data.fasilitas.forEach((fasilitas, index) => {
-        formData.append(`fasilitas[${index}][nama_fasilitas]`, fasilitas.nama_fasilitas);
+        formData.append(`fasilitas[${index}][nama]`, fasilitas.name);
       });
     }
 
