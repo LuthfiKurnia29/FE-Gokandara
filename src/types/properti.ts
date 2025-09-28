@@ -84,7 +84,7 @@ export interface CreatePropertyData {
   properti__gambars: File[];
   daftar_harga?: PricingOption[]; // New optional field for multiple pricing options
   fasilitas?: Array<{
-    nama_fasilitas: string;
+    name: string;
   }>;
 }
 
@@ -101,7 +101,7 @@ export interface UpdatePropertyData {
   properti__gambars?: File[];
   daftar_harga?: PricingOption[];
   fasilitas?: Array<{
-    nama_fasilitas: string;
+    name: string;
   }>;
 }
 
