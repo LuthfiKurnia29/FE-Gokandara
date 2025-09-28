@@ -34,7 +34,7 @@ const propertiSchema = z.object({
   fasilitas: z
     .array(
       z.object({
-        nama_fasilitas: z.string().min(1, 'Nama fasilitas harus diisi').max(255, 'Nama fasilitas maksimal 255 karakter')
+        name: z.string().min(1, 'Nama fasilitas harus diisi').max(255, 'Nama fasilitas maksimal 255 karakter')
       })
     )
     .optional(),
@@ -166,7 +166,7 @@ export const PropertiForm = memo(function PropertiForm({
 
   const handleAddFasilitas = () => {
     const currentFasilitas = fasilitas || [];
-    setValue('fasilitas', [...currentFasilitas, { nama_fasilitas: '' }]);
+    setValue('fasilitas', [...currentFasilitas, { name: '' }]);
   };
 
   const handleRemoveFasilitas = (index: number) => {
