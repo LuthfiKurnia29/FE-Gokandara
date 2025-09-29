@@ -290,6 +290,11 @@ const KonsumenPage = memo(function KonsumenPage() {
             <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
+            {(item as any).assign_name && (
+              <p className='text-sm'>
+                <span className='font-medium'>Assign:</span> {(item as any).assign_name}
+              </p>
+            )}
             {item.address && (
               <p className='text-sm'>
                 <span className='font-medium'>Alamat:</span> <span className='line-clamp-2'>{item.address}</span>

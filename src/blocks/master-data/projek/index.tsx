@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useDelete } from '@/hooks/use-delete';
-import { createProjek, getAllProjek, updateProjek } from '@/services/projek';
+import { createProjek, getAllProjek, updateProjek, uploadProjekGambars } from '@/services/projek';
 import { getProjek } from '@/services/projek';
 import { CreateProjekData, ProjekData } from '@/types/projek';
 import { useQueryClient } from '@tanstack/react-query';
@@ -105,6 +105,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     types?: any[];
     prices?: any[];
     facilities?: any[];
+    gambars?: File[];
   }) => {
     if (!selectedData) return;
     try {
@@ -119,12 +120,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           jenis_pembayaran_ids: ((p.jenis ?? []) as string[]).map((v) => Number(v))
         };
       });
-
+  
       const fasilitasPayload = (data.facilities ?? []).map((f) => ({
         name: f.name ?? '',
         luas: Number(f.luas) || 0
       }));
-
+  
       await updateProjek(selectedData.id, {
         name: data.projectName,
         alamat: data.address,
@@ -132,7 +133,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         tipe: tipePayload,
         fasilitas: fasilitasPayload
       });
-
+  
+      if (data.gambars && data.gambars.length > 0) {
+        await uploadProjekGambars(selectedData.id, data.gambars);
+      }
+  
       handleCloseForm();
       queryClient.invalidateQueries({ queryKey: ['/projek'] });
     } catch (error: any) {

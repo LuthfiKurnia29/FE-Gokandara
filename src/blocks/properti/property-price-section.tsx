@@ -29,7 +29,15 @@ export const PropertyPriceSection = memo(({ property }: PropertyPriceSectionProp
     return firstTipe?.harga || 0;
   }, [tipeData]);
 
+  const selectedLastPrice = useMemo(() => {
+    if (!tipeData || tipeData.length === 0 || tipeData.length === 1) return null;
+
+    const firstTipe = tipeData[tipeData.length - 1];
+    return firstTipe?.harga || 0;
+  }, [tipeData]);
+
   const propertyPrice = selectedPrice ? `Rp ${selectedPrice.toLocaleString('id-ID')}` : 'Harga tidak tersedia';
+  const propertyLastPrice = selectedLastPrice ? `Rp ${selectedLastPrice.toLocaleString('id-ID')}` : null;
 
   const handleOpenModal = () => {
     setOpen(true);
@@ -42,6 +50,12 @@ export const PropertyPriceSection = memo(({ property }: PropertyPriceSectionProp
       <div className='mb-4 rounded-lg bg-[#2563EB] p-6 text-center text-white'>
         <p className='mb-1 text-sm opacity-90'>Harga</p>
         <p className='mb-1 text-2xl font-bold'>{propertyPrice}</p>
+        {Boolean(propertyLastPrice) && (
+          <>
+            <p className='mb-1 text-sm opacity-60'>s/d</p>
+            <p className='mb-1 text-2xl font-bold'>{propertyLastPrice}</p>
+          </>
+        )}
       </div>
       <Button
         onClick={handleOpenModal}
