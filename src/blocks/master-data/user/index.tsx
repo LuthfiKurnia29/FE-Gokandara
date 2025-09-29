@@ -153,7 +153,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-h-[85vh] max-w-lg overflow-y-auto sm:max-h-[90vh]'>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Edit data user di form berikut.</DialogDescription>
@@ -221,7 +221,7 @@ const UserPage = memo(function UserPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-h-[85vh] max-w-lg overflow-y-auto sm:max-h-[90vh]'>
           <DialogHeader>
             <DialogTitle>Tambah User</DialogTitle>
             <DialogDescription>Isi form berikut untuk menambah user baru.</DialogDescription>
