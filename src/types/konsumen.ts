@@ -1,6 +1,7 @@
 import { ProjekData } from './projek';
 import { ProspekData } from './prospek';
 import { ReferensiData } from './referensi';
+import { UserData } from './user';
 
 export interface KonsumenData {
   id: number;
@@ -28,6 +29,7 @@ export interface KonsumenData {
   project?: ProjekData;
   refrensi?: ReferensiData;
   prospek?: ProspekData;
+  created_by?: UserData;
 }
 
 export interface KonsumenResponse {

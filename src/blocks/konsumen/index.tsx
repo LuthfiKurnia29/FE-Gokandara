@@ -91,6 +91,9 @@ const KonsumenPage = memo(function KonsumenPage() {
   // Check if current user is Mitra
   const isMitra = userRole.toLowerCase() === 'mitra' || userRoleId === 4; // Assuming Mitra role_id is 4
 
+  // Check if current user is Mitra
+  const isTelem = userRole.toLowerCase() === 'telemarketing' || userRoleId === 5; // Assuming Mitra role_id is 4
+
   // Check if user can see filter button (Admin and Supervisor only)
   const canSeeFilterButton = () => {
     return (
@@ -266,10 +269,7 @@ const KonsumenPage = memo(function KonsumenPage() {
                       disabled={deleteKonsumen.isPending}
                       variant='destructive'>
                       <Trash className='mr-2 h-4 w-4' />
-                      {userRole.toLowerCase() === 'sales' ||
-                      userRoleId === 3
-                        ? 'Ajukan Hapus'
-                        : 'Delete'}
+                      {userRole.toLowerCase() === 'sales' || userRoleId === 3 ? 'Ajukan Hapus' : 'Delete'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -287,6 +287,12 @@ const KonsumenPage = memo(function KonsumenPage() {
             </div>
           </div>
           <div className='mt-2 space-y-1'>
+            {isTelem && (
+              <p className='text-sm'>
+                <span className='font-medium'>Assigned To:</span>{' '}
+                <span className='line-clamp-2'>{item.created_by?.name}</span>
+              </p>
+            )}
             <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
