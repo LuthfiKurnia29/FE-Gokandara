@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useCurrentUser } from '@/services/auth';
 import { getTipesByProjek } from '@/services/projek';
 import { PropertyData } from '@/types/properti';
 import { useQuery } from '@tanstack/react-query';
@@ -43,6 +44,18 @@ export const PropertyPriceSection = memo(({ property }: PropertyPriceSectionProp
     setOpen(true);
   };
 
+  // Get current user to check role
+  const { data: currentUser } = useCurrentUser();
+
+  // Check if current user is Telemarketing
+  const isTelemarketing = useMemo(() => {
+    if (!currentUser?.roles) return false;
+    // Check if user has Telemarketing role based on roles array
+    return currentUser.roles.some(
+      (userRole) => userRole.role.name.toLowerCase() === 'telemarketing' || userRole.role.code.toLowerCase() === 'tlm'
+    );
+  }, [currentUser]);
+
   return (
     <div className='mt-8 px-4'>
       <h2 className='mb-4 text-[20px] font-bold text-[#0C0C0C]'>Harga</h2>
@@ -57,11 +70,13 @@ export const PropertyPriceSection = memo(({ property }: PropertyPriceSectionProp
           </>
         )}
       </div>
-      <Button
-        onClick={handleOpenModal}
-        className='h-12 w-full rounded-lg bg-[#FF8500] font-medium hover:bg-[#FF8500]/90'>
-        Pemesanan
-      </Button>
+      {!isTelemarketing && (
+        <Button
+          onClick={handleOpenModal}
+          className='h-12 w-full rounded-lg bg-[#FF8500] font-medium hover:bg-[#FF8500]/90'>
+          Pemesanan
+        </Button>
+      )}
 
       <AddTransaksiModal open={open} onOpenChange={setOpen} />
     </div>
