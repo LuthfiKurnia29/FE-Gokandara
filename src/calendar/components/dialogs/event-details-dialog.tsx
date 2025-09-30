@@ -30,7 +30,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
       <Dialog>
         <DialogTrigger asChild>{children}</DialogTrigger>
 
-        <DialogContent>
+        <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>{event.title}</DialogTitle>
           </DialogHeader>

@@ -84,13 +84,13 @@ export const MemberFilterModal = memo(function MemberFilterModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-[90vw] border-0 p-6'>
+      <DialogContent className='h-[90vh] max-h-[90vh] w-full max-w-[95vw] overflow-y-auto border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px]'>
         <DialogHeader>
           <DialogTitle>Filter Berdasarkan Member</DialogTitle>
           <DialogDescription>Pilih member untuk memfilter data.</DialogDescription>
         </DialogHeader>
 
-        <div className='mt-4 max-w-[80vw]'>
+        <div className='mt-4 w-full'>
           <PaginateTable
             columns={columns}
             url='/user'

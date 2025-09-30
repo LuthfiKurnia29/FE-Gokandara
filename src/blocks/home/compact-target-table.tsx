@@ -139,7 +139,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-w-lg h-[90vh] max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Edit Target</DialogTitle>
             <DialogDescription>Edit data target di form berikut.</DialogDescription>

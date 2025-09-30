@@ -977,7 +977,7 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       {/* Property Type Selection Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
+        <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           <DialogHeader>
             <DialogTitle>Edit Data Transaksi</DialogTitle>
             <DialogDescription>Edit data transaksi yang sudah ada di form berikut.</DialogDescription>

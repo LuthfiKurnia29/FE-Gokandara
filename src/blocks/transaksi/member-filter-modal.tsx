@@ -82,7 +82,7 @@ export const MemberFilterModal = memo(function MemberFilterModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px]'>
+      <DialogContent className='h-[90vh] max-h-[90vh] w-full max-w-[95vw] overflow-y-auto border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px]'>
         <DialogHeader>
           <DialogTitle>Filter Berdasarkan Member</DialogTitle>
           <DialogDescription>

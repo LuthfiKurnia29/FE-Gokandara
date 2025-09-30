@@ -122,7 +122,7 @@ export function AddEventDialog({ children, startDate, startTime, defaultKonsumen
     <Dialog open={isOpen} onOpenChange={onToggle}>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>Buat Jadwal Baru</DialogTitle>
           <DialogDescription>
@@ -134,7 +134,7 @@ export function AddEventDialog({ children, startDate, startTime, defaultKonsumen
           <form
             id='event-form'
             onSubmit={form.handleSubmit(onSubmit)}
-            className='grid max-h-[500px] gap-4 overflow-y-auto py-4'>
+            className='grid max-h-[calc(90vh-10rem)] gap-4 overflow-y-auto py-4'>
             <FormField
               control={form.control}
               name='konsumen_id'

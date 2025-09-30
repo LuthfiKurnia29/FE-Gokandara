@@ -137,7 +137,7 @@ const ConversationItem = memo(
                 Open
               </Button>
             </DialogTrigger>
-            <DialogContent className='w-lg max-w-[calc(100vw-2rem)] md:w-2xl'>
+            <DialogContent className='w-lg max-w-[calc(100vw-2rem)] md:w-2xl h-[90vh] max-h-[90vh] overflow-y-auto'>
               <DialogHeader>
                 <DialogTitle>{conversation.pengirim.name}</DialogTitle>
                 <DialogDescription>{formatDate(conversation.created_at)}</DialogDescription>
@@ -292,7 +292,7 @@ const PesanBlocks = memo(() => {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='w-3xl max-w-[calc(100vw-2rem)] sm:max-w-3xl'>
+        <DialogContent className='w-3xl max-w-[calc(100vw-2rem)] sm:max-w-3xl h-[90vh] max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Kirim Pesan</DialogTitle>
             <DialogDescription>Isi form berikut untuk mengirim pesan.</DialogDescription>

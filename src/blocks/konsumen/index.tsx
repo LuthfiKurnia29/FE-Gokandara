@@ -426,7 +426,7 @@ const KonsumenPage = memo(function KonsumenPage() {
 
       {/* Image Modal for Mitra Role */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className='max-w-2xl border-0 p-0'>
+        <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto max-w-2xl border-0 p-0'>
           <DialogTitle className='sr-only'>Gambar Konsumen</DialogTitle>
           <DialogDescription className='sr-only'>
             Modal untuk menampilkan gambar konsumen dalam ukuran penuh
