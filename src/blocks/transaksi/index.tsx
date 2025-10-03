@@ -121,18 +121,30 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     'created_by'
   ]);
 
-  // Perhitungan rincian pembayaran untuk popup Detail
+  // Perhitungan rincian pembayaran untuk popup Detail (selaras dengan Create/Edit)
   const selectedSkemaNama = (detail as any)?.skema_pembayaran?.nama || (detail as any)?.skemaPembayaran?.nama || '';
-  const hargaDetail = Number(
-    (detail as any)?.harga ??
-      (detail as any)?.harga_asli ??
-      (detail?.properti as any)?.harga ??
-      detail?.grand_total ??
-      0
+  const basePriceDetail = Number(
+    (detail as any)?.harga ?? (detail as any)?.harga_asli ?? (detail?.properti as any)?.harga ?? 0
   );
+  const kelebihanMeterDetail = Number((detail as any)?.kelebihan_tanah ?? 0);
+  const hargaPerMeterDetail = Number((detail as any)?.harga_per_meter ?? 0);
+  const kelebihanTanahAmountDetail = Math.max(kelebihanMeterDetail * hargaPerMeterDetail, 0);
+  const subtotalDetail = Math.max(basePriceDetail + kelebihanTanahAmountDetail, 0);
+  const diskonValDetail = Number((detail as any)?.diskon ?? 0);
+  const tipeDiskonDetail = String((detail as any)?.tipe_diskon ?? '').toLowerCase();
+  const isPercentDiskonDetail = tipeDiskonDetail === 'percent' || tipeDiskonDetail === 'persen';
+  const discountAmountDetail = (() => {
+    if (!diskonValDetail || Number.isNaN(diskonValDetail) || subtotalDetail <= 0) return 0;
+    if (isPercentDiskonDetail) {
+      const pct = Math.max(0, Math.min(diskonValDetail, 100));
+      return Math.round(subtotalDetail * (pct / 100));
+    }
+    return Math.min(diskonValDetail, subtotalDetail);
+  })();
+  const finalPriceDetail = Math.max(subtotalDetail - discountAmountDetail, 0);
   const dpValueDetail = Number((detail as any)?.dp ?? 0);
-  const dpPercentDetail = hargaDetail > 0 ? Math.round((dpValueDetail / hargaDetail) * 100) : 0;
-  const sisaPembayaranDetail = Math.max(hargaDetail - dpValueDetail, 0);
+  const dpPercentDetail = finalPriceDetail > 0 ? Math.round((dpValueDetail / finalPriceDetail) * 100) : 0;
+  const sisaPembayaranDetail = Math.max(finalPriceDetail - dpValueDetail, 0);
 
   const paymentRowsDetail = useMemo(() => {
     const rows: { label: string; amount: number; periode: string }[] = [];
@@ -150,11 +162,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       let assigned = dpValueDetail;
       for (let i = 0; i < parts.length; i++) {
         if (i < parts.length - 1) {
-          const amt = Math.round((hargaDetail * parts[i].pct) / 100);
+          const amt = Math.round((finalPriceDetail * parts[i].pct) / 100);
           rows.push({ label: parts[i].label, amount: amt, periode: '-' });
           assigned += amt;
         } else {
-          const amt = Math.max(hargaDetail - assigned, 0);
+          const amt = Math.max(finalPriceDetail - assigned, 0);
           rows.push({ label: parts[i].label, amount: amt, periode: '-' });
         }
       }
@@ -168,11 +180,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       let assigned = dpValueDetail;
       for (let i = 0; i < parts.length; i++) {
         if (i < parts.length - 1) {
-          const amt = Math.round((hargaDetail * parts[i].pct) / 100);
+          const amt = Math.round((finalPriceDetail * parts[i].pct) / 100);
           rows.push({ label: parts[i].label, amount: amt, periode: '-' });
           assigned += amt;
         } else {
-          const amt = Math.max(hargaDetail - assigned, 0);
+          const amt = Math.max(finalPriceDetail - assigned, 0);
           rows.push({ label: parts[i].label, amount: amt, periode: '-' });
         }
       }
@@ -205,7 +217,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       }
     }
     return rows;
-  }, [selectedSkemaNama, dpPercentDetail, dpValueDetail, hargaDetail, sisaPembayaranDetail]);
+  }, [selectedSkemaNama, dpPercentDetail, dpValueDetail, finalPriceDetail, sisaPembayaranDetail]);
 
   const handleEdit = (penjualan: PenjualanWithRelations) => {
     if (penjualan.status === 'Approved' || penjualan.status === 'Rejected') {
@@ -443,15 +455,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                       <span className='text-sm font-medium'>{(detail as any)?.kavling_dipesan}</span>
                     </div>
                   )}
-                  {detail.diskon !== null && detail.diskon !== undefined && (
+                  {discountAmountDetail > 0 && (
                     <div className='flex items-center justify-between'>
                       <span className='text-sm text-gray-500'>Diskon</span>
-                      <span className='text-sm font-medium'>
-                        {detail.tipe_diskon === 'percent'
-                          ? `${detail.diskon}%`
-                          : formatRupiah(Number(detail.diskon || 0))}
-                        {detail.tipe_diskon ? ` (${detail.tipe_diskon})` : ''}
-                      </span>
+                      <span className='text-sm font-bold text-red-600'>- {formatRupiah(discountAmountDetail)}</span>
                     </div>
                   )}
                   {(detail as any)?.kelebihan_tanah !== undefined && (
@@ -468,14 +475,24 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                       </span>
                     </div>
                   )}
-                  {(detail as any)?.harga !== undefined && (
+                  {kelebihanTanahAmountDetail > 0 && (
                     <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-500'>Harga</span>
+                      <span className='text-sm text-gray-500'>Biaya Kelebihan Tanah</span>
                       <span className='text-sm font-bold text-green-600'>
-                        {formatRupiah(Number((detail as any)?.harga || (detail.properti as any)?.harga || 0))}
+                        {formatRupiah(kelebihanTanahAmountDetail)}
                       </span>
                     </div>
                   )}
+                  {(detail as any)?.harga !== undefined && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm text-gray-500'>Harga Dasar</span>
+                      <span className='text-sm font-bold text-green-600'>{formatRupiah(basePriceDetail)}</span>
+                    </div>
+                  )}
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-500'>Subtotal</span>
+                    <span className='text-sm font-bold text-green-600'>{formatRupiah(subtotalDetail)}</span>
+                  </div>
                   {detail.dp !== null && detail.dp !== undefined && (
                     <div className='flex items-center justify-between'>
                       <span className='text-sm text-gray-500'>DP</span>
@@ -483,10 +500,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                     </div>
                   )}
                   <div className='flex items-center justify-between'>
-                    <span className='text-sm text-gray-500'>Grand Total</span>
-                    <span className='text-sm font-bold text-green-600'>
-                      {formatRupiah(Number(detail.grand_total || 0))}
-                    </span>
+                    <span className='text-sm text-gray-500'>Harga Setelah Diskon</span>
+                    <span className='text-sm font-bold text-green-600'>{formatRupiah(finalPriceDetail)}</span>
                   </div>
                   {(detail as any)?.skemaPembayaran?.nama && (
                     <div className='flex items-center justify-between'>
@@ -709,8 +724,9 @@ const PenjualanPage = memo(function PenjualanPage() {
       cell: ({ getValue }) => <span className='font-mono text-sm font-medium'>#{getValue()}</span>,
       meta: { style: { width: '100px' } }
     }),
+    // Use a unique column id to avoid duplicate React keys
     columnHelper.accessor((row) => (row as any).no_transaksi ?? '-', {
-      id: 'no_transaksi',
+      id: 'no_transaksi_text',
       header: 'No. Transaksi',
       cell: ({ getValue }) => {
         const val = getValue() as number | string;
@@ -770,9 +786,19 @@ const PenjualanPage = memo(function PenjualanPage() {
       id: 'harga_asli',
       header: 'Harga (Sebelum Diskon)',
       cell: ({ row }) => {
+        const basePrice = Number(
+          (row.original as any)?.harga ??
+            (row.original as any)?.harga_asli ??
+            (row.original as any)?.tipe?.harga ??
+            (row.original as any)?.properti?.harga ??
+            0
+        );
+        const kelebihanMeter = Number((row.original as any)?.kelebihan_tanah ?? 0);
+        const hargaPerMeter = Number((row.original as any)?.harga_per_meter ?? 0);
+        const subtotal = Math.max(basePrice + Math.max(0, kelebihanMeter) * Math.max(0, hargaPerMeter), 0);
         return (
           <div className='flex flex-col'>
-            <span className='font-medium text-green-600'>{formatRupiah(row.original.harga_asli)}</span>
+            <span className='font-medium text-green-600'>{formatRupiah(subtotal)}</span>
           </div>
         );
       },

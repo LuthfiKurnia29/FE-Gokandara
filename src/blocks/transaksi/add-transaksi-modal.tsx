@@ -23,6 +23,10 @@ interface AddTransaksiModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const FIELD_CLS =
+  '!h-12 !min-h-12 !w-full !rounded-lg !border !px-3 !py-0 !text-sm focus-visible:!ring-2 focus-visible:!ring-offset-2';
+const FIELD_SMALL_CLS = '!h-9 !min-h-9 !w-16 !rounded-md !text-center !px-2 !py-0 !text-sm';
+
 export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenChange }: AddTransaksiModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [dpPercent, setDpPercent] = useState(30);
@@ -278,52 +282,54 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
 
             <div className='grid gap-6 px-6 pt-4 pb-10'>
               {isAdmin ? (
-              <div className='grid grid-cols-2 gap-6'>
-                <div>
-                  <Label className='mb-2 block'>Nama SPV</Label>
-                  <Select
-                    value={selectedSpvId}
-                    onValueChange={(v) => {
-                      setSelectedSpvId(v);
-                      setSelectedSalesId('');
-                    }}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
-                      <SelectValue placeholder={isLoadingSpv ? 'Loading...' : 'Pilih SPV'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(supervisorData?.data ?? []).map((user: any) => (
-                        <SelectItem key={user.id} value={String(user.id)}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className='grid grid-cols-2 gap-6'>
+                  <div>
+                    <Label className='mb-2 block'>Nama SPV</Label>
+                    <Select
+                      value={selectedSpvId}
+                      onValueChange={(v) => {
+                        setSelectedSpvId(v);
+                        setSelectedSalesId('');
+                      }}>
+                      <SelectTrigger className={FIELD_CLS}>
+                        <SelectValue placeholder={isLoadingSpv ? 'Loading...' : 'Pilih SPV'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(supervisorData?.data ?? []).map((user: any) => (
+                          <SelectItem key={user.id} value={String(user.id)}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className='mb-2 block'>Nama Sales</Label>
+                    <Select value={selectedSalesId} onValueChange={(v) => setSelectedSalesId(v)}>
+                      <SelectTrigger className={FIELD_CLS} disabled={!selectedSpvId || isLoadingSales}>
+                        <SelectValue
+                          placeholder={
+                            !selectedSpvId ? 'Pilih SPV terlebih dahulu' : isLoadingSales ? 'Loading...' : 'Pilih Sales'
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredSales.map((user: any) => (
+                          <SelectItem key={user.id} value={String(user.id)}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <Label className='mb-2 block'>Nama Sales</Label>
-                  <Select value={selectedSalesId} onValueChange={(v) => setSelectedSalesId(v)}>
-                    <SelectTrigger className='h-12 w-full rounded-lg' disabled={!selectedSpvId || isLoadingSales}>
-                      <SelectValue
-                        placeholder={
-                          !selectedSpvId ? 'Pilih SPV terlebih dahulu' : isLoadingSales ? 'Loading...' : 'Pilih Sales'
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredSales.map((user: any) => (
-                        <SelectItem key={user.id} value={String(user.id)}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              ):""}
+              ) : (
+                ''
+              )}
               <div>
                 <Label className='mb-2 block'>Nama Konsumen</Label>
                 <Select value={selectedKonsumenId} onValueChange={(v) => setSelectedKonsumenId(v)}>
-                  <SelectTrigger className='h-12 w-full rounded-lg' disabled={isLoadingKonsumen}>
+                  <SelectTrigger className={FIELD_CLS} disabled={isLoadingKonsumen}>
                     <SelectValue placeholder={isLoadingKonsumen ? 'Loading...' : 'Pilih Konsumen'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -361,7 +367,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <Input
                   type='text'
                   placeholder='Masukkan no transaksi'
-                  className='h-12 w-full rounded-lg'
+                  className={FIELD_CLS}
                   value={noTransaksi}
                   onChange={(e) => setNoTransaksi(e.target.value)}
                 />
@@ -375,7 +381,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                     setSelectedProjekId(Number(v));
                     setSelectedTipeId(null);
                   }}>
-                  <SelectTrigger className='h-12 w-full rounded-lg'>
+                  <SelectTrigger className={FIELD_CLS}>
                     <SelectValue placeholder='Pilih projek' />
                   </SelectTrigger>
                   <SelectContent>
@@ -392,7 +398,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <div>
                   <Label className='mb-2 block'>Tipe</Label>
                   <Select value={selectedTipeId?.toString()} onValueChange={(v) => setSelectedTipeId(Number(v))}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe' />
                     </SelectTrigger>
                     <SelectContent>
@@ -409,7 +415,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder='1'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={jumlahKavling}
                     onChange={(e) => setJumlahKavling(e.target.value)}
@@ -423,7 +429,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={kelebihanTanah}
                     onChange={(e) => setKelebihanTanah(e.target.value)}
@@ -434,7 +440,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={hargaPerMeter}
                     onChange={(e) => setHargaPerMeter(e.target.value)}
@@ -446,7 +452,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <div>
                   <Label className='mb-2 block'>Tipe Diskon</Label>
                   <Select value={tipeDiskon} onValueChange={(v) => setTipeDiskon(v as 'persen' | 'nominal')}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe diskon' />
                     </SelectTrigger>
                     <SelectContent>
@@ -460,7 +466,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder={tipeDiskon === 'persen' ? '0-100' : '0'}
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     max={tipeDiskon === 'persen' ? 100 : undefined}
                     value={diskon}
@@ -531,7 +537,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 </div>
                 <div>
                   <Select value={selectedSkemaId?.toString()} onValueChange={(v) => setSelectedSkemaId(Number(v))}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih skema pembayaran' />
                     </SelectTrigger>
                     <SelectContent>
@@ -555,7 +561,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                       <div>{row.label}</div>
                       <div>
                         {row.periode && row.periode !== '-' ? (
-                          <Input value={row.periode} className='h-9 w-16 rounded-md text-center' readOnly />
+                          <Input value={row.periode} className={FIELD_SMALL_CLS} readOnly />
                         ) : (
                           <span>-</span>
                         )}

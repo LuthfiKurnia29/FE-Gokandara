@@ -7,6 +7,8 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useAllSkemaPembayaran } from '@/services/skema-pembayaran';
 
@@ -43,9 +45,9 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
     Array.from({ length: 2 }).map(() => ({ name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '' }))
   );
 
-  // Step 3: Harga
+  // Step 3: Harga per Jenis Pembayaran
   const [prices, setPrices] = useState(
-    Array.from({ length: 2 }).map(() => ({ tipe: '', jenis: [] as string[], harga: '' }))
+    Array.from({ length: 2 }).map(() => ({ tipe: '', items: [] as { jenisId: string; harga: string }[] }))
   );
 
   // Step 4: Fasilitas
@@ -72,8 +74,9 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
       setPrices(
         initialData.prices.map((p: any) => ({
           tipe: p.tipe ?? '',
-          jenis: Array.isArray(p.jenis) ? p.jenis.map((x: any) => String(x)) : [],
-          harga: p.harga ? String(p.harga) : ''
+          items: Array.isArray(p.items)
+            ? p.items.map((it: any) => ({ jenisId: String(it.jenisId ?? it.id ?? ''), harga: String(it.harga ?? '') }))
+            : []
         }))
       );
     }
@@ -89,7 +92,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
     setPrices((prev) => {
       const target = types.length;
       const next = Array.from({ length: target }).map((_, i) => {
-        const cur = prev[i] ?? { tipe: '', jenis: [] as string[], harga: '' };
+        const cur = prev[i] ?? { tipe: '', items: [] as { jenisId: string; harga: string }[] };
         return { ...cur, tipe: types[i]?.name ?? '' };
       });
       return next;
@@ -106,6 +109,11 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
     () => skemaPembayaranOptions.map((skema) => ({ value: skema.id.toString(), label: skema.nama })),
     [skemaPembayaranOptions]
   );
+  const paymentLabelById = useMemo(() => {
+    const map: Record<string, string> = {};
+    paymentOptions.forEach((opt) => (map[opt.value] = opt.label));
+    return map;
+  }, [paymentOptions]);
 
   const handleFileUploadChange = (files: FilePondFile[] | null) => {
     if (!files) {
@@ -184,7 +192,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
               <Label>Upload Gambar Projek</Label>
               <FileUpload
                 onChange={handleFileUploadChange}
-                initialFiles={uploadedFiles}
+                initialFiles={initialData?.gambarUrls ?? uploadedFiles}
                 allowMultiple
                 acceptedFileTypes={['image/*']}
                 credits={false}
@@ -304,30 +312,77 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                   <Select
                     multiple
                     options={paymentOptions}
-                    value={p.jenis}
-                    onChange={(v) =>
+                    value={p.items.map((it) => it.jenisId)}
+                    showCountWhenMultiple
+                    renderMultipleCountLabel={(n) => `${n} jenis dipilih`}
+                    onChange={(v) => {
+                      const selected = ((v as string[]) ?? []).filter(Boolean);
                       setPrices((prev) =>
-                        prev.map((it, i) => (i === idx ? { ...it, jenis: (v as string[]) ?? [] } : it))
-                      )
-                    }
+                        prev.map((it, i) => {
+                          if (i !== idx) return it;
+                          const existing = it.items ?? [];
+                          const nextItems = selected.map((id) => {
+                            const found = existing.find((e) => e.jenisId === id);
+                            return { jenisId: id, harga: found?.harga ?? '' };
+                          });
+                          return { ...it, items: nextItems };
+                        })
+                      );
+                    }}
                     placeholder={isLoadingSkema ? 'Loading...' : 'Pilih'}
                     className='h-12'
                   />
                 </div>
-                <div className='space-y-2'>
-                  <Label>Harga</Label>
-                  <Input
-                    type='text'
-                    inputMode='numeric'
-                    pattern='[0-9]*'
-                    placeholder='0'
-                    value={p.harga ? new Intl.NumberFormat('id-ID').format(Number(p.harga)) : ''}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, '');
-                      setPrices((prev) => prev.map((it, i) => (i === idx ? { ...it, harga: raw } : it)));
-                    }}
-                    className='h-12'
-                  />
+                <div className='space-y-2 md:col-span-3'>
+                  <Label>Harga per Jenis Pembayaran</Label>
+                  {p.items.length === 0 ? (
+                    <p className='text-sm text-gray-500'>Pilih jenis pembayaran terlebih dahulu</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Jenis</TableHead>
+                          <TableHead>Harga</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {p.items.map((item, jdx) => (
+                          <TableRow key={jdx}>
+                            <TableCell>
+                              <Input
+                                value={paymentLabelById[item.jenisId] ?? item.jenisId}
+                                readOnly
+                                className='h-10 w-full bg-gray-50'
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type='text'
+                                inputMode='numeric'
+                                pattern='[0-9]*'
+                                placeholder='0'
+                                value={item.harga ? new Intl.NumberFormat('id-ID').format(Number(item.harga)) : ''}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/[^\d]/g, '');
+                                  setPrices((prev) =>
+                                    prev.map((it, i) => {
+                                      if (i !== idx) return it;
+                                      const nextItems = it.items.map((x, k) => (k === jdx ? { ...x, harga: raw } : x));
+                                      return { ...it, items: nextItems };
+                                    })
+                                  );
+                                }}
+                                className='h-10 w-full'
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+                <div className='md:col-span-3'>
+                  <Separator className='my-2' />
                 </div>
               </div>
             ))}

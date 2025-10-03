@@ -7,12 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
+import { Select as SearchSelect } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { usePermissions } from '@/services/auth';
 import { useKonsumenList } from '@/services/konsumen';
 import { usePenjualanById, useUpdatePenjualan } from '@/services/penjualan';
-import { getAllProjek, getTipesByProjek } from '@/services/projek';
-import { useAllSkemaPembayaran } from '@/services/skema-pembayaran';
+import { getAllProjek, getPembayaranByProjekTipe, getTipesByProjek } from '@/services/projek';
 import { useSupervisorList, useUserList } from '@/services/user';
 import { useQuery } from '@tanstack/react-query';
 
@@ -24,6 +24,11 @@ interface EditTransaksiModalProps {
   transaksiId: number | null;
 }
 
+// Konsistensi ukuran field – pakai modifier `!` agar override semua style bawaan komponen
+const FIELD_CLS =
+  '!h-12 !min-h-12 !w-full !rounded-lg !border !px-3 !py-0 !text-sm focus-visible:!ring-2 focus-visible:!ring-offset-2';
+const FIELD_SMALL_CLS = '!h-9 !min-h-9 !w-16 !rounded-md !px-2 !py-0 !text-center !text-sm';
+
 export const EditTransaksiModal = memo(function EditTransaksiModal({
   open,
   onOpenChange,
@@ -31,7 +36,6 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
 }: EditTransaksiModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [dpPercent, setDpPercent] = useState(30);
-  const { data: skemaPembayaranOptions = [] } = useAllSkemaPembayaran();
   const [selectedSkemaId, setSelectedSkemaId] = useState<number | null>(null);
   const [noTransaksi, setNoTransaksi] = useState<string>('');
   const [tipeDiskon, setTipeDiskon] = useState<'persen' | 'nominal'>('persen');
@@ -47,6 +51,19 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     () => getTipesByProjek(selectedProjekId as number),
     { enabled: !!selectedProjekId }
   );
+
+  // Skema pembayaran bergantung pada projek dan tipe yang dipilih
+  const { data: skemaPembayaranOptions = [] } = useQuery(
+    ['/projek', selectedProjekId, 'tipe', selectedTipeId, 'pembayaran'],
+    () => getPembayaranByProjekTipe(selectedProjekId as number, selectedTipeId as number),
+    { enabled: !!selectedProjekId && !!selectedTipeId }
+  );
+
+  // Reset skema pembayaran ketika tipe berubah
+  useEffect(() => {
+    setSelectedSkemaId(null);
+  }, [selectedTipeId]);
+
   const { data: supervisorData, isLoading: isLoadingSpv } = useSupervisorList();
   const { data: salesData, isLoading: isLoadingSales } = useUserList({ perPage: 1000, role_id: 3 });
   const [selectedSpvId, setSelectedSpvId] = useState<string>('');
@@ -64,28 +81,41 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   }, [tipeList, selectedTipeId]);
 
   const harga = useMemo(() => {
-    const qty = Number(jumlahKavling || 1);
-    const base = Number((selectedTipe as any)?.harga ?? 0) * qty;
-    const extra = Number(kelebihanTanah || 0) * Number(hargaPerMeter || 0) * 1000000;
-    return base + extra;
-  }, [selectedTipe, kelebihanTanah, hargaPerMeter, jumlahKavling]);
+    const skema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
+    const skemaHarga = Number(skema?.harga);
+    const base = Number.isFinite(skemaHarga) ? skemaHarga : Number((selectedTipe as any)?.harga ?? 0);
+    return base;
+  }, [selectedSkemaId, skemaPembayaranOptions, selectedTipe]);
+
+  const kelebihanTanahAmount = useMemo(() => {
+    return Number(kelebihanTanah || 0) * Number(hargaPerMeter || 0);
+  }, [kelebihanTanah, hargaPerMeter]);
   const dpValue = useMemo(() => Math.round((harga * dpPercent) / 100), [harga, dpPercent]);
-  const sisaPembayaran = useMemo(() => Math.max(harga - dpValue, 0), [harga, dpValue]);
   const discountAmount = useMemo(() => {
     if (!diskon || diskon.trim() === '') return 0;
     const val = Number(diskon);
     if (Number.isNaN(val) || val <= 0) return 0;
+    const totalBeforeDiscount = harga + kelebihanTanahAmount;
     if (tipeDiskon === 'persen') {
       const pct = Math.max(0, Math.min(val, 100));
-      return Math.round(harga * (pct / 100));
+      return Math.round(totalBeforeDiscount * (pct / 100));
     }
-    return Math.min(val, harga);
-  }, [diskon, tipeDiskon, harga]);
-  const hargaSetelahDiskon = useMemo(() => Math.max(harga - discountAmount, 0), [harga, discountAmount]);
+    return Math.min(val, totalBeforeDiscount);
+  }, [diskon, tipeDiskon, harga, kelebihanTanahAmount]);
+  const hargaSetelahDiskon = useMemo(
+    () => Math.max(harga + kelebihanTanahAmount - discountAmount, 0),
+    [harga, kelebihanTanahAmount, discountAmount]
+  );
+  const sisaPembayaran = useMemo(() => Math.max(hargaSetelahDiskon - dpValue, 0), [hargaSetelahDiskon, dpValue]);
   const selectedSkemaNama = useMemo(() => {
     const skema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
     return skema?.nama || '';
   }, [skemaPembayaranOptions, selectedSkemaId]);
+  const sisaLabel = useMemo(() => {
+    const nama = selectedSkemaNama.toLowerCase();
+    if (nama.includes('kpr')) return 'Sisa Plafon';
+    return 'Sisa Pembayaran';
+  }, [selectedSkemaNama]);
 
   const isProgressSkema = useMemo(() => {
     return (
@@ -131,6 +161,18 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     return (salesData?.data ?? []).filter((u: any) => String(u.parent_id) === String(selectedSpvId));
   }, [salesData, selectedSpvId]);
 
+  const safeSpvOptions = useMemo(() => {
+    return (supervisorData?.data ?? [])
+      .filter((u: any) => u && u.id && (u.name || u.nama))
+      .map((u: any) => ({ value: String(u.id), label: u.name || u.nama }));
+  }, [supervisorData]);
+
+  const safeSalesOptions = useMemo(() => {
+    return (filteredSales ?? [])
+      .filter((u: any) => u && u.id && (u.name || u.nama))
+      .map((u: any) => ({ value: String(u.id), label: u.name || u.nama }));
+  }, [filteredSales]);
+
   const { getUserData } = usePermissions();
   const userData = getUserData();
   const userRole = userData?.roles?.[0]?.role?.name || '';
@@ -147,13 +189,17 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
 
   const konsumenParams = useMemo(() => {
     const p: any = { per_page: 1000 };
-    // Saat mode edit, jangan batasi berdasarkan created_id agar opsi konsumen
-    // yang sudah dipilih tetap muncul walaupun tidak sesuai filter.
     if (!transaksiId && effectiveCreatedId) p.created_id = effectiveCreatedId;
     return p;
   }, [effectiveCreatedId, transaksiId]);
 
   const { data: konsumenRes, isLoading: isLoadingKonsumen } = useKonsumenList(konsumenParams);
+
+  const safeKonsumenOptions = useMemo(() => {
+    return (konsumenRes?.data ?? [])
+      .filter((k: any) => k && k.id && (k.name || k.nama))
+      .map((k: any) => ({ value: String(k.id), label: k.name || k.nama }));
+  }, [konsumenRes]);
 
   // Load current transaksi detail
   const { data: detail } = usePenjualanById(transaksiId, [
@@ -162,7 +208,6 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     'blok',
     'tipe',
     'unit',
-    // Sesuaikan nama relasi dengan konvensi backend
     'projek',
     'skema_pembayaran',
     'created_by'
@@ -182,21 +227,17 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     setJumlahKavling(String((detail as any)?.kavling_dipesan ?? '1'));
     setKelebihanTanah(String((detail as any)?.kelebihan_tanah ?? '0'));
     setHargaPerMeter(String((detail as any)?.harga_per_meter ?? '0'));
-    // Prefill SPV/Sales berdasarkan pembuat transaksi
     const creator = (detail as any)?.created_by;
     if (creator?.id) {
       const roleId = Number(creator.role_id);
       if (roleId === 3) {
-        // Sales
         setSelectedSalesId(String(creator.id));
         if (creator.parent_id) setSelectedSpvId(String(creator.parent_id));
       } else if (roleId === 2) {
-        // Supervisor
         setSelectedSpvId(String(creator.id));
         setSelectedSalesId('');
       }
     }
-    // Estimate dpPercent from dp and harga if possible
     const dp = Number(detail.dp ?? 0);
     const estHarga = Number((detail as any)?.harga ?? (detail.properti as any)?.harga ?? 0);
     if (dp > 0 && estHarga > 0) {
@@ -211,6 +252,14 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     const rows: { label: string; amount: number; periode: string }[] = [];
 
     rows.push({ label: 'DP', amount: dpValue, periode: '-' });
+    const skemaLower = selectedSkemaNama.toLowerCase();
+    if (skemaLower.includes('kpr')) {
+      rows.push({ label: 'Sisa Plafon', amount: sisaPembayaran, periode: '-' });
+      return rows;
+    } else if (skemaLower.includes('cash keras')) {
+      rows.push({ label: 'Sisa Pembayaran', amount: sisaPembayaran, periode: '-' });
+      return rows;
+    }
 
     if (selectedSkemaNama.includes('Cash By progress 3 lantai')) {
       const lantaiPct = dpPercent >= 50 ? 15 : 20;
@@ -283,7 +332,13 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
 
   const updatePenjualan = useUpdatePenjualan();
 
-  const handleNext = () => setStep(2);
+  const handleNext = () => {
+    if (!selectedKonsumenId) {
+      toast.error('Silakan pilih konsumen');
+      return;
+    }
+    setStep(2);
+  };
 
   const handleClose = (val: boolean) => {
     if (!val) {
@@ -309,7 +364,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
       ...(effectiveCreatedId ? { created_id: effectiveCreatedId } : {}),
       ...(selectedProjekId ? { projeks_id: selectedProjekId } : {}),
       ...(selectedTipeId ? { tipe_id: selectedTipeId } : {}),
-      kavling_dipesan: Number(jumlahKavling) || undefined,
+      ...(jumlahKavling !== '' ? { kavling_dipesan: jumlahKavling } : {}),
       ...(kelebihanTanah !== '' ? { kelebihan_tanah: Number(kelebihanTanah) } : {}),
       ...(hargaPerMeter !== '' ? { harga_per_meter: Number(hargaPerMeter) } : {}),
       ...(selectedSkemaId ? { skema_pembayaran_id: selectedSkemaId } : {}),
@@ -341,42 +396,32 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <div className='grid grid-cols-2 gap-6'>
                   <div>
                     <Label className='mb-2 block'>Nama SPV</Label>
-                    <Select
+                    <SearchSelect
+                      options={safeSpvOptions}
                       value={selectedSpvId}
-                      onValueChange={(v) => {
-                        setSelectedSpvId(v);
+                      onChange={(v) => {
+                        setSelectedSpvId(v as string);
                         setSelectedSalesId('');
-                      }}>
-                      <SelectTrigger className='h-12 w-full rounded-lg'>
-                        <SelectValue placeholder={isLoadingSpv ? 'Loading...' : 'Pilih SPV'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(supervisorData?.data ?? []).map((user: any) => (
-                          <SelectItem key={user.id} value={String(user.id)}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      }}
+                      placeholder={isLoadingSpv ? 'Loading...' : 'Pilih SPV'}
+                      inputPlaceholder={'Cari SPV...'}
+                      disabled={isLoadingSpv}
+                      className={FIELD_CLS}
+                    />
                   </div>
                   <div>
                     <Label className='mb-2 block'>Nama Sales</Label>
-                    <Select value={selectedSalesId} onValueChange={(v) => setSelectedSalesId(v)}>
-                      <SelectTrigger className='h-12 w-full rounded-lg' disabled={!selectedSpvId || isLoadingSales}>
-                        <SelectValue
-                          placeholder={
-                            !selectedSpvId ? 'Pilih SPV terlebih dahulu' : isLoadingSales ? 'Loading...' : 'Pilih Sales'
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredSales.map((user: any) => (
-                          <SelectItem key={user.id} value={String(user.id)}>
-                            {user.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchSelect
+                      options={safeSalesOptions}
+                      value={selectedSalesId}
+                      onChange={(v) => setSelectedSalesId(v as string)}
+                      placeholder={
+                        !selectedSpvId ? 'Pilih SPV terlebih dahulu' : isLoadingSales ? 'Loading...' : 'Pilih Sales'
+                      }
+                      inputPlaceholder={'Cari Sales...'}
+                      disabled={!selectedSpvId || isLoadingSales}
+                      className={FIELD_CLS}
+                    />
                   </div>
                 </div>
               ) : (
@@ -384,18 +429,15 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
               )}
               <div>
                 <Label className='mb-2 block'>Nama Konsumen</Label>
-                <Select value={selectedKonsumenId} onValueChange={(v) => setSelectedKonsumenId(v)}>
-                  <SelectTrigger className='h-12 w-full rounded-lg' disabled={isLoadingKonsumen}>
-                    <SelectValue placeholder={isLoadingKonsumen ? 'Loading...' : 'Pilih Konsumen'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(konsumenRes?.data ?? []).map((k: any) => (
-                      <SelectItem key={k.id} value={String(k.id)}>
-                        {k.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchSelect
+                  options={safeKonsumenOptions}
+                  value={selectedKonsumenId}
+                  onChange={(val) => setSelectedKonsumenId(val as string)}
+                  placeholder={isLoadingKonsumen ? 'Loading...' : 'Pilih Konsumen'}
+                  inputPlaceholder={'Cari konsumen...'}
+                  disabled={isLoadingKonsumen}
+                  className={FIELD_CLS}
+                />
               </div>
             </div>
 
@@ -423,7 +465,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <Input
                   type='text'
                   placeholder='Masukkan no transaksi'
-                  className='h-12 w-full rounded-lg'
+                  className={FIELD_CLS}
                   value={noTransaksi}
                   onChange={(e) => setNoTransaksi(e.target.value)}
                 />
@@ -437,7 +479,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                     setSelectedProjekId(Number(v));
                     setSelectedTipeId(null);
                   }}>
-                  <SelectTrigger className='h-12 w-full rounded-lg'>
+                  <SelectTrigger className={FIELD_CLS}>
                     <SelectValue placeholder='Pilih projek' />
                   </SelectTrigger>
                   <SelectContent>
@@ -454,7 +496,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <div>
                   <Label className='mb-2 block'>Tipe</Label>
                   <Select value={selectedTipeId?.toString()} onValueChange={(v) => setSelectedTipeId(Number(v))}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe' />
                     </SelectTrigger>
                     <SelectContent>
@@ -471,7 +513,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <Input
                     type='number'
                     placeholder='1'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={jumlahKavling}
                     onChange={(e) => setJumlahKavling(e.target.value)}
@@ -485,7 +527,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <Input
                     type='number'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={kelebihanTanah}
                     onChange={(e) => setKelebihanTanah(e.target.value)}
@@ -496,7 +538,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <Input
                     type='number'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={hargaPerMeter}
                     onChange={(e) => setHargaPerMeter(e.target.value)}
@@ -508,7 +550,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <div>
                   <Label className='mb-2 block'>Tipe Diskon</Label>
                   <Select value={tipeDiskon} onValueChange={(v) => setTipeDiskon(v as 'persen' | 'nominal')}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe diskon' />
                     </SelectTrigger>
                     <SelectContent>
@@ -522,7 +564,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <Input
                     type='number'
                     placeholder={tipeDiskon === 'persen' ? '0-100' : '0'}
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     max={tipeDiskon === 'persen' ? 100 : undefined}
                     value={diskon}
@@ -551,6 +593,12 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <span>Harga</span>
                   <span className='font-medium'>Rp {harga.toLocaleString('id-ID')}</span>
                 </div>
+                {kelebihanTanahAmount > 0 && (
+                  <div className='flex items-center justify-between'>
+                    <span>Kelebihan Tanah</span>
+                    <span className='font-medium'>Rp {kelebihanTanahAmount.toLocaleString('id-ID')}</span>
+                  </div>
+                )}
                 {discountAmount > 0 && (
                   <div className='flex items-center justify-between'>
                     <span>Diskon</span>
@@ -580,16 +628,16 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   </div>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span>Sisa Pembayaran</span>
+                  <span>{sisaLabel}</span>
                   <span className='font-medium'>Rp {sisaPembayaran.toLocaleString('id-ID')}</span>
                 </div>
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                   <div className='flex items-center justify-between gap-4'>
-                    <Label className='mb-2 block'>Skema Pembayaran</Label>
+                    <Label className='whitespace-nowrap'>Skema Pembayaran</Label>
                   </div>
                   <div>
-                    <Select value={selectedSkemaId?.toString()} onValueChange={(v) => setSelectedSkemaId(Number(v))}>
-                      <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <Select value={`${selectedSkemaId ?? ''}`} onValueChange={(v) => setSelectedSkemaId(Number(v))}>
+                      <SelectTrigger className={FIELD_CLS}>
                         <SelectValue placeholder='Pilih skema pembayaran' />
                       </SelectTrigger>
                       <SelectContent>
@@ -606,22 +654,25 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
 
               <Separator />
 
-              <div className='space-y-2'>
-                <div className='flex items-center justify-between'>
-                  <span className='font-medium'>Rincian Pembayaran</span>
-                  <span className='text-muted-foreground text-sm'>Skema: {selectedSkemaNama || '-'}</span>
+              <div className='rounded-lg border'>
+                <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b px-4 py-3 text-sm'>
+                  <div>Pembayaran</div>
+                  <div>Periode</div>
+                  <div className='text-right'>Angsuran</div>
                 </div>
-                <div className='rounded-md border'>
-                  {paymentRows.map((row, idx) => (
-                    <div key={idx} className='flex items-center justify-between border-b p-3 last:border-b-0'>
-                      <div>
-                        <div className='text-sm font-medium'>{row.label}</div>
-                        <div className='text-muted-foreground text-xs'>Periode: {row.periode}</div>
-                      </div>
-                      <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
+                {paymentRows.map((row, idx) => (
+                  <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
+                    <div>{row.label}</div>
+                    <div>
+                      {row.periode && row.periode !== '-' ? (
+                        <Input value={row.periode} className={FIELD_SMALL_CLS} readOnly />
+                      ) : (
+                        <span>-</span>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
+                  </div>
+                ))}
               </div>
 
               <div className='bg-muted/40 flex items-center justify-center border-t px-6 py-6'>

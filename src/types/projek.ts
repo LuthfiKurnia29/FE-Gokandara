@@ -33,8 +33,10 @@ export interface CreateProjekData {
     luas_tanah: number;
     luas_bangunan: number;
     jumlah_unit: number;
-    harga: number;
-    jenis_pembayaran_ids: number[];
+    jenis_pembayaran: Array<{
+      id: number;
+      harga: number;
+    }>;
   }>;
   fasilitas?: Array<{
     name: string;

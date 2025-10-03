@@ -19,6 +19,15 @@ export const getTipesByProjek = async (id: number): Promise<any[]> => {
   return data.data || data;
 };
 
+// Mendapatkan daftar skema pembayaran berdasarkan projek dan tipe
+export const getPembayaranByProjekTipe = async (
+  projekId: number,
+  tipeId: number
+): Promise<Array<{ id: number; nama: string; harga: number | string }>> => {
+  const { data } = await axios.get(`/projek/${projekId}/tipe/${tipeId}/pembayaran`);
+  return data.data || data;
+};
+
 export const createProjek = async (payload: CreateProjekData) => {
   const formData = new FormData();
 
@@ -34,10 +43,10 @@ export const createProjek = async (payload: CreateProjekData) => {
       formData.append(`tipe[${i}][luas_tanah]`, String(t.luas_tanah ?? 0));
       formData.append(`tipe[${i}][luas_bangunan]`, String(t.luas_bangunan ?? 0));
       formData.append(`tipe[${i}][jumlah_unit]`, String(t.jumlah_unit ?? 0));
-      formData.append(`tipe[${i}][harga]`, String(t.harga ?? 0));
-      if (t.jenis_pembayaran_ids && t.jenis_pembayaran_ids.length > 0) {
-        t.jenis_pembayaran_ids.forEach((id, j) => {
-          formData.append(`tipe[${i}][jenis_pembayaran_ids][${j}]`, String(id));
+      if (t.jenis_pembayaran && t.jenis_pembayaran.length > 0) {
+        t.jenis_pembayaran.forEach((jp, j) => {
+          formData.append(`tipe[${i}][jenis_pembayaran][${j}][id]`, String(jp.id));
+          formData.append(`tipe[${i}][jenis_pembayaran][${j}][harga]`, String(jp.harga ?? 0));
         });
       }
     });
@@ -76,10 +85,10 @@ export const updateProjek = async (id: number, payload: CreateProjekData) => {
       formData.append(`tipe[${i}][luas_tanah]`, String(t.luas_tanah ?? 0));
       formData.append(`tipe[${i}][luas_bangunan]`, String(t.luas_bangunan ?? 0));
       formData.append(`tipe[${i}][jumlah_unit]`, String(t.jumlah_unit ?? 0));
-      formData.append(`tipe[${i}][harga]`, String(t.harga ?? 0));
-      if (t.jenis_pembayaran_ids && t.jenis_pembayaran_ids.length > 0) {
-        t.jenis_pembayaran_ids.forEach((id, j) => {
-          formData.append(`tipe[${i}][jenis_pembayaran_ids][${j}]`, String(id));
+      if (t.jenis_pembayaran && t.jenis_pembayaran.length > 0) {
+        t.jenis_pembayaran.forEach((jp, j) => {
+          formData.append(`tipe[${i}][jenis_pembayaran][${j}][id]`, String(jp.id));
+          formData.append(`tipe[${i}][jenis_pembayaran][${j}][harga]`, String(jp.harga ?? 0));
         });
       }
     });
