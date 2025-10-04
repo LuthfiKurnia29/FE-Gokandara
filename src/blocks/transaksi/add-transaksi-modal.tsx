@@ -49,6 +49,19 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
     { enabled: !!selectedProjekId && !!selectedTipeId }
   );
 
+  const FIELD_CLS =
+    '!h-12 !min-h-12 !w-full !rounded-lg !border !px-3 !py-0 !text-sm focus-visible:!ring-2 focus-visible:!ring-offset-2';
+  const FIELD_SMALL_CLS = '!h-9 !min-h-9 !w-16 !rounded-md !px-2 !py-0 !text-center !text-sm';
+
+  // Formatter sederhana untuk tampilan Rupiah tanpa desimal
+  const formatRupiahPlain = (amount: number) =>
+    new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(
+      Number.isFinite(amount) ? amount : 0
+    );
+
+  // Ambil hanya digit dari input pengguna
+  const parseNumeric = (val: string) => (val || '').replace(/\D/g, '');
+
   // Reset skema pembayaran ketika tipe berubah
   useEffect(() => {
     setSelectedSkemaId(null);
@@ -342,7 +355,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <div>
                     <Label className='mb-2 block'>Nama SPV</Label>
                     <SearchSelect
-                      className='h-12 w-full rounded-lg'
+                      className={FIELD_CLS}
                       options={safeSpvOptions}
                       value={selectedSpvId}
                       onChange={(v) => {
@@ -357,7 +370,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <div>
                     <Label className='mb-2 block'>Nama Sales</Label>
                     <SearchSelect
-                      className='h-12 w-full rounded-lg'
+                      className={FIELD_CLS}
                       options={safeSalesOptions}
                       value={selectedSalesId}
                       onChange={(v) => setSelectedSalesId(v as string)}
@@ -375,7 +388,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
               <div>
                 <Label className='mb-2 block'>Nama Konsumen</Label>
                 <SearchSelect
-                  className='h-12 w-full rounded-lg'
+                  className={FIELD_CLS}
                   options={safeKonsumenOptions}
                   value={selectedKonsumenId}
                   onChange={(val) => setSelectedKonsumenId(val as string)}
@@ -410,7 +423,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <Input
                   type='text'
                   placeholder='Masukkan no transaksi'
-                  className='h-12 w-full rounded-lg'
+                  className={FIELD_CLS}
                   value={noTransaksi}
                   onChange={(e) => setNoTransaksi(e.target.value)}
                 />
@@ -424,7 +437,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                     setSelectedProjekId(Number(v));
                     setSelectedTipeId(null);
                   }}>
-                  <SelectTrigger className='h-12 w-full rounded-lg'>
+                  <SelectTrigger className={FIELD_CLS}>
                     <SelectValue placeholder='Pilih projek' />
                   </SelectTrigger>
                   <SelectContent>
@@ -441,7 +454,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <div>
                   <Label className='mb-2 block'>Tipe</Label>
                   <Select value={selectedTipeId?.toString()} onValueChange={(v) => setSelectedTipeId(Number(v))}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe' />
                     </SelectTrigger>
                     <SelectContent>
@@ -458,7 +471,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='text'
                     placeholder='Masukkan no kavling'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     value={jumlahKavling}
                     onChange={(e) => setJumlahKavling(e.target.value)}
                   />
@@ -471,7 +484,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     value={kelebihanTanah}
                     onChange={(e) => setKelebihanTanah(e.target.value)}
@@ -480,12 +493,14 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <div>
                   <Label className='mb-2 block'>Harga per meter</Label>
                   <Input
-                    type='number'
+                    type='text'
                     placeholder='0'
-                    className='h-12 w-full rounded-lg'
-                    min={0}
-                    value={hargaPerMeter}
-                    onChange={(e) => setHargaPerMeter(e.target.value)}
+                    className={FIELD_CLS}
+                    value={hargaPerMeter && hargaPerMeter !== '' ? formatRupiahPlain(Number(hargaPerMeter)) : ''}
+                    onChange={(e) => {
+                      const numeric = parseNumeric(e.target.value);
+                      setHargaPerMeter(numeric);
+                    }}
                   />
                 </div>
               </div>
@@ -494,7 +509,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 <div>
                   <Label className='mb-2 block'>Tipe Diskon</Label>
                   <Select value={tipeDiskon} onValueChange={(v) => setTipeDiskon(v as 'persen' | 'nominal')}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih tipe diskon' />
                     </SelectTrigger>
                     <SelectContent>
@@ -508,7 +523,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                   <Input
                     type='number'
                     placeholder={tipeDiskon === 'persen' ? '0-100' : '0'}
-                    className='h-12 w-full rounded-lg'
+                    className={FIELD_CLS}
                     min={0}
                     max={tipeDiskon === 'persen' ? 100 : undefined}
                     value={diskon}
@@ -589,7 +604,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 </div>
                 <div>
                   <Select value={selectedSkemaId?.toString()} onValueChange={(v) => setSelectedSkemaId(Number(v))}>
-                    <SelectTrigger className='h-12 w-full rounded-lg'>
+                    <SelectTrigger className={FIELD_CLS}>
                       <SelectValue placeholder='Pilih skema pembayaran' />
                     </SelectTrigger>
                     <SelectContent>

@@ -29,6 +29,15 @@ const FIELD_CLS =
   '!h-12 !min-h-12 !w-full !rounded-lg !border !px-3 !py-0 !text-sm focus-visible:!ring-2 focus-visible:!ring-offset-2';
 const FIELD_SMALL_CLS = '!h-9 !min-h-9 !w-16 !rounded-md !px-2 !py-0 !text-center !text-sm';
 
+// Formatter sederhana untuk tampilan angka lokal tanpa desimal
+const formatRupiahPlain = (amount: number) =>
+  new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(
+    Number.isFinite(amount) ? amount : 0
+  );
+
+// Ambil hanya digit dari input pengguna
+const parseNumeric = (val: string) => (val || '').replace(/\D/g, '');
+
 export const EditTransaksiModal = memo(function EditTransaksiModal({
   open,
   onOpenChange,
@@ -536,12 +545,14 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <div>
                   <Label className='mb-2 block'>Harga per meter</Label>
                   <Input
-                    type='number'
+                    type='text'
                     placeholder='0'
                     className={FIELD_CLS}
-                    min={0}
-                    value={hargaPerMeter}
-                    onChange={(e) => setHargaPerMeter(e.target.value)}
+                    value={hargaPerMeter && hargaPerMeter !== '' ? formatRupiahPlain(Number(hargaPerMeter)) : ''}
+                    onChange={(e) => {
+                      const numeric = parseNumeric(e.target.value);
+                      setHargaPerMeter(numeric);
+                    }}
                   />
                 </div>
               </div>
