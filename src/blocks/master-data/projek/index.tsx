@@ -65,10 +65,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       .then((detail: any) => {
         const tipeArr = Array.isArray(detail?.tipe) ? detail.tipe : [];
         const facilitiesArr = Array.isArray(detail?.fasilitas) ? detail.fasilitas : [];
+        const gambarUrls = Array.isArray(detail?.gambar)
+          ? detail.gambar
+              .map((g: any) => (typeof g?.gambar === 'string' ? g.gambar : null))
+              .filter((url: string | null): url is string => !!url)
+          : [];
         setInitialWizardData({
           projectName: detail?.name ?? data.name ?? '',
           address: detail?.alamat ?? '',
           jumlahKavling: detail?.jumlah_kavling != null ? String(detail.jumlah_kavling) : '',
+          gambarUrls,
           types: tipeArr.map((t: any) => ({
             name: t?.name ?? '',
             luasTanah: t?.luas_tanah != null ? String(t.luas_tanah) : '',
@@ -77,8 +83,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           })),
           prices: tipeArr.map((t: any) => ({
             tipe: t?.name ?? '',
-            jenis: Array.isArray(t?.jenis_pembayaran_ids) ? t.jenis_pembayaran_ids.map((id: number) => String(id)) : [],
-            harga: t?.harga != null ? String(t.harga) : ''
+            items: Array.isArray(t?.jenis_pembayaran)
+              ? t.jenis_pembayaran.map((jp: any) => ({
+                  jenisId: String(jp?.id ?? ''),
+                  harga: jp?.harga != null ? String(jp.harga) : ''
+                }))
+              : []
           })),
           facilities: facilitiesArr.map((f: any) => ({
             name: f?.name ?? '',
@@ -110,14 +120,16 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     if (!selectedData) return;
     try {
       const tipePayload = (data.types ?? []).map((t, idx) => {
-        const p = (data.prices ?? [])[idx] ?? { jenis: [], harga: '' };
+        const p = (data.prices ?? [])[idx] ?? { items: [] };
         return {
           name: t.name ?? '',
           luas_tanah: Number(t.luasTanah) || 0,
           luas_bangunan: Number(t.luasBangunan) || 0,
           jumlah_unit: Number(t.jumlahUnit) || 0,
-          harga: Number(p.harga) || 0,
-          jenis_pembayaran_ids: ((p.jenis ?? []) as string[]).map((v) => Number(v))
+          jenis_pembayaran: ((p.items ?? []) as { jenisId: string; harga: string }[]).map((it) => ({
+            id: Number(it.jenisId) || 0,
+            harga: Number(it.harga) || 0
+          }))
         };
       });
   
@@ -205,14 +217,16 @@ const ProjekPage = memo(function ProjekPage() {
   }) => {
     try {
       const tipePayload = (data.types ?? []).map((t, idx) => {
-        const p = (data.prices ?? [])[idx] ?? { jenis: [], harga: '' };
+        const p = (data.prices ?? [])[idx] ?? { items: [] };
         return {
           name: t.name ?? '',
           luas_tanah: Number(t.luasTanah) || 0,
           luas_bangunan: Number(t.luasBangunan) || 0,
           jumlah_unit: Number(t.jumlahUnit) || 0,
-          harga: Number(p.harga) || 0,
-          jenis_pembayaran_ids: ((p.jenis ?? []) as string[]).map((v) => Number(v))
+          jenis_pembayaran: ((p.items ?? []) as { jenisId: string; harga: string }[]).map((it) => ({
+            id: Number(it.jenisId) || 0,
+            harga: Number(it.harga) || 0
+          }))
         };
       });
 

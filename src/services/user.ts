@@ -149,6 +149,48 @@ export const useSupervisorList = () => {
   });
 };
 
+// Supervisor list for Mitra (Create Transaksi should use this)
+export const useSupervisorMitraList = () => {
+  return useQuery({
+    queryKey: ['/user-spv-mitra'],
+    queryFn: async () => {
+      const response = await axios.get('/user-spv-mitra');
+      const payload = response.data;
+      // Normalize to { data: [] } shape for consumers that expect .data
+      if (Array.isArray(payload)) {
+        return { data: payload } as any;
+      }
+      if (payload && Array.isArray(payload.data)) {
+        return { data: payload.data } as any;
+      }
+      return payload;
+    },
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
+// Sales list by supervisor parent ID
+export const useUsersByParent = (parentId: number | null) => {
+  return useQuery({
+    queryKey: ['/user-by-parent', parentId],
+    queryFn: async () => {
+      if (!parentId) throw new Error('parentId is required');
+      const response = await axios.get(`/user-by-parent/${parentId}`);
+      const payload = response.data;
+      // Normalize to { data: [] }
+      if (Array.isArray(payload)) {
+        return { data: payload } as any;
+      }
+      if (payload && Array.isArray(payload.data)) {
+        return { data: payload.data } as any;
+      }
+      return payload;
+    },
+    enabled: !!parentId,
+    staleTime: 5 * 60 * 1000
+  });
+};
+
 // Mutation hooks
 export const useCreateUser = () => {
   const queryClient = useQueryClient();

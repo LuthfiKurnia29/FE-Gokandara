@@ -370,3 +370,22 @@ export const useFollowUpHistoryByKonsumen = (konsumenId: number | null) => {
     refetchOnWindowFocus: true
   });
 };
+
+// Konsumen by createdId
+export const useKonsumenByCreated = (createdId: number | null) => {
+  return useQuery({
+    queryKey: ['/konsumen-by-created', createdId],
+    queryFn: async () => {
+      if (!createdId) throw new Error('createdId is required');
+      const res = await axios.get(`/konsumen-by-created/${createdId}`);
+      const payload = res.data;
+      // Normalize response to { data: [] }
+      if (Array.isArray(payload)) return { data: payload } as any;
+      if (payload && Array.isArray(payload.data)) return { data: payload.data } as any;
+      return payload;
+    },
+    enabled: !!createdId,
+    staleTime: 30 * 1000,
+    cacheTime: 5 * 60 * 1000
+  });
+};

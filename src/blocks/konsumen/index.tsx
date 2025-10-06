@@ -296,6 +296,25 @@ const KonsumenPage = memo(function KonsumenPage() {
             <p className='text-sm'>
               <span className='font-medium'>Phone:</span> {item.phone}
             </p>
+            {item.created_at && (
+              <p className='text-sm'>
+                <span className='font-medium'>Dibuat:</span>{' '}
+                {(function () {
+                  const val = item.created_at as unknown as string;
+                  const tryIso = val?.includes('T') ? val : (val || '').replace(' ', 'T');
+                  const d = new Date(tryIso);
+                  return isNaN(d.getTime())
+                    ? val
+                    : d.toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      });
+                })()}
+              </p>
+            )}
             {(item as any).assign_name && (
               <p className='text-sm'>
                 <span className='font-medium'>Assign:</span> {(item as any).assign_name}

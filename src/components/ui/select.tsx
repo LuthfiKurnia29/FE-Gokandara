@@ -29,11 +29,25 @@ interface SelectBoxProps {
   className?: string;
   multiple?: boolean;
   disabled?: boolean;
+  showCountWhenMultiple?: boolean;
+  renderMultipleCountLabel?: (count: number) => React.ReactNode;
 }
 
 const Select = React.forwardRef<HTMLInputElement, SelectBoxProps>(
   (
-    { inputPlaceholder, emptyPlaceholder, placeholder, className, options = [], value, onChange, multiple, disabled },
+    {
+      inputPlaceholder,
+      emptyPlaceholder,
+      placeholder,
+      className,
+      options = [],
+      value,
+      onChange,
+      multiple,
+      disabled,
+      showCountWhenMultiple,
+      renderMultipleCountLabel
+    },
     ref
   ) => {
     const [searchTerm, setSearchTerm] = React.useState<string>('');
@@ -100,11 +114,19 @@ const Select = React.forwardRef<HTMLInputElement, SelectBoxProps>(
               {multiple ? (
                 <div className='flex flex-wrap gap-1'>
                   {Array.isArray(selectedOption) && selectedOption.length > 0 ? (
-                    selectedOption.map((option) => (
-                      <div key={option.value} className='bg-accent flex items-center gap-1 rounded-md px-1 text-sm'>
-                        {option.label}
-                      </div>
-                    ))
+                    showCountWhenMultiple ? (
+                      <span className='text-sm'>
+                        {renderMultipleCountLabel
+                          ? renderMultipleCountLabel(selectedOption.length)
+                          : `${selectedOption.length} selected`}
+                      </span>
+                    ) : (
+                      selectedOption.map((option) => (
+                        <div key={option.value} className='bg-accent flex items-center gap-1 rounded-md px-1 text-sm'>
+                          {option.label}
+                        </div>
+                      ))
+                    )
                   ) : (
                     <span className='text-muted-foreground mr-auto'>{placeholder}</span>
                   )}

@@ -23,6 +23,7 @@ export interface KonsumenData {
   refrensi_id: number;
   prospek_id: number;
   created_id?: number | null; // ID of the supervisor/sales user
+  created_at?: string; // Timestamp pembuatan data
   gambar?: string | null; // URL gambar untuk existing data
   gambar_url?: string | null; // Full URL gambar untuk menampilkan
   // Relations (optional when included)
