@@ -163,8 +163,7 @@ const KonsumenPage = memo(function KonsumenPage() {
       const errors = error?.response?.data?.errors || {};
       const msgFromField = Array.isArray(errors.tgl_fu_2) ? errors.tgl_fu_2[0] : undefined;
       const fallbackMsg = error?.response?.data?.message;
-      const message =
-        status === 422 && (msgFromField || fallbackMsg) ? msgFromField || fallbackMsg : 'Terjadi sesuatu Error!';
+      const message = (msgFromField || fallbackMsg) ? msgFromField || fallbackMsg : 'Terjadi sesuatu Error!';
       toast.error(message || 'Tanggal follow up 2 minimal 7 hari setelah Tanggal & waktu follow up 1');
     }
   };
