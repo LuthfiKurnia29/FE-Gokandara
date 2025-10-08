@@ -242,7 +242,7 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className='max-w-4xl p-0'>
+        <DialogContent className='w-[98vw] p-0 sm:max-w-[60rem]'>
           <TambahProjekWizard
             title='Edit Projek'
             onCancel={handleEditCancel}
@@ -252,10 +252,18 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
               projectName: projekData?.name || '',
               address: projekData?.address || '',
               jumlahKavling: property?.jumlah_kavling || 0,
-              types: [],
+              types:
+                projekData?.tipe?.map((t) => ({
+                  name: t.name,
+                  luasTanah: t.luas_tanah,
+                  luasBangunan: t.luas_bangunan,
+                  jumlahUnit: t.jumlah_unit,
+                  unitTerjual: t.unit_terjual,
+                  jenisPembayaran: t.jenis_pembayaran
+                })) || [],
               prices: [],
               facilities: property?.fasilitas || [],
-              gambarUrls: projekData?.gambars?.map((g) => g.gambar) || []
+              gambarUrls: projekData?.gambar?.map((g) => g.gambar) || []
             }}
           />
         </DialogContent>

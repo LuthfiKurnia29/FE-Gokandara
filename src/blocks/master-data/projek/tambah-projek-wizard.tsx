@@ -227,7 +227,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
             {types.map((t, idx) => {
               const unitTersisa = (Number(t.jumlahUnit) || 0) - (Number(t.unitTerjual) || 0);
               return (
-                <div key={idx} className='grid grid-cols-1 gap-4 md:grid-cols-6'>
+                <div key={idx} className='grid grid-cols-1 gap-4 md:grid-cols-7'>
                   <div className='space-y-2'>
                     <Label>Nama Tipe</Label>
                     <Input
@@ -292,7 +292,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                   </div>
                   <div className='space-y-2'>
                     <Label>Unit Terjual</Label>
-                    <Input type='number' min={0} step={1} placeholder='' readOnly className='h-12 bg-gray-50' />
+                    <Input type='number' value={t.unitTerjual} placeholder='' readOnly className='h-12 bg-gray-50' />
                   </div>
                   <div className='space-y-2'>
                     <Label>Unit Tersisa</Label>

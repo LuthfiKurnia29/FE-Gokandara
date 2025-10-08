@@ -9,6 +9,7 @@ export type TipeData = {
   luas_tanah?: number;
   luas_bangunan?: number;
   jumlah_unit?: number;
+  unit_terjual?: number;
   harga?: string | null;
   jenis_pembayaran?: JenisPembayaran[];
   created_at?: string;

@@ -1,8 +1,16 @@
+import { TipeData } from './tipe';
+
 export interface ProjekData {
   id: number;
   name: string;
   address: string;
   gambars: ProjekGambar[];
+  gambar: ProjekGambar[];
+  tipe: TipeData[];
+  fasilitas: any[];
+  jumlah_kavling: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ProjekGambar {

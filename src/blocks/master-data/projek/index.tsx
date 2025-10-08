@@ -79,7 +79,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             name: t?.name ?? '',
             luasTanah: t?.luas_tanah != null ? String(t.luas_tanah) : '',
             luasBangunan: t?.luas_bangunan != null ? String(t.luas_bangunan) : '',
-            jumlahUnit: t?.jumlah_unit != null ? String(t.jumlah_unit) : ''
+            jumlahUnit: t?.jumlah_unit != null ? String(t.jumlah_unit) : '',
+            unitTerjual: t?.unit_terjual != null ? String(t.unit_terjual) : ''
           })),
           prices: tipeArr.map((t: any) => ({
             tipe: t?.name ?? '',
@@ -132,12 +133,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           }))
         };
       });
-  
+
       const fasilitasPayload = (data.facilities ?? []).map((f) => ({
         name: f.name ?? '',
         luas: Number(f.luas) || 0
       }));
-  
+
       await updateProjek(selectedData.id, {
         name: data.projectName,
         alamat: data.address,
@@ -145,11 +146,11 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         tipe: tipePayload,
         fasilitas: fasilitasPayload
       });
-  
+
       if (data.gambars && data.gambars.length > 0) {
         await uploadProjekGambars(selectedData.id, data.gambars);
       }
-  
+
       handleCloseForm();
       queryClient.invalidateQueries({ queryKey: ['/projek'] });
     } catch (error: any) {
@@ -267,7 +268,7 @@ const ProjekPage = memo(function ProjekPage() {
         )}
       />
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='w-[98vw] p-0 sm:max-w-[50rem]'>
+        <DialogContent className='w-[98vw] p-0 sm:max-w-[60rem]'>
           <TambahProjekWizard
             onCancel={handleCloseForm}
             onSubmit={handleWizardSubmit}
