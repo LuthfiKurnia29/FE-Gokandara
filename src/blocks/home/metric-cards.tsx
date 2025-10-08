@@ -106,6 +106,14 @@ export default function MetricCards({ dashboardData }: ComponentWithDashboardPro
     return Math.min((value / max) * 100, 100);
   };
 
+  const handleNewKonsumensClick = () => {
+    router.push('/konsumen');
+  };
+
+  const handleKonsumenProspekClick = () => {
+    router.push('/konsumen');
+  };
+
   const stats = [
     {
       title: 'Follow Up Hari ini',
@@ -128,14 +136,16 @@ export default function MetricCards({ dashboardData }: ComponentWithDashboardPro
       value: konsumenProspekCount.toString().padStart(2, '0'),
       bgColor: 'bg-orange-500',
       filledPercentage: calculatePercentage(konsumenProspekCount, 200), // Assume max 200 for demo
-      isLoading: dashboardData?.isLoading.konsumenByProspek
+      isLoading: dashboardData?.isLoading.konsumenByProspek,
+      onClick: handleKonsumenProspekClick
     },
     {
       title: 'Konsumen Baru',
       value: newKonsumensCount.toString().padStart(2, '0'),
       bgColor: 'bg-slate-600',
       filledPercentage: calculatePercentage(newKonsumensCount, 10), // Assume max 10 for demo
-      isLoading: dashboardData?.isLoading.newKonsumens
+      isLoading: dashboardData?.isLoading.newKonsumens,
+      onClick: handleNewKonsumensClick
     }
   ];
 
