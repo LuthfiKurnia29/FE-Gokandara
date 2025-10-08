@@ -27,14 +27,34 @@ export const PropertyPriceSection = memo(({ property }: PropertyPriceSectionProp
     if (!tipeData || tipeData.length === 0) return null;
 
     const firstTipe = tipeData[0];
-    return firstTipe?.harga || 0;
+
+    // Get the minimum price from jenis_pembayaran array
+    if (firstTipe?.jenis_pembayaran && firstTipe.jenis_pembayaran.length > 0) {
+      const prices = firstTipe.jenis_pembayaran
+        .map((jp: any) => parseFloat(jp.harga))
+        .filter((price: any) => !isNaN(price));
+
+      return prices.length > 0 ? Math.min(...prices) : 0;
+    }
+
+    return parseFloat(firstTipe?.harga || '0') || 0;
   }, [tipeData]);
 
   const selectedLastPrice = useMemo(() => {
     if (!tipeData || tipeData.length === 0 || tipeData.length === 1) return null;
 
-    const firstTipe = tipeData[tipeData.length - 1];
-    return firstTipe?.harga || 0;
+    const lastTipe = tipeData[tipeData.length - 1];
+
+    // Get the maximum price from jenis_pembayaran array
+    if (lastTipe?.jenis_pembayaran && lastTipe.jenis_pembayaran.length > 0) {
+      const prices = lastTipe.jenis_pembayaran
+        .map((jp: any) => parseFloat(jp.harga))
+        .filter((price: any) => !isNaN(price));
+
+      return prices.length > 0 ? Math.max(...prices) : 0;
+    }
+
+    return parseFloat(lastTipe?.harga || '0') || 0;
   }, [tipeData]);
 
   const propertyPrice = selectedPrice ? `Rp ${selectedPrice.toLocaleString('id-ID')}` : 'Harga tidak tersedia';

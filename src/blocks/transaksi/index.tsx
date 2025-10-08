@@ -841,7 +841,11 @@ const PenjualanPage = memo(function PenjualanPage() {
       id: 'sales',
       header: 'Sales',
       cell: ({ row }) => {
-        return <span className='text-muted-foreground'>{row.original.created_by?.name}</span>;
+        const createdBy: any = row.original.created_by;
+        const salesName = createdBy?.name || createdBy?.nama;
+        const spvName = createdBy?.parent_id ? createdBy?.parent?.name || createdBy?.parent?.nama : null;
+        const displayText = salesName ? `${salesName} ${spvName ? '( ' + spvName + ' )' : ''}` : '-';
+        return <span className='text-muted-foreground'>{displayText}</span>;
       },
       meta: { style: { width: '100px' } }
     }),
@@ -1003,7 +1007,7 @@ const PenjualanPage = memo(function PenjualanPage() {
 
       {/* Property Type Selection Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto w-full max-w-[95vw] border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
+        <DialogContent className='h-[90vh] max-h-[90vh] w-full max-w-[95vw] overflow-y-auto border-0 p-6 lg:max-w-[1000px] xl:max-w-[1200px] [&>button]:rounded-full [&>button]:bg-gray-200 [&>button]:p-2 [&>button]:transition-colors [&>button]:hover:bg-gray-300'>
           <DialogHeader>
             <DialogTitle>Edit Data Transaksi</DialogTitle>
             <DialogDescription>Edit data transaksi yang sudah ada di form berikut.</DialogDescription>

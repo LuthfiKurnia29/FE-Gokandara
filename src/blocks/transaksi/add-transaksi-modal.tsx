@@ -541,15 +541,28 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 </div>
                 <div>
                   <Label className='mb-2 block'>Diskon</Label>
-                  <Input
-                    type='number'
-                    placeholder={tipeDiskon === 'persen' ? '0-100' : '0'}
-                    className={FIELD_CLS}
-                    min={0}
-                    max={tipeDiskon === 'persen' ? 100 : undefined}
-                    value={diskon}
-                    onChange={(e) => setDiskon(e.target.value)}
-                  />
+                  {tipeDiskon === 'nominal' ? (
+                    <Input
+                      type='text'
+                      placeholder='0'
+                      className={FIELD_CLS}
+                      value={diskon && diskon !== '' ? formatRupiahPlain(Number(diskon)) : ''}
+                      onChange={(e) => {
+                        const numeric = parseNumeric(e.target.value);
+                        setDiskon(numeric);
+                      }}
+                    />
+                  ) : (
+                    <Input
+                      type='number'
+                      placeholder='0-100'
+                      className={FIELD_CLS}
+                      min={0}
+                      max={100}
+                      value={diskon}
+                      onChange={(e) => setDiskon(e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
 
