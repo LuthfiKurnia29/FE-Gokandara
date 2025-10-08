@@ -179,7 +179,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
       </DropdownMenu>
 
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='w-[98vw] p-0 sm:max-w-[50rem]'>
+        <DialogContent className='w-[98vw] p-0 sm:max-w-[60rem]'>
           <TambahProjekWizard
             onCancel={handleCloseForm}
             onSubmit={handleWizardSubmit}

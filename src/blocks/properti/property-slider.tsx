@@ -250,7 +250,8 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
             isLoading={updateProjekMutation.isPending}
             initialData={{
               projectName: projekData?.name || '',
-              address: projekData?.address || '',
+              alamat: projekData?.name || '',
+              address: projekData?.alamat || '',
               jumlahKavling: property?.jumlah_kavling || 0,
               types:
                 projekData?.tipe?.map((t) => ({

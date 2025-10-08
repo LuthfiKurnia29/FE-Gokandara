@@ -4,6 +4,7 @@ export interface ProjekData {
   id: number;
   name: string;
   address: string;
+  alamat: string;
   gambars: ProjekGambar[];
   gambar: ProjekGambar[];
   tipe: TipeData[];
