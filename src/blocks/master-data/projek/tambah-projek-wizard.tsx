@@ -292,13 +292,13 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                   </div>
                   <div className='space-y-2'>
                     <Label>Unit Terjual</Label>
-                    <Input type='number' value={t.unitTerjual} placeholder='' readOnly className='h-12 bg-gray-50' />
+                    <Input type='number' value={t.unitTerjual} placeholder='' readOnly className='h-12 bg-gray-100' />
                   </div>
                   <div className='space-y-2'>
                     <Label>Unit Tersisa</Label>
-                    <Input value={unitTersisa.toString()} readOnly className='h-12 bg-gray-50' />
+                    <Input value={unitTersisa.toString()} readOnly className='h-12 bg-gray-100' />
                   </div>
-                  <div className='space-y-2 md:col-span-6'>
+                  <div className='flex items-end space-y-2'>
                     <Button
                       variant='destructive'
                       className='w-full'
