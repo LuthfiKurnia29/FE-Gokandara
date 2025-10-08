@@ -78,7 +78,7 @@ export function DashboardHeader() {
 
   const handleLogout = () => {
     authService.logout();
-    window.location.reload(); // Refresh to trigger auth check
+    window.location.href = '/'; // Refresh to trigger auth check
   };
 
   // Get user data from API or fallback to stored data
@@ -146,9 +146,9 @@ export function DashboardHeader() {
             )}
 
             {/* Calendar Icon with Green Badge */}
-            <div className='relative' onClick={handleCalendarNotificationClick}>
+            <Link href='/calendar' className='relative'>
               <Calendar className='h-6 w-6 cursor-pointer text-gray-600' />
-            </div>
+            </Link>
           </div>
 
           {/* User Profile Dropdown */}
