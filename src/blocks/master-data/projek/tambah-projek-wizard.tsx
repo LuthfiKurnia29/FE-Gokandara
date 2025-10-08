@@ -42,7 +42,13 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
 
   // Step 2: Tipe
   const [types, setTypes] = useState(
-    Array.from({ length: 2 }).map(() => ({ name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '' }))
+    Array.from({ length: 2 }).map(() => ({
+      name: '',
+      luasTanah: '',
+      luasBangunan: '',
+      jumlahUnit: '',
+      unitTerjual: ''
+    }))
   );
 
   // Step 3: Harga per Jenis Pembayaran
@@ -66,7 +72,8 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
           name: t.name ?? '',
           luasTanah: t.luasTanah ? String(t.luasTanah) : '',
           luasBangunan: t.luasBangunan ? String(t.luasBangunan) : '',
-          jumlahUnit: t.jumlahUnit ? String(t.jumlahUnit) : ''
+          jumlahUnit: t.jumlahUnit ? String(t.jumlahUnit) : '',
+          unitTerjual: t.unitTerjual ? String(t.unitTerjual) : ''
         }))
       );
     }
@@ -208,62 +215,65 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
               <button
                 className='text-gray-500 hover:text-gray-700'
                 onClick={() =>
-                  setTypes((prev) => [...prev, { name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '' }])
+                  setTypes((prev) => [
+                    ...prev,
+                    { name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '', unitTerjual: '' }
+                  ])
                 }>
                 {' '}
                 + Tambah Tipe
               </button>
             </div>
-            {types.map((t, idx) => (
-              <div key={idx} className='grid grid-cols-1 gap-4 md:grid-cols-4'>
-                <div className='space-y-2'>
-                  <Label>Nama Tipe</Label>
-                  <Input
-                    value={t.name}
-                    onChange={(e) =>
-                      setTypes((prev) => prev.map((it, i) => (i === idx ? { ...it, name: e.target.value } : it)))
-                    }
-                    className='h-12'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Luas Tanah</Label>
-                  <Input
-                    type='number'
-                    min={1}
-                    step={1}
-                    value={t.luasTanah}
-                    onChange={(e) =>
-                      setTypes((prev) =>
-                        prev.map((it, i) =>
-                          i === idx ? { ...it, luasTanah: e.target.value.replace(/[^0-9]/g, '') } : it
+            {types.map((t, idx) => {
+              const unitTersisa = (Number(t.jumlahUnit) || 0) - (Number(t.unitTerjual) || 0);
+              return (
+                <div key={idx} className='grid grid-cols-1 gap-4 md:grid-cols-6'>
+                  <div className='space-y-2'>
+                    <Label>Nama Tipe</Label>
+                    <Input
+                      value={t.name}
+                      onChange={(e) =>
+                        setTypes((prev) => prev.map((it, i) => (i === idx ? { ...it, name: e.target.value } : it)))
+                      }
+                      className='h-12'
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>Luas Tanah</Label>
+                    <Input
+                      type='number'
+                      min={1}
+                      step={1}
+                      value={t.luasTanah}
+                      onChange={(e) =>
+                        setTypes((prev) =>
+                          prev.map((it, i) =>
+                            i === idx ? { ...it, luasTanah: e.target.value.replace(/[^0-9]/g, '') } : it
+                          )
                         )
-                      )
-                    }
-                    className='h-12'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Luas Bangunan</Label>
-                  <Input
-                    type='number'
-                    min={1}
-                    step={1}
-                    value={t.luasBangunan}
-                    onChange={(e) =>
-                      setTypes((prev) =>
-                        prev.map((it, i) =>
-                          i === idx ? { ...it, luasBangunan: e.target.value.replace(/[^0-9]/g, '') } : it
+                      }
+                      className='h-12'
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>Luas Bangunan</Label>
+                    <Input
+                      type='number'
+                      min={1}
+                      step={1}
+                      value={t.luasBangunan}
+                      onChange={(e) =>
+                        setTypes((prev) =>
+                          prev.map((it, i) =>
+                            i === idx ? { ...it, luasBangunan: e.target.value.replace(/[^0-9]/g, '') } : it
+                          )
                         )
-                      )
-                    }
-                    className='h-12'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Jumlah Unit</Label>
-
-                  <div className='grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
+                      }
+                      className='h-12'
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>Jumlah Unit</Label>
                     <Input
                       type='number'
                       min={1}
@@ -279,9 +289,19 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                       }
                       className='h-12'
                     />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>Unit Terjual</Label>
+                    <Input type='number' min={0} step={1} placeholder='' readOnly className='h-12 bg-gray-50' />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>Unit Tersisa</Label>
+                    <Input value={unitTersisa.toString()} readOnly className='h-12 bg-gray-50' />
+                  </div>
+                  <div className='space-y-2 md:col-span-6'>
                     <Button
                       variant='destructive'
-                      className='shrink-0'
+                      className='w-full'
                       disabled={types.length <= 1}
                       title={types.length <= 1 ? 'Minimal harus tersisa 1 baris' : undefined}
                       onClick={() => {
@@ -291,8 +311,8 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                     </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
