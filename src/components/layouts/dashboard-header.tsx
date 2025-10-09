@@ -146,7 +146,7 @@ export function DashboardHeader() {
             )}
 
             {/* Calendar Icon with Green Badge */}
-            <Link href='/calendar' className='relative'>
+            <Link href='/kalender' className='relative'>
               <Calendar className='h-6 w-6 cursor-pointer text-gray-600' />
             </Link>
           </div>

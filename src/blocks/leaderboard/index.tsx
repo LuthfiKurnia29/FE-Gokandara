@@ -14,6 +14,7 @@ import { LeaderboardItem } from '@/types/leaderboard';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import { Filter, Mail, MessageCircle, Phone, PhoneCall, User, Video, X } from 'lucide-react';
+import moment from 'moment';
 
 const columnHelper = createColumnHelper<LeaderboardItem>();
 
@@ -32,8 +33,8 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   const apiUrl = '/leaderboard';
   const [top3, setTop3] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
-  const [endDate, setEndDate] = useState<Date>(new Date(2025, 0, 7));
+  const [startDate, setStartDate] = useState<Date>(new Date(moment().startOf('year').format('YYYY-MM-DD')));
+  const [endDate, setEndDate] = useState<Date>(new Date(moment().endOf('year').format('YYYY-MM-DD')));
 
   // Convert dates to string format for API
   const formatDateForAPI = (date: Date) => {
