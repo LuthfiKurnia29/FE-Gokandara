@@ -49,7 +49,7 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
   // Badge logic (Transaksi, Pesan, and Target & Bonus)
   const determineBadgeCount = (title: string) => {
     if (title === 'Transaksi') return transaksiTotal;
-    if (title === 'Pesan') return 1; // TODO: Implement pesan count when API is available
+    // if (title === 'Pesan') return 1; // TODO: Implement pesan count when API is available
     if (title === 'Target & Bonus') return targetCountAchieved;
     return 0;
   };
