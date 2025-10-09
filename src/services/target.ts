@@ -70,8 +70,8 @@ export const targetService = {
 
   // Get count of achieved targets
   getCountAchieved: async (): Promise<number> => {
-    const response = await axios.get<{ count: number }>('/target/count-achieved');
-    return response.data.count;
+    const response = await axios.get<number>('/target/count-achieved');
+    return response.data;
   }
 };
 
