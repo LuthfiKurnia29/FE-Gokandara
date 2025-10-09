@@ -32,7 +32,10 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   // Use real backend endpoint
   const apiUrl = '/leaderboard';
   const [top3, setTop3] = useState<any[]>([]);
-  const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+  const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({
+    start: moment().startOf('year').format('YYYY-MM-DD'),
+    end: moment().endOf('year').format('YYYY-MM-DD')
+  });
   const [startDate, setStartDate] = useState<Date>(new Date(moment().startOf('year').format('YYYY-MM-DD')));
   const [endDate, setEndDate] = useState<Date>(new Date(moment().endOf('year').format('YYYY-MM-DD')));
 
