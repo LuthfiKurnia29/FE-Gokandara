@@ -12,6 +12,9 @@ export interface PropertyData {
   tipe_ids?: number[];
   blok_ids?: number[];
   jumlah_kavling: number;
+  kamar_tidur: number;
+  kamar_mandi: number;
+  wifi: boolean;
   created_at: string;
   updated_at: string;
   // Relations (optional when included)

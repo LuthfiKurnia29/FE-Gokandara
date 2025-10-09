@@ -36,6 +36,15 @@ export const createProjek = async (payload: CreateProjekData) => {
   if (payload.jumlah_kavling !== undefined && payload.jumlah_kavling !== null) {
     formData.append('jumlah_kavling', String(payload.jumlah_kavling));
   }
+  if (payload.kamar_tidur !== undefined && payload.kamar_tidur !== null) {
+    formData.append('kamar_tidur', String(payload.kamar_tidur));
+  }
+  if (payload.kamar_mandi !== undefined && payload.kamar_mandi !== null) {
+    formData.append('kamar_mandi', String(payload.kamar_mandi));
+  }
+  if (payload.wifi !== undefined && payload.wifi !== null) {
+    formData.append('wifi', payload.wifi ? '1' : '0');
+  }
 
   if (payload.tipe && payload.tipe.length > 0) {
     payload.tipe.forEach((t, i) => {
@@ -77,6 +86,15 @@ export const updateProjek = async (id: number, payload: CreateProjekData) => {
   if (payload.alamat) formData.append('alamat', payload.alamat);
   if (payload.jumlah_kavling !== undefined && payload.jumlah_kavling !== null) {
     formData.append('jumlah_kavling', String(payload.jumlah_kavling));
+  }
+  if (payload.kamar_tidur !== undefined && payload.kamar_tidur !== null) {
+    formData.append('kamar_tidur', String(payload.kamar_tidur));
+  }
+  if (payload.kamar_mandi !== undefined && payload.kamar_mandi !== null) {
+    formData.append('kamar_mandi', String(payload.kamar_mandi));
+  }
+  if (payload.wifi !== undefined && payload.wifi !== null) {
+    formData.append('wifi', payload.wifi ? '1' : '0');
   }
 
   if (payload.tipe && payload.tipe.length > 0) {
@@ -129,6 +147,14 @@ export const deleteProjekGambar = async (id: number): Promise<any> => {
   return axios.delete(`/projek-gambar/${id}`);
 };
 
+export const uploadProjekLogo = async (id: number, file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append('logo', file);
+  return axios.post(`/projek/${id}/logo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
 export const useCreateProjek = () => {
   return useMutation({
     mutationFn: createProjek,
@@ -166,5 +192,35 @@ export const useProjekById = (id: number | null) => {
     enabled: id !== null && id !== undefined,
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000
+  });
+};
+
+export const useUploadProjekGambars = () => {
+  return useMutation({
+    mutationFn: ({ id, files }: { id: number; files: File[] }) => uploadProjekGambars(id, files),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal mengupload gambar projek');
+    }
+  });
+};
+
+export const useProjekGambars = (id: number | null) => {
+  return useQuery({
+    queryKey: ['/projek', id, 'images'],
+    queryFn: () => {
+      if (!id) throw new Error('ID is required');
+      return getProjekGambars(id);
+    },
+    enabled: id !== null && id !== undefined,
+    staleTime: 5 * 60 * 1000
+  });
+};
+
+export const useUploadProjekLogo = () => {
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => uploadProjekLogo(id, file),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal mengupload logo projek');
+    }
   });
 };

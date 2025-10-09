@@ -5,11 +5,16 @@ export interface ProjekData {
   name: string;
   address: string;
   alamat: string;
+  logo?: string;
+  logo_url?: string;
   gambars: ProjekGambar[];
   gambar: ProjekGambar[];
   tipe: TipeData[];
   fasilitas: any[];
   jumlah_kavling: number;
+  kamar_tidur?: number;
+  kamar_mandi?: number;
+  wifi?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +23,7 @@ export interface ProjekGambar {
   id: number;
   projek_id: number;
   gambar: string;
+  gambar_url: string;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +43,9 @@ export interface CreateProjekData {
   name: string;
   alamat?: string;
   jumlah_kavling?: number;
+  kamar_tidur?: number;
+  kamar_mandi?: number;
+  wifi?: boolean;
   tipe?: Array<{
     name: string;
     luas_tanah: number;

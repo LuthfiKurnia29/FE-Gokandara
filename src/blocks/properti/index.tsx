@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import { PropertyDescription } from '@/blocks/properti/property-description';
 import { PropertyFacilities } from '@/blocks/properti/property-facilities';
@@ -10,11 +10,25 @@ import { PropertyLocation } from '@/blocks/properti/property-location';
 import { PropertyPriceSection } from '@/blocks/properti/property-price-section';
 import { PropertySalesHistory } from '@/blocks/properti/property-sales-history';
 import { PropertySlider } from '@/blocks/properti/property-slider';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { FileUpload } from '@/components/ui/file-upload';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProjekGambars, useProjekById } from '@/services/projek';
+import { getProjekGambars, useProjekById, useUploadProjekLogo } from '@/services/projek';
 import { PropertyData } from '@/types/properti';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { FilePondFile } from 'filepond';
+import { Pencil } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface PropertyContentProps {
   propertyId: string;
@@ -22,8 +36,12 @@ interface PropertyContentProps {
 
 export const PropertyContent = memo(function PropertyContent({ propertyId }: PropertyContentProps) {
   const projekId = parseInt(propertyId);
+  const queryClient = useQueryClient();
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [logoFile, setLogoFile] = useState<FilePondFile[] | null>(null);
 
   const { data: projek, isLoading, error } = useProjekById(projekId || null);
+  const uploadLogoMutation = useUploadProjekLogo();
 
   const { data: projekImages = [] } = useQuery({
     queryKey: ['/projek', projekId, 'gambars'],
@@ -39,6 +57,9 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
         harga: (projek as any)?.harga || 0,
         jumlah_kavling: (projek as any)?.jumlah_kavling || 0,
         fasilitas: (projek as any)?.fasilitas || [],
+        kamar_tidur: (projek as any)?.kamar_tidur || 0,
+        kamar_mandi: (projek as any)?.kamar_mandi || 0,
+        wifi: (projek as any)?.wifi || false,
         properti_gambar: Array.isArray(projekImages)
           ? projekImages.map((img: any) => ({
               id: img.id ?? 0,
@@ -72,7 +93,45 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
 
   const sliderImages = propertyImages.length > 0 ? propertyImages : [fallbackImage];
 
-  const thumbnailImage = propertyImages.length > 0 ? propertyImages[0] : fallbackImage;
+  const logoUrl = useMemo(() => {
+    if (!projek?.logo) return null;
+    const url = projek.logo_url;
+    return typeof url === 'string' && url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL ?? ''}${url}`;
+  }, [projek?.logo]);
+
+  const initialLogoFiles = useMemo(() => {
+    if (!logoUrl) return [];
+    return [logoUrl];
+  }, [logoUrl]);
+
+  const thumbnailImage = logoUrl || (propertyImages.length > 0 ? propertyImages[0] : fallbackImage);
+
+  const handleLogoUpload = async () => {
+    if (!logoFile || logoFile.length === 0) {
+      toast.error('Silakan pilih file logo terlebih dahulu');
+      return;
+    }
+
+    const file = logoFile[0].file as File;
+
+    try {
+      await uploadLogoMutation.mutateAsync(
+        { id: projekId, file },
+        {
+          onSuccess: async () => {
+            toast.success('Logo berhasil diupload');
+            setIsLogoModalOpen(false);
+            setLogoFile(null);
+            // Refetch projek data
+            await queryClient.invalidateQueries({ queryKey: ['/projek', 'by-id', projekId] });
+            await queryClient.refetchQueries({ queryKey: ['/projek', 'by-id', projekId] });
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
+  };
 
   if (!finalProperty && isLoading) {
     return (
@@ -133,11 +192,18 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
                 <div
                   className='h-full w-full bg-gray-200'
                   style={{
-                    backgroundImage: `url('${thumbnailImage}')`,
+                    backgroundImage: `url('${logoUrl}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
                   }}
                 />
+                <Button
+                  size='icon'
+                  variant='default'
+                  onClick={() => setIsLogoModalOpen(true)}
+                  className='bg-primary hover:bg-primary/90 absolute right-3 bottom-3 size-10 rounded-full shadow-lg'>
+                  <Pencil className='size-5' />
+                </Button>
               </div>
             </div>
           </div>
@@ -161,6 +227,33 @@ export const PropertyContent = memo(function PropertyContent({ propertyId }: Pro
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isLogoModalOpen} onOpenChange={setIsLogoModalOpen}>
+        <DialogContent className='sm:max-w-[500px]'>
+          <DialogHeader>
+            <DialogTitle>Upload Logo Projek</DialogTitle>
+            <DialogDescription>Pilih file logo untuk projek ini. File harus berupa gambar.</DialogDescription>
+          </DialogHeader>
+          <div className='py-4'>
+            <FileUpload
+              name='logo'
+              allowMultiple={false}
+              acceptedFileTypes={['image/*']}
+              labelIdle='Drag & Drop logo atau <span class="filepond--label-action">Browse</span>'
+              initialFiles={initialLogoFiles}
+              onupdatefiles={(files) => setLogoFile(files)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsLogoModalOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleLogoUpload} disabled={uploadLogoMutation.isPending}>
+              {uploadLogoMutation.isPending ? 'Uploading...' : 'Upload'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

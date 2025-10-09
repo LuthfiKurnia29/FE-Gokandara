@@ -102,6 +102,14 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     return false;
   };
 
+  const canUpdateToITJ = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'Approved';
+  };
+
+  const canUpdateToAkad = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'ITJ';
+  };
+
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [showBookingForm, setShowBookingForm] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -220,8 +228,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   }, [selectedSkemaNama, dpPercentDetail, dpValueDetail, finalPriceDetail, sisaPembayaranDetail]);
 
   const handleEdit = (penjualan: PenjualanWithRelations) => {
-    if (penjualan.status === 'Approved' || penjualan.status === 'Rejected') {
-      toast.warning('Transaksi dengan status Approved/Rejected tidak dapat diedit.');
+    if (['Approved', 'Rejected', 'ITJ', 'Akad'].includes(penjualan.status as any)) {
+      toast.warning('Transaksi dengan status Approved/Rejected/ITJ/Akad tidak dapat diedit.');
       return;
     }
     setSelectedId(penjualan.id);
@@ -282,6 +290,24 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     }
   };
 
+  const handleUpdateToITJ = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'ITJ' } });
+      toast.success('Status transaksi berhasil diubah menjadi ITJ');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+    }
+  };
+
+  const handleUpdateToAkad = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Akad' } });
+      toast.success('Status transaksi berhasil diubah menjadi Akad');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+    }
+  };
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setShowBookingForm(false);
@@ -330,7 +356,9 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleEdit(row.original)}
-            disabled={updatePenjualan.isPending || ['Approved', 'Rejected'].includes(row.original.status)}>
+            disabled={
+              updatePenjualan.isPending || ['Approved', 'Rejected', 'ITJ', 'Akad'].includes(row.original.status)
+            }>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
@@ -365,6 +393,24 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               className='text-red-600'>
               <X className='mr-2 h-4 w-4' />
               Reject
+            </DropdownMenuItem>
+          )}
+          {canUpdateToITJ(row.original.status) && (
+            <DropdownMenuItem
+              onClick={() => handleUpdateToITJ(row.original)}
+              disabled={updatePenjualanStatus.isPending}
+              className='text-emerald-600'>
+              <CheckCircle className='mr-2 h-4 w-4' />
+              Move to ITJ
+            </DropdownMenuItem>
+          )}
+          {canUpdateToAkad(row.original.status) && (
+            <DropdownMenuItem
+              onClick={() => handleUpdateToAkad(row.original)}
+              disabled={updatePenjualanStatus.isPending}
+              className='text-emerald-700'>
+              <CheckCircle className='mr-2 h-4 w-4' />
+              Move to Akad
             </DropdownMenuItem>
           )}
           {/* Removed "Move to Pending" option - Rejected status is final */}
@@ -871,6 +917,10 @@ const PenjualanPage = memo(function PenjualanPage() {
               return 'bg-blue-500 text-white hover:bg-blue-600';
             case 'Rejected':
               return 'bg-red-500 text-white hover:bg-red-600';
+            case 'ITJ':
+              return 'bg-emerald-600 text-white hover:bg-emerald-700';
+            case 'Akad':
+              return 'bg-teal-600 text-white hover:bg-teal-700';
             default:
               return 'bg-gray-500 text-white hover:bg-gray-600';
           }
@@ -886,6 +936,10 @@ const PenjualanPage = memo(function PenjualanPage() {
               return <MessageSquare className='h-3 w-3' />;
             case 'Rejected':
               return <X className='h-3 w-3' />;
+            case 'ITJ':
+              return <CheckCircle className='h-3 w-3' />;
+            case 'Akad':
+              return <CheckCircle className='h-3 w-3' />;
             default:
               return null;
           }

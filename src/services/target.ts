@@ -66,6 +66,12 @@ export const targetService = {
   getAchievedUsers: async (id: number): Promise<any> => {
     const response = await axios.get(`/target/${id}/achieved`);
     return response.data;
+  },
+
+  // Get count of achieved targets
+  getCountAchieved: async (): Promise<number> => {
+    const response = await axios.get<{ count: number }>('/target/count-achieved');
+    return response.data.count;
   }
 };
 
@@ -105,6 +111,15 @@ export const useAchievedUsers = (id: number | null) => {
       return targetService.getAchievedUsers(id);
     },
     enabled: !!id
+  });
+};
+
+export const useTargetCountAchieved = () => {
+  return useQuery({
+    queryKey: ['/target/count-achieved'],
+    queryFn: (): Promise<number> => {
+      return targetService.getCountAchieved();
+    }
   });
 };
 

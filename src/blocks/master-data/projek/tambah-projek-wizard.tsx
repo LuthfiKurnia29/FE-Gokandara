@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useAllSkemaPembayaran } from '@/services/skema-pembayaran';
@@ -57,6 +58,9 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
   );
 
   // Step 4: Fasilitas
+  const [kamarTidur, setKamarTidur] = useState<string>('');
+  const [kamarMandi, setKamarMandi] = useState<string>('');
+  const [wifi, setWifi] = useState<boolean>(false);
   const [facilities, setFacilities] = useState(Array.from({ length: 2 }).map(() => ({ name: '', luas: '' })));
 
   useEffect(() => {
@@ -91,6 +95,15 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
       setFacilities(
         initialData.facilities.map((f: any) => ({ name: f.name ?? '', luas: f.luas ? String(f.luas) : '' }))
       );
+    }
+    if (typeof initialData.kamarTidur === 'string' || typeof initialData.kamarTidur === 'number') {
+      setKamarTidur(String(initialData.kamarTidur ?? ''));
+    }
+    if (typeof initialData.kamarMandi === 'string' || typeof initialData.kamarMandi === 'number') {
+      setKamarMandi(String(initialData.kamarMandi ?? ''));
+    }
+    if (typeof initialData.wifi === 'boolean') {
+      setWifi(initialData.wifi);
     }
   }, [initialData]);
 
@@ -131,7 +144,18 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
   };
 
   const handleSubmit = () => {
-    onSubmit({ projectName, address, jumlahKavling, types, prices, facilities, gambars: uploadedFiles });
+    onSubmit({
+      projectName,
+      address,
+      jumlahKavling,
+      types,
+      prices,
+      facilities,
+      kamarTidur,
+      kamarMandi,
+      wifi,
+      gambars: uploadedFiles
+    });
   };
 
   const tabIndex = steps.findIndex((s) => s.key === active);
@@ -411,8 +435,53 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
 
         {active === 'fasilitas' && (
           <div className='space-y-6'>
+            {/* New Fields Section */}
+            <div className='rounded-lg border bg-gray-50 p-6'>
+              <h3 className='mb-4 text-lg font-semibold'>Informasi Fasilitas Utama</h3>
+              <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+                <div className='space-y-2'>
+                  <Label>Kamar Tidur</Label>
+                  <Input
+                    type='number'
+                    min={0}
+                    step={1}
+                    placeholder='0'
+                    value={kamarTidur}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setKamarTidur(val);
+                    }}
+                    className='h-12'
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label>Kamar Mandi</Label>
+                  <Input
+                    type='number'
+                    min={0}
+                    step={1}
+                    placeholder='0'
+                    value={kamarMandi}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setKamarMandi(val);
+                    }}
+                    className='h-12'
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label>WiFi</Label>
+                  <div className='flex h-12 items-center'>
+                    <Switch checked={wifi} onCheckedChange={setWifi} />
+                    <span className='ml-3 text-sm text-gray-600'>{wifi ? 'Tersedia' : 'Tidak Tersedia'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Existing Facilities List */}
             <div className='flex items-center justify-between'>
-              <div />
+              <h3 className='text-lg font-semibold'>Fasilitas Lainnya</h3>
               <button
                 className='text-gray-500 hover:text-gray-700'
                 onClick={() => setFacilities((prev) => [...prev, { name: '', luas: '' }])}>

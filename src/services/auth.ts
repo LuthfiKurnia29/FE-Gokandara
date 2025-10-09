@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import type { CurrentUserResponse, LoginFormData, LoginResponse } from '@/types/auth';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const authService = {
   login: async (data: LoginFormData): Promise<LoginResponse> => {
@@ -56,6 +56,15 @@ export const authService = {
     return response.data;
   },
 
+  updateProfile: async (data: FormData): Promise<CurrentUserResponse> => {
+    const response = await axios.post<CurrentUserResponse>('/user-profile', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   // Permission checking utility
   hasPermission: (userData: CurrentUserResponse | null, menuCode: string): boolean => {
     // If no menuCode provided, allow access (no permission check needed)
@@ -100,4 +109,21 @@ export const usePermissions = () => {
     getUserData,
     userData
   };
+};
+
+// Mutation hook for updating user profile
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: FormData): Promise<CurrentUserResponse> => {
+      return authService.updateProfile(data);
+    },
+    onSuccess: (data) => {
+      // Update stored user data
+      authService.storeUserData(data);
+      // Invalidate and refetch current user
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    }
+  });
 };

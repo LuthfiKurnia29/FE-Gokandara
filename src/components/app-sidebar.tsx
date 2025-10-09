@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { authService, useCurrentUser } from '@/services/auth';
 import { useTransaksiTotalCount } from '@/services/penjualan';
 import { useAllProjects } from '@/services/properti';
+import { useTargetCountAchieved } from '@/services/target';
 import { type MenuItem, permissionUtils } from '@/stores/menu-item';
 
 import { Button } from './ui/button';
@@ -33,6 +34,7 @@ import { Building2, ChevronDown, ChevronUp } from 'lucide-react';
 const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
   const pathname = usePathname();
   const { data: transaksiTotal = 0 } = useTransaksiTotalCount();
+  const { data: targetCountAchieved = 0 } = useTargetCountAchieved();
 
   // Only render if item.url is defined
   if (!item.url) return null;
@@ -44,16 +46,19 @@ const SidebarMenuItemComponent = React.memo(({ item }: { item: MenuItem }) => {
 
   // Otherwise render as regular menu item
   const IconComponent = item.icon;
-  // Badge logic (Transaksi dan Pesan sesuai Figma)
+  // Badge logic (Transaksi, Pesan, and Target & Bonus)
   const determineBadgeCount = (title: string) => {
     if (title === 'Transaksi') return transaksiTotal;
     if (title === 'Pesan') return 1; // TODO: Implement pesan count when API is available
+    if (title === 'Target & Bonus') return targetCountAchieved;
     return 0;
   };
 
   const badgeCount = determineBadgeCount(item.title);
-  const showBadge = (item.title === 'Transaksi' || item.title === 'Pesan') && badgeCount > 0;
-  const badgeColor = item.title === 'Transaksi' ? 'bg-green-500' : 'bg-orange-500';
+  const showBadge =
+    (item.title === 'Transaksi' || item.title === 'Pesan' || item.title === 'Target & Bonus') && badgeCount > 0;
+  const badgeColor =
+    item.title === 'Transaksi' ? 'bg-green-500' : item.title === 'Target & Bonus' ? 'bg-blue-500' : 'bg-orange-500';
 
   const isActive = item.url === '/' ? pathname === '/' : pathname.startsWith(item.url);
 

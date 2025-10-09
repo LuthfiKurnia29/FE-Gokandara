@@ -1,16 +1,16 @@
-import { memo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 
-import { useProjekById, useUpdateProjek } from '@/services/projek';
-import { CreateProjekData } from '@/types/projek';
+import { useProjekGambars, useUploadProjekGambars } from '@/services/projek';
 import { PropertyData } from '@/types/properti';
 import { Splide, SplideSlide, SplideTrack } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
-import type { Options } from '@splidejs/splide';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '../../components/ui/button';
-import { Dialog, DialogContent } from '../../components/ui/dialog';
-import TambahProjekWizard from '../master-data/projek/tambah-projek-wizard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { FileUpload } from '../../components/ui/file-upload';
+import { Label } from '../../components/ui/label';
+import { FilePondFile } from 'filepond';
 import { Bath, Bed, Expand, Pencil, Share2, Wifi } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -22,12 +22,17 @@ interface PropertySliderProps {
 const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const splideRef = useRef<any>(null);
   const queryClient = useQueryClient();
 
   const projekId = property?.projek?.id || null;
-  const { data: projekData } = useProjekById(projekId);
-  const updateProjekMutation = useUpdateProjek();
+  const uploadGambarsMutation = useUploadProjekGambars();
+  const { data: projekGambars = [] } = useProjekGambars(projekId);
+
+  const initialFiles = useMemo(() => {
+    return projekGambars.map((g: any) => g.gambar_url);
+  }, [projekGambars]);
 
   const options = {
     type: 'fade' as const,
@@ -66,45 +71,38 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
 
   const handleEditCancel = () => {
     setIsEditModalOpen(false);
+    setUploadedFiles([]);
   };
 
-  const handleEditSubmit = async (wizardData: any) => {
+  const handleFileUploadChange = (files: FilePondFile[] | null) => {
+    if (!files) {
+      setUploadedFiles([]);
+      return;
+    }
+    setUploadedFiles(files.map((f) => f.file as File));
+  };
+
+  const handleEditSubmit = async () => {
     if (!projekId) {
       toast.error('Projek ID tidak ditemukan');
       return;
     }
 
-    const payload: CreateProjekData = {
-      name: wizardData.projectName,
-      alamat: wizardData.address,
-      jumlah_kavling: Number(wizardData.jumlahKavling) || undefined,
-      tipe: wizardData.types.map((t: any) => ({
-        name: t.name,
-        luas_tanah: Number(t.luasTanah) || 0,
-        luas_bangunan: Number(t.luasBangunan) || 0,
-        jumlah_unit: Number(t.jumlahUnit) || 0,
-        jenis_pembayaran:
-          wizardData.prices
-            .find((p: any) => p.tipe === t.name)
-            ?.items.map((item: any) => ({
-              id: Number(item.jenisId),
-              harga: Number(item.harga) || 0
-            })) || []
-      })),
-      fasilitas: wizardData.facilities.map((f: any) => ({
-        name: f.name,
-        luas: Number(f.luas) || 0
-      })),
-      gambars: wizardData.gambars || []
-    };
+    if (uploadedFiles.length === 0) {
+      toast.error('Pilih minimal 1 gambar untuk diupload');
+      return;
+    }
 
     try {
-      await updateProjekMutation.mutateAsync({ id: projekId, data: payload });
-      toast.success('Projek berhasil diupdate');
+      await uploadGambarsMutation.mutateAsync({ id: projekId, files: uploadedFiles });
+      toast.success('Gambar projek berhasil diupload');
       setIsEditModalOpen(false);
+      setUploadedFiles([]);
       queryClient.invalidateQueries({ queryKey: ['/projek'] });
+      queryClient.invalidateQueries({ queryKey: ['/properti'] });
+      queryClient.invalidateQueries({ queryKey: ['/projek', projekId, 'images'] });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengupdate projek');
+      toast.error(error.response?.data?.message || 'Gagal mengupload gambar projek');
     }
   };
 
@@ -159,15 +157,17 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
               <div className='flex items-center gap-6'>
                 <div className='flex items-center gap-2'>
                   <Bed className='h-5 w-5 text-white' />
-                  <span className='text-sm text-white'>0 Kamar Tidur</span>
+                  <span className='text-sm text-white'>{property?.kamar_tidur} Kamar Tidur</span>
                 </div>
                 <div className='flex items-center gap-2'>
                   <Bath className='h-5 w-5 text-white' />
-                  <span className='text-sm text-white'>0 Kamar Mandi</span>
+                  <span className='text-sm text-white'>{property?.kamar_mandi} Kamar Mandi</span>
                 </div>
                 <div className='flex items-center gap-2'>
                   <Wifi className='h-5 w-5 text-white' />
-                  <span className='text-sm text-white'>Wifi Available</span>
+                  <span className='text-sm text-white'>
+                    {property?.wifi ? 'Wifi Available' : 'Wifi Tidak Tersedia'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -240,33 +240,38 @@ const PropertySliderComponent = ({ images, property }: PropertySliderProps) => {
         }
       `}</style>
 
-      {/* Edit Modal */}
+      {/* Upload Images Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className='w-[98vw] p-0 sm:max-w-[60rem]'>
-          <TambahProjekWizard
-            title='Edit Projek'
-            onCancel={handleEditCancel}
-            onSubmit={handleEditSubmit}
-            isLoading={updateProjekMutation.isPending}
-            initialData={{
-              projectName: projekData?.name || '',
-              alamat: projekData?.name || '',
-              address: projekData?.alamat || '',
-              jumlahKavling: property?.jumlah_kavling || 0,
-              types:
-                projekData?.tipe?.map((t) => ({
-                  name: t.name,
-                  luasTanah: t.luas_tanah,
-                  luasBangunan: t.luas_bangunan,
-                  jumlahUnit: t.jumlah_unit,
-                  unitTerjual: t.unit_terjual,
-                  jenisPembayaran: t.jenis_pembayaran
-                })) || [],
-              prices: [],
-              facilities: property?.fasilitas || [],
-              gambarUrls: projekData?.gambar?.map((g) => g.gambar) || []
-            }}
-          />
+        <DialogContent className='w-full max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>Upload Gambar Projek</DialogTitle>
+          </DialogHeader>
+
+          <div className='space-y-4 py-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='gambar'>Gambar</Label>
+              <FileUpload
+                name='gambar'
+                onupdatefiles={handleFileUploadChange}
+                initialFiles={initialFiles}
+                allowMultiple
+                acceptedFileTypes={['image/*']}
+                credits={false}
+              />
+            </div>
+          </div>
+
+          <div className='flex items-center justify-end gap-3'>
+            <Button variant='secondary' onClick={handleEditCancel} disabled={uploadGambarsMutation.isPending}>
+              Batalkan
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={uploadGambarsMutation.isPending || uploadedFiles.length === 0}
+              className='bg-green-500 hover:bg-green-600'>
+              {uploadGambarsMutation.isPending ? 'Mengupload...' : 'Upload'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
