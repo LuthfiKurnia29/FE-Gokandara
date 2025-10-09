@@ -10,6 +10,7 @@ import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -17,11 +18,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
 import { useDelete } from '@/hooks/use-delete';
 import { usePermissions } from '@/services/auth';
 import { useCreateKonsumen, useDeleteKonsumen, useUpdateKonsumen } from '@/services/konsumen';
+import { getAllProspek } from '@/services/prospek';
 import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
-import { useQueryClient } from '@tanstack/react-query';
+import { ProspekData } from '@/types/prospek';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import { Filter, History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
@@ -76,6 +80,13 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedImageName, setSelectedImageName] = useState<string>('');
+
+  // Filter states
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedProspekId, setSelectedProspekId] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+
   const { getUserData } = usePermissions();
   const { delete: handleDelete, DeleteConfirmDialog } = useDelete({
     onSuccess: () => {
@@ -109,6 +120,12 @@ const KonsumenPage = memo(function KonsumenPage() {
   const createKonsumen = useCreateKonsumen();
   const updateKonsumen = useUpdateKonsumen();
   const deleteKonsumen = useDeleteKonsumen();
+
+  // Fetch prospek data for filter
+  const { data: prospekData = [] } = useQuery<ProspekData[]>({
+    queryKey: ['/prospek'],
+    queryFn: () => getAllProspek()
+  });
 
   const handleCreate = () => {
     setMode('create');
@@ -163,7 +180,7 @@ const KonsumenPage = memo(function KonsumenPage() {
       const errors = error?.response?.data?.errors || {};
       const msgFromField = Array.isArray(errors.tgl_fu_2) ? errors.tgl_fu_2[0] : undefined;
       const fallbackMsg = error?.response?.data?.message;
-      const message = (msgFromField || fallbackMsg) ? msgFromField || fallbackMsg : 'Terjadi sesuatu Error!';
+      const message = msgFromField || fallbackMsg ? msgFromField || fallbackMsg : 'Terjadi sesuatu Error!';
       toast.error(message || 'Tanggal follow up 2 minimal 7 hari setelah Tanggal & waktu follow up 1');
     }
   };
@@ -182,6 +199,30 @@ const KonsumenPage = memo(function KonsumenPage() {
   const handleClearFilter = () => {
     setSelectedMemberId(null);
     setSelectedMemberName('');
+  };
+
+  // Handle date range change
+  const handleDateRangeChange = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  // Handle clear all filters
+  const handleClearAllFilters = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setSelectedProspekId('');
+    setSelectedStatus('');
+    handleClearFilter();
+  };
+
+  // Format date to YYYY-MM-DD for API
+  const formatDateForAPI = (date: Date | undefined) => {
+    if (!date) return undefined;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const renderItem = (item: KonsumenData, index: number) => {
@@ -352,39 +393,123 @@ const KonsumenPage = memo(function KonsumenPage() {
         url='/konsumen'
         id='konsumen'
         perPage={12}
-        queryKey={['/konsumen', selectedMemberId?.toString() || 'all']}
+        queryKey={[
+          '/konsumen',
+          selectedMemberId?.toString() || 'all',
+          formatDateForAPI(startDate) || 'no-start',
+          formatDateForAPI(endDate) || 'no-end',
+          selectedProspekId || 'all-prospek',
+          selectedStatus || 'all-status'
+        ]}
         payload={{
-          ...(selectedMemberId && { created_id: selectedMemberId })
+          ...(selectedMemberId && { created_id: selectedMemberId }),
+          ...(startDate && { dateStart: formatDateForAPI(startDate) }),
+          ...(endDate && { dateEnd: formatDateForAPI(endDate) }),
+          ...(selectedProspekId && { prospek_id: selectedProspekId }),
+          ...(selectedStatus && { status: selectedStatus })
         }}
         containerClassName='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2'
         renderItem={renderItem}
         Plugin={() => (
-          <div className='flex flex-wrap items-center gap-2'>
-            {/* Member Filter Button - Only show for Admin and Supervisor */}
-            {canSeeFilterButton() && (
-              <div className='flex items-center gap-2'>
-                {selectedMemberId && (
-                  <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
-                    <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={handleClearFilter}
-                      className='hover:bg-primary/20 h-6 w-6 p-0'>
-                      <X className='h-3 w-3' />
-                    </Button>
-                  </div>
-                )}
-                <Button variant='outline' onClick={() => setShowMemberFilter(true)} className='flex items-center gap-2'>
-                  <Filter className='h-4 w-4' />
-                  Filter Berdasarkan Member
+          <div className='flex w-full flex-col gap-3'>
+            {/* Filter Section */}
+            <div className='flex flex-wrap items-center gap-2'>
+              {/* Date Range Filter */}
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onChange={handleDateRangeChange}
+                className='w-fit'
+              />
+
+              {/* Prospek Filter */}
+              <Select value={selectedProspekId} onValueChange={setSelectedProspekId}>
+                <SelectTrigger className='w-[200px]'>
+                  <SelectValue placeholder='Pilih Prospek' />
+                </SelectTrigger>
+                <SelectContent>
+                  {prospekData.map((prospek) => (
+                    <SelectItem key={prospek.id} value={prospek.id.toString()}>
+                      <div className='flex items-center gap-2'>
+                        <div
+                          className='h-3 w-3 rounded-full border border-gray-300'
+                          style={{ backgroundColor: prospek.color || '#6B7280' }}
+                        />
+                        <span>{prospek.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Clear Prospek Filter */}
+              {selectedProspekId && (
+                <Button variant='ghost' size='sm' onClick={() => setSelectedProspekId('')} className='h-9 px-2'>
+                  <X className='h-4 w-4' />
                 </Button>
-              </div>
-            )}
-            <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
-              <Plus />
-              Tambah Konsumen
-            </Button>
+              )}
+
+              {/* Status Filter */}
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className='w-[200px]'>
+                  <SelectValue placeholder='Pilih Status' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='Pending'>Pending</SelectItem>
+                  <SelectItem value='Negotiation'>Negotiation</SelectItem>
+                  <SelectItem value='Approved'>Approved</SelectItem>
+                  <SelectItem value='ITJ'>ITJ</SelectItem>
+                  <SelectItem value='Akad'>Akad</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Status Filter */}
+              {selectedStatus && (
+                <Button variant='ghost' size='sm' onClick={() => setSelectedStatus('')} className='h-9 px-2'>
+                  <X className='h-4 w-4' />
+                </Button>
+              )}
+
+              {/* Clear All Filters Button */}
+              {(startDate || endDate || selectedProspekId || selectedStatus || selectedMemberId) && (
+                <Button variant='outline' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
+                  <X className='h-4 w-4' />
+                  Clear All Filters
+                </Button>
+              )}
+            </div>
+
+            {/* Action Buttons Section */}
+            <div className='flex flex-wrap items-center gap-2'>
+              {/* Member Filter Button - Only show for Admin and Supervisor */}
+              {canSeeFilterButton() && (
+                <div className='flex items-center gap-2'>
+                  {selectedMemberId && (
+                    <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
+                      <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={handleClearFilter}
+                        className='hover:bg-primary/20 h-6 w-6 p-0'>
+                        <X className='h-3 w-3' />
+                      </Button>
+                    </div>
+                  )}
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowMemberFilter(true)}
+                    className='flex items-center gap-2'>
+                    <Filter className='h-4 w-4' />
+                    Filter Berdasarkan Member
+                  </Button>
+                </div>
+              )}
+              <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
+                <Plus />
+                Tambah Konsumen
+              </Button>
+            </div>
           </div>
         )}
       />
@@ -444,7 +569,7 @@ const KonsumenPage = memo(function KonsumenPage() {
 
       {/* Image Modal for Mitra Role */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className='h-[90vh] max-h-[90vh] overflow-y-auto max-w-2xl border-0 p-0'>
+        <DialogContent className='h-[90vh] max-h-[90vh] max-w-2xl overflow-y-auto border-0 p-0'>
           <DialogTitle className='sr-only'>Gambar Konsumen</DialogTitle>
           <DialogDescription className='sr-only'>
             Modal untuk menampilkan gambar konsumen dalam ukuran penuh
