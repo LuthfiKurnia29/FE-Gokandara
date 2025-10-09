@@ -29,6 +29,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
 import { Filter, History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
+import moment from 'moment';
 import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
 
@@ -82,8 +83,8 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [selectedImageName, setSelectedImageName] = useState<string>('');
 
   // Filter states
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date(moment().startOf('year').format('YYYY-MM-DD')));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date(moment().endOf('year').format('YYYY-MM-DD')));
   const [selectedProspekId, setSelectedProspekId] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
 
@@ -209,8 +210,8 @@ const KonsumenPage = memo(function KonsumenPage() {
 
   // Handle clear all filters
   const handleClearAllFilters = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
+    setStartDate(new Date(moment().startOf('year').format('YYYY-MM-DD')));
+    setEndDate(new Date(moment().endOf('year').format('YYYY-MM-DD')));
     setSelectedProspekId('');
     setSelectedStatus('');
     handleClearFilter();
