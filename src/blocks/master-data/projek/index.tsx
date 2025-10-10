@@ -117,6 +117,9 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     prices?: any[];
     facilities?: any[];
     gambars?: File[];
+    kamarTidur?: number;
+    kamarMandi?: number;
+    wifi?: boolean;
   }) => {
     if (!selectedData) return;
     try {
@@ -144,7 +147,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
         alamat: data.address,
         jumlah_kavling: data.jumlahKavling ? Number(data.jumlahKavling) : undefined,
         tipe: tipePayload,
-        fasilitas: fasilitasPayload
+        fasilitas: fasilitasPayload,
+        kamar_tidur: data.kamarTidur ? Number(data.kamarTidur) : 0,
+        kamar_mandi: data.kamarMandi ? Number(data.kamarMandi) : 0,
+        wifi: data.wifi ? true : false
       });
 
       if (data.gambars && data.gambars.length > 0) {
@@ -215,6 +221,9 @@ const ProjekPage = memo(function ProjekPage() {
     prices?: any[];
     facilities?: any[];
     gambars?: File[];
+    kamarTidur?: number;
+    kamarMandi?: number;
+    wifi?: boolean;
   }) => {
     try {
       const tipePayload = (data.types ?? []).map((t, idx) => {
@@ -242,7 +251,10 @@ const ProjekPage = memo(function ProjekPage() {
         jumlah_kavling: data.jumlahKavling ? Number(data.jumlahKavling) : undefined,
         tipe: tipePayload,
         fasilitas: fasilitasPayload,
-        gambars: data.gambars && data.gambars.length > 0 ? data.gambars : undefined
+        gambars: data.gambars && data.gambars.length > 0 ? data.gambars : undefined,
+        kamar_tidur: data.kamarTidur ? Number(data.kamarTidur) : 0,
+        kamar_mandi: data.kamarMandi ? Number(data.kamarMandi) : 0,
+        wifi: data.wifi ? true : false
       });
 
       handleCloseForm();
