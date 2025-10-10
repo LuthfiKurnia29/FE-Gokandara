@@ -110,6 +110,10 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     return canChangeStatus() && currentStatus === 'ITJ';
   };
 
+  const canUpdateToRefund = (currentStatus: string) => {
+    return canChangeStatus() && currentStatus === 'ITJ';
+  };
+
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [showBookingForm, setShowBookingForm] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -228,8 +232,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   }, [selectedSkemaNama, dpPercentDetail, dpValueDetail, finalPriceDetail, sisaPembayaranDetail]);
 
   const handleEdit = (penjualan: PenjualanWithRelations) => {
-    if (['Approved', 'Rejected', 'ITJ', 'Akad'].includes(penjualan.status as any)) {
-      toast.warning('Transaksi dengan status Approved/Rejected/ITJ/Akad tidak dapat diedit.');
+    if (['Approved', 'Rejected', 'ITJ', 'Akad', 'Refund'].includes(penjualan.status as any)) {
+      toast.warning('Transaksi dengan status Approved/Rejected/ITJ/Akad/Refund tidak dapat diedit.');
       return;
     }
     setSelectedId(penjualan.id);
@@ -308,6 +312,15 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     }
   };
 
+  const handleUpdateToRefund = async (penjualan: PenjualanWithRelations) => {
+    try {
+      await updatePenjualanStatus.mutateAsync({ id: penjualan.id, data: { status: 'Refund' } });
+      toast.success('Status transaksi berhasil diubah menjadi Refund');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Terjadi kesalahan saat mengubah status');
+    }
+  };
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setShowBookingForm(false);
@@ -357,7 +370,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           <DropdownMenuItem
             onClick={() => handleEdit(row.original)}
             disabled={
-              updatePenjualan.isPending || ['Approved', 'Rejected', 'ITJ', 'Akad'].includes(row.original.status)
+              updatePenjualan.isPending || ['Approved', 'Rejected', 'ITJ', 'Akad', 'Refund'].includes(row.original.status)
             }>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
@@ -411,6 +424,15 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               className='text-emerald-700'>
               <CheckCircle className='mr-2 h-4 w-4' />
               Move to Akad
+            </DropdownMenuItem>
+          )}
+          {canUpdateToRefund(row.original.status) && (
+            <DropdownMenuItem
+              onClick={() => handleUpdateToRefund(row.original)}
+              disabled={updatePenjualanStatus.isPending}
+              className='text-yellow-600'>
+              <X className='mr-2 h-4 w-4' />
+              Move to Refund
             </DropdownMenuItem>
           )}
           {/* Removed "Move to Pending" option - Rejected status is final */}
@@ -921,6 +943,8 @@ const PenjualanPage = memo(function PenjualanPage() {
               return 'bg-emerald-600 text-white hover:bg-emerald-700';
             case 'Akad':
               return 'bg-teal-600 text-white hover:bg-teal-700';
+            case 'Refund':
+              return 'bg-yellow-600 text-white hover:bg-yellow-700';
             default:
               return 'bg-gray-500 text-white hover:bg-gray-600';
           }
@@ -940,6 +964,8 @@ const PenjualanPage = memo(function PenjualanPage() {
               return <CheckCircle className='h-3 w-3' />;
             case 'Akad':
               return <CheckCircle className='h-3 w-3' />;
+            case 'Refund':
+              return <History className='h-3 w-3' />;
             default:
               return null;
           }

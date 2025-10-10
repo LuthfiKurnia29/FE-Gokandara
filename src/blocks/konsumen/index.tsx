@@ -285,6 +285,26 @@ const KonsumenPage = memo(function KonsumenPage() {
       return item.prospek?.color || '#6B7280';
     };
 
+    const getStatusColor = () => {
+      if (item.latest_transaksi?.status === 'Approved') {
+        return '#008000';
+      } else if (item.latest_transaksi?.status === 'Negotiation') {
+        return '#FFA500';
+      } else if (item.latest_transaksi?.status === 'Pending') {
+        return '#FFA500';
+      } else if (item.latest_transaksi?.status === 'Rejected') {
+        return '#FF0000';
+      } else if (item.latest_transaksi?.status === 'ITJ') {
+        return '#008000';
+      } else if (item.latest_transaksi?.status === 'Akad') {
+        return '#008000';
+      } else if (item.latest_transaksi?.status === 'Refund') {
+        return '#FF0000';
+      } else {
+        return '#FF0000';
+      }
+    };
+
     return (
       <div className='flex h-full justify-between rounded-lg border bg-white p-4 shadow-sm'>
         <div className='flex-1'>
@@ -306,6 +326,16 @@ const KonsumenPage = memo(function KonsumenPage() {
                         title={`Prospek: ${item.prospek.name}`}
                       />
                       <span className='text-xs text-gray-500 capitalize'>{item.prospek.name}</span>
+                    </div>
+                  )}
+                  {item.latest_transaksi && (
+                    <div className='mb-1 flex items-center gap-1'>
+                      <div
+                        className='h-3 w-3 rounded-full border border-gray-300'
+                        style={{ backgroundColor: getStatusColor() }}
+                        title={`Status Transaksi: ${item.latest_transaksi.status}`}
+                      />
+                      <span className='text-xs text-gray-500 capitalize'>{item.latest_transaksi.status}</span>
                     </div>
                   )}
                   <h3 className='text-lg font-semibold'>{item.name}</h3>

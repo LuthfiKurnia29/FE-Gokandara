@@ -1,7 +1,7 @@
 import { User } from './auth';
 import { ProjekData } from './projek';
 
-export type PenjualanStatus = 'Pending' | 'Negotiation' | 'Approved' | 'Rejected' | 'ITJ' | 'Akad';
+export type PenjualanStatus = 'Pending' | 'Negotiation' | 'Approved' | 'Rejected' | 'ITJ' | 'Akad' | 'Refund';
 
 // PropertyData interface matching the seeder structure
 export interface PropertyData {

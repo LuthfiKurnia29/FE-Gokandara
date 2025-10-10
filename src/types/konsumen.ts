@@ -1,3 +1,4 @@
+import { PenjualanData } from "./penjualan";
 import { ProjekData } from './projek';
 import { ProspekData } from './prospek';
 import { ReferensiData } from './referensi';
@@ -31,6 +32,7 @@ export interface KonsumenData {
   refrensi?: ReferensiData;
   prospek?: ProspekData;
   created_by?: UserData;
+  latest_transaksi?: PenjualanData;
 }
 
 export interface KonsumenResponse {
