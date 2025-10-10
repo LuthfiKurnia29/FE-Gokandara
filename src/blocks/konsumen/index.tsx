@@ -443,30 +443,30 @@ const KonsumenPage = memo(function KonsumenPage() {
         renderItem={renderItem}
         Plugin={() => (
           <div className='flex w-full flex-col gap-3'>
-            {/* Filter Section */}
-            <div className='flex flex-wrap items-center gap-2'>
-              {/* Open Filter Modal Button */}
-              <Button variant='outline' onClick={() => setShowFilterModal(true)} className='flex items-center gap-2'>
-                <Filter className='h-4 w-4' />
-                Filter Data
-                {hasActiveFilters && (
-                  <span className='bg-primary text-primary-foreground ml-1 rounded-full px-2 py-0.5 text-xs'>
-                    Aktif
-                  </span>
-                )}
-              </Button>
-
-              {/* Clear All Filters Button */}
-              {hasActiveFilters && (
-                <Button variant='ghost' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
-                  <X className='h-4 w-4' />
-                  Clear All
-                </Button>
-              )}
-            </div>
-
             {/* Action Buttons Section */}
             <div className='flex flex-wrap items-center gap-2'>
+              {/* Filter Section */}
+              <div className='flex flex-wrap items-center gap-2'>
+                {/* Open Filter Modal Button */}
+                <Button variant='outline' onClick={() => setShowFilterModal(true)} className='flex items-center gap-2'>
+                  <Filter className='h-4 w-4' />
+                  Filter Data
+                  {hasActiveFilters && (
+                    <span className='bg-primary text-primary-foreground ml-1 rounded-full px-2 py-0.5 text-xs'>
+                      Aktif
+                    </span>
+                  )}
+                </Button>
+
+                {/* Clear All Filters Button */}
+                {hasActiveFilters && (
+                  <Button variant='ghost' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
+                    <X className='h-4 w-4' />
+                    Clear All
+                  </Button>
+                )}
+              </div>
+
               {/* Member Filter Button - Only show for Admin and Supervisor */}
               {canSeeFilterButton() && (
                 <div className='flex items-center gap-2'>
