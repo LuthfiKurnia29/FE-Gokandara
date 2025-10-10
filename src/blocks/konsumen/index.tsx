@@ -29,7 +29,7 @@ import { ProspekData } from '@/types/prospek';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 
-import { Filter, History, Mail, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
+import { CheckCircle, Clock, Filter, History, Mail, MessageSquare, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
 import moment from 'moment';
 import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
@@ -285,23 +285,45 @@ const KonsumenPage = memo(function KonsumenPage() {
       return item.prospek?.color || '#6B7280';
     };
 
-    const getStatusColor = () => {
-      if (item.latest_transaksi?.status === 'Approved') {
-        return '#008000';
-      } else if (item.latest_transaksi?.status === 'Negotiation') {
-        return '#FFA500';
-      } else if (item.latest_transaksi?.status === 'Pending') {
-        return '#FFA500';
-      } else if (item.latest_transaksi?.status === 'Rejected') {
-        return '#FF0000';
-      } else if (item.latest_transaksi?.status === 'ITJ') {
-        return '#008000';
-      } else if (item.latest_transaksi?.status === 'Akad') {
-        return '#008000';
-      } else if (item.latest_transaksi?.status === 'Refund') {
-        return '#FF0000';
-      } else {
-        return '#FF0000';
+    const getStatusStyle = (status: string) => {
+      switch (status) {
+        case 'Approved':
+          return 'bg-green-500 text-white hover:bg-green-600';
+        case 'Pending':
+          return 'bg-orange-500 text-white hover:bg-orange-600';
+        case 'Negotiation':
+          return 'bg-blue-500 text-white hover:bg-blue-600';
+        case 'Rejected':
+          return 'bg-red-500 text-white hover:bg-red-600';
+        case 'ITJ':
+          return 'bg-emerald-600 text-white hover:bg-emerald-700';
+        case 'Akad':
+          return 'bg-teal-600 text-white hover:bg-teal-700';
+        case 'Refund':
+          return 'bg-yellow-600 text-white hover:bg-yellow-700';
+        default:
+          return 'bg-gray-500 text-white hover:bg-gray-600';
+      }
+    };
+
+    const getStatusIcon = (status: string) => {
+      switch (status) {
+        case 'Approved':
+          return <CheckCircle className='h-3 w-3' />;
+        case 'Pending':
+          return <Clock className='h-3 w-3' />;
+        case 'Negotiation':
+          return <MessageSquare className='h-3 w-3' />;
+        case 'Rejected':
+          return <X className='h-3 w-3' />;
+        case 'ITJ':
+          return <CheckCircle className='h-3 w-3' />;
+        case 'Akad':
+          return <CheckCircle className='h-3 w-3' />;
+        case 'Refund':
+          return <History className='h-3 w-3' />;
+        default:
+          return null;
       }
     };
 
@@ -329,13 +351,11 @@ const KonsumenPage = memo(function KonsumenPage() {
                     </div>
                   )}
                   {item.latest_transaksi && (
-                    <div className='mb-1 flex items-center gap-1'>
-                      <div
-                        className='h-3 w-3 rounded-full border border-gray-300'
-                        style={{ backgroundColor: getStatusColor() }}
-                        title={`Status Transaksi: ${item.latest_transaksi.status}`}
-                      />
-                      <span className='text-xs text-gray-500 capitalize'>{item.latest_transaksi.status}</span>
+                    <div className='mb-1'>
+                      <Badge className={`${getStatusStyle(item.latest_transaksi.status)} flex items-center gap-1 rounded-full px-3 py-1 text-xs`}>
+                        {getStatusIcon(item.latest_transaksi.status)}
+                        {item.latest_transaksi.status}
+                      </Badge>
                     </div>
                   )}
                   <h3 className='text-lg font-semibold'>{item.name}</h3>
