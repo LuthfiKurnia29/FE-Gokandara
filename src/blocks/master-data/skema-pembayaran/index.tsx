@@ -148,7 +148,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             onSubmit={handleFormSubmit}
             onCancel={handleCloseForm}
             isLoading={updateSkemaPembayaran.isPending}
-            defaultValues={selectedData ? { nama: selectedData.nama } : undefined}
+            defaultValues={selectedData ? { nama: selectedData.nama, details: selectedData.details } : undefined}
           />
         </DialogContent>
       </Dialog>
