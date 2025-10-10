@@ -122,7 +122,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   const sisaPembayaran = useMemo(() => Math.max(hargaSetelahDiskon - dpValue, 0), [hargaSetelahDiskon, dpValue]);
   const selectedSkemaNama = useMemo(() => {
     const skema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
-    return skema?.nama || '';
+    return skema?.skema_pembayaran?.nama || '';
   }, [skemaPembayaranOptions, selectedSkemaId]);
   const sisaLabel = useMemo(() => {
     const nama = selectedSkemaNama.toLowerCase();

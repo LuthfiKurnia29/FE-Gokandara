@@ -1,6 +1,12 @@
+export interface SkemaPembayaranDetail {
+  nama: string;
+  persentase: number;
+}
+
 export interface SkemaPembayaran {
   id: number;
   nama: string;
+  details: SkemaPembayaranDetail[];
   created_at: string;
   updated_at: string;
 }
@@ -33,10 +39,12 @@ export interface SkemaPembayaranApiResponse {
 
 export interface CreateSkemaPembayaranData {
   nama: string;
+  details: SkemaPembayaranDetail[];
 }
 
 export interface UpdateSkemaPembayaranData {
   nama: string;
+  details: SkemaPembayaranDetail[];
 }
 
 export interface UseSkemaPembayaranListParams {
