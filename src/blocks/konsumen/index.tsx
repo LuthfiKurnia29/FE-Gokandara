@@ -2,6 +2,7 @@
 
 import { memo, useState } from 'react';
 
+import { FilterModal, FilterValues } from '@/blocks/konsumen/filter-modal';
 import { KonsumenForm } from '@/blocks/konsumen/form';
 import { HistoryFollowUp } from '@/blocks/konsumen/history_follow_up';
 import { MemberFilterModal } from '@/blocks/konsumen/member-filter-modal';
@@ -76,6 +77,7 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [selectedKonsumen, setSelectedKonsumen] = useState<KonsumenData | null>(null);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
+  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
@@ -202,6 +204,26 @@ const KonsumenPage = memo(function KonsumenPage() {
     setSelectedMemberName('');
   };
 
+  // Handle apply filters from modal
+  const handleApplyFilters = (filters: FilterValues) => {
+    setStartDate(filters.startDate);
+    setEndDate(filters.endDate);
+    setSelectedProspekId(filters.selectedProspekId);
+    setSelectedStatus(filters.selectedStatus);
+    setSelectedMemberId(filters.selectedMemberId);
+    setSelectedMemberName(filters.selectedMemberName);
+  };
+
+  // Get current filter values for the modal
+  const getCurrentFilters = (): FilterValues => ({
+    startDate,
+    endDate,
+    selectedProspekId,
+    selectedStatus,
+    selectedMemberId,
+    selectedMemberName
+  });
+
   // Handle date range change
   const handleDateRangeChange = (start: Date, end: Date) => {
     setStartDate(start);
@@ -216,6 +238,14 @@ const KonsumenPage = memo(function KonsumenPage() {
     setSelectedStatus('');
     handleClearFilter();
   };
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    selectedProspekId ||
+    selectedStatus ||
+    selectedMemberId ||
+    (startDate && startDate.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
+    (endDate && endDate.getTime() !== new Date(moment().endOf('year').format('YYYY-MM-DD')).getTime());
 
   // Format date to YYYY-MM-DD for API
   const formatDateForAPI = (date: Date | undefined) => {
@@ -415,67 +445,22 @@ const KonsumenPage = memo(function KonsumenPage() {
           <div className='flex w-full flex-col gap-3'>
             {/* Filter Section */}
             <div className='flex flex-wrap items-center gap-2'>
-              {/* Date Range Filter */}
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handleDateRangeChange}
-                className='w-fit'
-              />
-
-              {/* Prospek Filter */}
-              <Select value={selectedProspekId} onValueChange={setSelectedProspekId}>
-                <SelectTrigger className='w-[200px]'>
-                  <SelectValue placeholder='Pilih Prospek' />
-                </SelectTrigger>
-                <SelectContent>
-                  {prospekData.map((prospek) => (
-                    <SelectItem key={prospek.id} value={prospek.id.toString()}>
-                      <div className='flex items-center gap-2'>
-                        <div
-                          className='h-3 w-3 rounded-full border border-gray-300'
-                          style={{ backgroundColor: prospek.color || '#6B7280' }}
-                        />
-                        <span>{prospek.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Clear Prospek Filter */}
-              {selectedProspekId && (
-                <Button variant='ghost' size='sm' onClick={() => setSelectedProspekId('')} className='h-9 px-2'>
-                  <X className='h-4 w-4' />
-                </Button>
-              )}
-
-              {/* Status Filter */}
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className='w-[200px]'>
-                  <SelectValue placeholder='Pilih Status' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='Pending'>Pending</SelectItem>
-                  <SelectItem value='Negotiation'>Negotiation</SelectItem>
-                  <SelectItem value='Approved'>Approved</SelectItem>
-                  <SelectItem value='ITJ'>ITJ</SelectItem>
-                  <SelectItem value='Akad'>Akad</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Clear Status Filter */}
-              {selectedStatus && (
-                <Button variant='ghost' size='sm' onClick={() => setSelectedStatus('')} className='h-9 px-2'>
-                  <X className='h-4 w-4' />
-                </Button>
-              )}
+              {/* Open Filter Modal Button */}
+              <Button variant='outline' onClick={() => setShowFilterModal(true)} className='flex items-center gap-2'>
+                <Filter className='h-4 w-4' />
+                Filter Data
+                {hasActiveFilters && (
+                  <span className='bg-primary text-primary-foreground ml-1 rounded-full px-2 py-0.5 text-xs'>
+                    Aktif
+                  </span>
+                )}
+              </Button>
 
               {/* Clear All Filters Button */}
-              {(startDate || endDate || selectedProspekId || selectedStatus || selectedMemberId) && (
-                <Button variant='outline' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
+              {hasActiveFilters && (
+                <Button variant='ghost' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
                   <X className='h-4 w-4' />
-                  Clear All Filters
+                  Clear All
                 </Button>
               )}
             </div>
@@ -497,13 +482,15 @@ const KonsumenPage = memo(function KonsumenPage() {
                       </Button>
                     </div>
                   )}
-                  <Button
-                    variant='outline'
-                    onClick={() => setShowMemberFilter(true)}
-                    className='flex items-center gap-2'>
-                    <Filter className='h-4 w-4' />
-                    Filter Berdasarkan Member
-                  </Button>
+                  {!selectedMemberId && (
+                    <Button
+                      variant='outline'
+                      onClick={() => setShowMemberFilter(true)}
+                      className='flex items-center gap-2'>
+                      <Filter className='h-4 w-4' />
+                      Filter Berdasarkan Member
+                    </Button>
+                  )}
                 </div>
               )}
               <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
@@ -560,6 +547,15 @@ const KonsumenPage = memo(function KonsumenPage() {
           <HistoryFollowUp konsumen={selectedKonsumen} onClose={handleCloseHistory} />
         </DialogContent>
       </Dialog>
+
+      {/* Filter Modal */}
+      <FilterModal
+        open={showFilterModal}
+        onOpenChange={setShowFilterModal}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={getCurrentFilters()}
+        prospekData={prospekData}
+      />
 
       {/* Member Filter Modal */}
       <MemberFilterModal

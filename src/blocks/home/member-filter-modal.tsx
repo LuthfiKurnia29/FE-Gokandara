@@ -64,7 +64,7 @@ export const MemberFilterModal = memo(function MemberFilterModal({
     columnHelper.accessor('roles', {
       header: 'Role',
       cell: ({ row }) => {
-        const role = row.original.role;
+        const role = row.original.roles[0].role;
         return (
           <div className='flex flex-col'>
             <span className='text-sm font-medium'>{role?.name || '-'}</span>

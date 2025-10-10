@@ -3,6 +3,7 @@
 import { memo } from 'react';
 
 import { PaginateTable } from '@/components/paginate-table';
+import { useTargetCountAchieved } from '@/services/target';
 import { TargetWithRelations } from '@/types/target';
 import { createColumnHelper } from '@tanstack/react-table';
 
@@ -44,6 +45,8 @@ const columns = [
 ];
 
 export const TargetAchievedTable = memo(function TargetAchievedTable({ id }: { id: number }) {
+  const { refetch } = useTargetCountAchieved();
+
   return (
     <PaginateTable
       columns={columns}
@@ -53,6 +56,9 @@ export const TargetAchievedTable = memo(function TargetAchievedTable({ id }: { i
       queryKey={[`/target/${id}/achieved`]}
       payload={{}}
       Plugin={() => null}
+      onSuccess={() => {
+        refetch();
+      }}
     />
   );
 });

@@ -62,6 +62,7 @@ interface PaginateTableProps<TData> {
   perPage?: number;
   // When used inside another <form>, avoid nested <form> to prevent hydration errors
   searchIsForm?: boolean;
+  onSuccess?: () => void;
 }
 
 // Define types for the component ref
@@ -155,7 +156,8 @@ const PaginateTable = memo(
         grouped = false,
         queryKey,
         perPage = 10,
-        searchIsForm = true
+        searchIsForm = true,
+        onSuccess = () => ({})
       },
       ref
     ) => {
@@ -181,7 +183,8 @@ const PaginateTable = memo(
               }
             })
             .then((res) => res.data),
-        placeholderData: { data: [] }
+        placeholderData: { data: [] },
+        onSuccess: onSuccess
       });
 
       useImperativeHandle(ref, () => ({
