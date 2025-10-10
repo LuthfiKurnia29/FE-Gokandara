@@ -682,7 +682,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                       <SelectContent>
                         {skemaPembayaranOptions.map((s: any) => (
                           <SelectItem key={s.id} value={String(s.id)}>
-                            {s.nama}
+                            {s.skema_pembayaran.nama}
                           </SelectItem>
                         ))}
                       </SelectContent>

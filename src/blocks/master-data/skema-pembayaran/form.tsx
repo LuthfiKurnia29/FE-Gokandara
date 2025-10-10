@@ -117,7 +117,7 @@ export const SkemaPembayaranForm = memo(function SkemaPembayaranForm({
         <div className='space-y-3'>
           {fields.map((field, index) => (
             <div key={field.id} className='flex items-start gap-2 p-3 border rounded-lg'>
-              <div className='flex-1 space-y-3'>
+              <div className='flex-1 space-y-3 grid grid-cols-2 gap-2'>
                 <div className='space-y-2'>
                   <Label htmlFor={`details.${index}.nama`}>Nama Detail *</Label>
                   <Input

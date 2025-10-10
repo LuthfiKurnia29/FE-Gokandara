@@ -644,7 +644,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                     <SelectContent>
                       {skemaPembayaranOptions.map((skema) => (
                         <SelectItem key={skema.id} value={skema.id.toString()}>
-                          {skema.nama}
+                          {skema.skema_pembayaran.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>
