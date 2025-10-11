@@ -388,7 +388,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className='max-w-[900px] border-0 p-0'>
+      <DialogContent className='!max-w-[900px] border-0 p-0'>
         {step === 1 ? (
           <div className='flex h-full flex-col'>
             <DialogHeader className='px-6 pt-6'>
@@ -683,13 +683,13 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 </div>
 
                 <div className='rounded-lg border md:col-span-2'>
-                  <div className='text-muted-foreground grid grid-[1fr_2fr_2fr] gap-2 border-b px-4 py-3 text-sm'>
+                  <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b px-4 py-3 text-sm'>
                     <div>Pembayaran</div>
                     <div>Tanggal</div>
                     <div className='text-right'>Angsuran</div>
                   </div>
                   {paymentRows.map((row, idx) => (
-                    <div key={idx} className='grid grid-[1fr_2fr_2fr] items-center gap-2 px-4 py-3'>
+                    <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
                       <div>{row.label}</div>
                       <div>
                         <DatePicker

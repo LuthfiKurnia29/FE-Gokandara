@@ -130,7 +130,8 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     // Sesuaikan nama relasi dengan konvensi backend
     'projek',
     'skema_pembayaran',
-    'created_by'
+    'created_by',
+    'detail_pembayaran'
   ]);
 
   // Perhitungan rincian pembayaran untuk popup Detail (selaras dengan Create/Edit)
@@ -159,77 +160,34 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
   const sisaPembayaranDetail = Math.max(finalPriceDetail - dpValueDetail, 0);
 
   const paymentRowsDetail = useMemo(() => {
-    const rows: { label: string; amount: number; periode: string }[] = [];
-    if (!selectedSkemaNama) return rows;
-    rows.push({ label: 'DP', amount: dpValueDetail, periode: '-' });
+    const rows: { id: number; label: string; amount: number; tanggal: string | null }[] = [];
+    
+    if (!detail) return rows;
 
-    if (selectedSkemaNama.includes('Cash By progress 3 lantai')) {
-      const lantaiPct = dpPercentDetail >= 50 ? 15 : 20;
-      const parts = [
-        { label: 'Pengecoran Plat lantai 2', pct: lantaiPct },
-        { label: 'Pengecoran Plat lantai 3', pct: lantaiPct },
-        { label: 'Bangunan Hitam (Sudah Mau Masuk Acian)', pct: 10 },
-        { label: 'Pengecatan Terakhir sebelum PDAM/PLN ter instal', pct: 10 }
-      ];
-      let assigned = dpValueDetail;
-      for (let i = 0; i < parts.length; i++) {
-        if (i < parts.length - 1) {
-          const amt = Math.round((finalPriceDetail * parts[i].pct) / 100);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-          assigned += amt;
-        } else {
-          const amt = Math.max(finalPriceDetail - assigned, 0);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-        }
-      }
-    } else if (selectedSkemaNama.includes('Cash By progress 2 lantai')) {
-      const platPct = dpPercentDetail >= 50 ? 30 : 40;
-      const parts = [
-        { label: 'Pengecoran Plat lantai 2', pct: platPct },
-        { label: 'Bata terpasang 100%', pct: 10 },
-        { label: 'Pengecatan Terakhir sebelum PDAM/PLN ter instal', pct: 10 }
-      ];
-      let assigned = dpValueDetail;
-      for (let i = 0; i < parts.length; i++) {
-        if (i < parts.length - 1) {
-          const amt = Math.round((finalPriceDetail * parts[i].pct) / 100);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-          assigned += amt;
-        } else {
-          const amt = Math.max(finalPriceDetail - assigned, 0);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-        }
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 3x')) {
-      const n = 3;
-      const total = sisaPembayaranDetail;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 6x')) {
-      const n = 6;
-      const total = sisaPembayaranDetail;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 12x')) {
-      const n = 12;
-      const total = sisaPembayaranDetail;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    }
-    return rows;
-  }, [selectedSkemaNama, dpPercentDetail, dpValueDetail, finalPriceDetail, sisaPembayaranDetail]);
+    const skemaPembayaran = (detail as any)?.skema_pembayaran;
+    const detailPembayaran = (detail as any)?.detail_pembayaran || [];
+
+    if (!skemaPembayaran?.details) return rows;
+
+    // Create a map of detail_pembayaran by detail_skema_pembayaran_id for quick lookup
+    const detailPembayaranMap = new Map();
+    detailPembayaran.forEach((dp: any) => {
+      detailPembayaranMap.set(dp.detail_skema_pembayaran_id, dp);
+    });
+
+    return skemaPembayaran.details.map((detailSkema: any) => {
+      const amount = (finalPriceDetail * detailSkema.persentase) / 100;
+      const detailPembayaranItem = detailPembayaranMap.get(detailSkema.id);
+      const tanggal = detailPembayaranItem?.tanggal || null;
+
+      return {
+        id: detailSkema.id,
+        label: detailSkema.nama,
+        amount: Math.round(amount),
+        tanggal
+      };
+    });
+  }, [detail, finalPriceDetail]);
 
   const handleEdit = (penjualan: PenjualanWithRelations) => {
     if (['Approved', 'Rejected', 'ITJ', 'Akad', 'Refund'].includes(penjualan.status as any)) {
@@ -586,11 +544,22 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                     <span className='text-sm text-gray-500'>Skema: {selectedSkemaNama || '-'}</span>
                   </div>
                   <div className='rounded-md border'>
-                    {paymentRowsDetail.map((row, idx) => (
-                      <div key={idx} className='flex items-center justify-between border-b p-3 last:border-b-0'>
-                        <div>
-                          <div className='text-sm font-medium'>{row.label}</div>
-                          <div className='text-xs text-gray-500'>Periode: {row.periode}</div>
+                    <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b bg-gray-50 px-4 py-3 text-sm font-medium'>
+                      <div>Pembayaran</div>
+                      <div>Tanggal</div>
+                      <div className='text-right'>Angsuran</div>
+                    </div>
+                    {paymentRowsDetail.map((row: any, idx: number) => (
+                      <div key={idx} className='grid grid-cols-3 items-center gap-2 border-b px-4 py-3 last:border-b-0'>
+                        <div className='text-sm font-medium'>{row.label}</div>
+                        <div className='text-sm text-gray-600'>
+                          {row.tanggal
+                            ? new Date(row.tanggal).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              })
+                            : '-'}
                         </div>
                         <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
                       </div>
