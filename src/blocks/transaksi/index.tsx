@@ -519,12 +519,12 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                     <span className='text-sm text-gray-500'>Subtotal</span>
                     <span className='text-sm font-bold text-green-600'>{formatRupiah(subtotalDetail)}</span>
                   </div>
-                  {detail.dp !== null && detail.dp !== undefined && (
+                  {/* {detail.dp !== null && detail.dp !== undefined && (
                     <div className='flex items-center justify-between'>
                       <span className='text-sm text-gray-500'>DP</span>
                       <span className='text-sm font-bold text-green-600'>{formatRupiah(Number(detail.dp || 0))}</span>
                     </div>
-                  )}
+                  )} */}
                   <div className='flex items-center justify-between'>
                     <span className='text-sm text-gray-500'>Harga Setelah Diskon</span>
                     <span className='text-sm font-bold text-green-600'>{formatRupiah(finalPriceDetail)}</span>
