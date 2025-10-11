@@ -38,14 +38,19 @@ export interface SkemaPembayaranApiResponse {
   data?: SkemaPembayaran;
 }
 
+export interface FormSkemaPembayaranDetailData {
+  nama: string;
+  persentase: number;
+}
+
 export interface CreateSkemaPembayaranData {
   nama: string;
-  details: SkemaPembayaranDetail[];
+  details: FormSkemaPembayaranDetailData[];
 }
 
 export interface UpdateSkemaPembayaranData {
   nama: string;
-  details: SkemaPembayaranDetail[];
+  details: FormSkemaPembayaranDetailData[];
 }
 
 export interface UseSkemaPembayaranListParams {
