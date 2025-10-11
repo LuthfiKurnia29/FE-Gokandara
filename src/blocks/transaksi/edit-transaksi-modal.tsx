@@ -349,7 +349,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     })).filter((item) => item.tanggal !== undefined);
 
     const payload: any = {
-      no_transaksi: Number(noTransaksi) || undefined,
+      no_transaksi: noTransaksi || undefined,
       konsumen_id: selectedKonsumenId ? parseInt(selectedKonsumenId) : undefined,
       ...(effectiveCreatedId ? { created_id: effectiveCreatedId } : {}),
       ...(selectedProjekId ? { projeks_id: selectedProjekId } : {}),

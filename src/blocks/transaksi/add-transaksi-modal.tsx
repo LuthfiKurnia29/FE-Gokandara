@@ -362,7 +362,7 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
     })).filter((item) => item.tanggal !== undefined);
 
     const payload: any = {
-      no_transaksi: Number(noTransaksi) || 0,
+      no_transaksi: noTransaksi || '',
       konsumen_id: selectedKonsumenId ? parseInt(selectedKonsumenId) : undefined,
       ...(effectiveCreatedId ? { created_id: effectiveCreatedId } : {}),
       ...(selectedProjekId ? { projeks_id: selectedProjekId } : {}),
