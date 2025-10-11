@@ -608,7 +608,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   <span>Harga Setelah Diskon</span>
                   <span className='font-medium'>Rp {hargaSetelahDiskon.toLocaleString('id-ID')}</span>
                 </div>
-                <div>
+                {/* <div>
                   <div className='flex items-center justify-between'>
                     <span>Down Payment ({dpPercent}%)</span>
                     <span className='font-medium'>Rp {dpValue.toLocaleString('id-ID')}</span>
@@ -625,7 +625,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                     />
                     <span className='text-muted-foreground w-10 text-right text-sm'>{dpPercent}%</span>
                   </div>
-                </div>
+                </div> */}
                 <div className='flex items-center justify-between'>
                   <span>{sisaLabel}</span>
                   <span className='font-medium'>Rp {sisaPembayaran.toLocaleString('id-ID')}</span>
@@ -654,13 +654,13 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
               <Separator />
 
               <div className='rounded-lg border'>
-                <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b px-4 py-3 text-sm'>
+                <div className='text-muted-foreground grid grid-[1fr_2fr_2fr] gap-2 border-b px-4 py-3 text-sm'>
                   <div>Pembayaran</div>
                   <div>Tanggal</div>
                   <div className='text-right'>Angsuran</div>
                 </div>
                 {paymentRows.map((row, idx) => (
-                  <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
+                  <div key={idx} className='grid grid-[1fr_2fr_2fr] items-center gap-2 px-4 py-3'>
                     <div>{row.label}</div>
                     <div>
                       <DatePicker

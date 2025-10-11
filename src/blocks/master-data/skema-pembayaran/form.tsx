@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,7 @@ export const SkemaPembayaranForm = memo(function SkemaPembayaranForm({
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors }
   } = useForm<SkemaPembayaranFormData>({
     resolver: zodResolver(skemaPembayaranSchema),
@@ -61,6 +62,20 @@ export const SkemaPembayaranForm = memo(function SkemaPembayaranForm({
     control,
     name: 'details'
   });
+
+  // Watch the details array to calculate total persentase
+  const watchDetails = watch('details');
+
+  // Calculate total persentase
+  const totalPersentase = useMemo(() => {
+    return watchDetails?.reduce((sum, detail) => {
+      const persentase = Number(detail.persentase) || 0;
+      return sum + persentase;
+    }, 0) || 0;
+  }, [watchDetails]);
+
+  // Check if form is valid for submission
+  const isPersentaseValid = totalPersentase === 100;
 
   const handleFormSubmit = (data: SkemaPembayaranFormData) => {
     onSubmit(data);
@@ -166,13 +181,27 @@ export const SkemaPembayaranForm = memo(function SkemaPembayaranForm({
         {errors.details && typeof errors.details.message === 'string' && (
           <p className='text-sm text-red-600'>{errors.details.message}</p>
         )}
+
+        {/* Total persentase validation */}
+        <div className='flex items-center justify-between p-3 border rounded-lg bg-muted/50'>
+          <span className='text-sm font-medium'>Total Persentase:</span>
+          <span className={`text-sm font-bold ${totalPersentase === 100 ? 'text-green-600' : 'text-red-600'}`}>
+            {totalPersentase}%
+          </span>
+        </div>
+
+        {!isPersentaseValid && (
+          <p className='text-sm text-red-600'>
+            Total persentase harus 100%. Saat ini: {totalPersentase}%
+          </p>
+        )}
       </div>
 
       <div className='flex justify-end space-x-2 pt-4'>
         <Button type='button' variant='outline' onClick={handleCancel} disabled={isLoading}>
           Batal
         </Button>
-        <Button type='submit' disabled={isLoading}>
+        <Button type='submit' disabled={isLoading || !isPersentaseValid}>
           {isLoading ? 'Menyimpan...' : selectedId ? 'Update' : 'Simpan'}
         </Button>
       </div>
