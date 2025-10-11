@@ -3,6 +3,7 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -76,6 +77,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   const [selectedSpvId, setSelectedSpvId] = useState<string>('');
   const [selectedSalesId, setSelectedSalesId] = useState<string>('');
   const [selectedKonsumenId, setSelectedKonsumenId] = useState<string>('');
+  const [paymentDates, setPaymentDates] = useState<Record<number, Date | undefined>>({});
 
   const { data: supervisorData, isLoading: isLoadingSpv } = useSupervisorMitraList();
   const { data: salesData, isLoading: isLoadingSales } = useUsersByParent(selectedSpvId ? Number(selectedSpvId) : null);
@@ -241,7 +243,8 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     'unit',
     'projek',
     'skema_pembayaran',
-    'created_by'
+    'created_by',
+    'detail_pembayaran'
   ]);
 
   // Prefill fields when detail is available
@@ -275,91 +278,39 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
       const pct = Math.round((dp / estHarga) * 100);
       setDpPercent(Math.max(0, Math.min(pct, 100)));
     }
+
+    // Load existing payment dates if available
+    const detailPembayaran = (detail as any)?.detail_pembayaran;
+    if (detailPembayaran && Array.isArray(detailPembayaran)) {
+      const dates: Record<number, Date | undefined> = {};
+      detailPembayaran.forEach((item: any) => {
+        if (item.detail_skema_pembayaran_id && item.tanggal) {
+          dates[item.detail_skema_pembayaran_id] = new Date(item.tanggal);
+        }
+      });
+      setPaymentDates(dates);
+    }
   }, [detail]);
 
   const paymentRows = useMemo(() => {
-    if (!selectedSkemaNama) return [] as { label: string; amount: number; periode: string }[];
+    if (!selectedSkemaId) return [] as { id: number; label: string; amount: number; periode: string }[];
 
-    const rows: { label: string; amount: number; periode: string }[] = [];
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
 
-    rows.push({ label: 'DP', amount: dpValue, periode: '-' });
-    const skemaLower = selectedSkemaNama.toLowerCase();
-    if (skemaLower.includes('kpr')) {
-      rows.push({ label: 'Sisa Plafon', amount: sisaPembayaran, periode: '-' });
-      return rows;
-    } else if (skemaLower.includes('cash keras')) {
-      rows.push({ label: 'Sisa Pembayaran', amount: sisaPembayaran, periode: '-' });
-      return rows;
-    }
+    if (!selectedSkema?.skema_pembayaran?.details) return [];
 
-    if (selectedSkemaNama.includes('Cash By progress 3 lantai')) {
-      const lantaiPct = dpPercent >= 50 ? 15 : 20;
-      const parts = [
-        { label: 'Pengecoran Plat lantai 2', pct: lantaiPct },
-        { label: 'Pengecoran Plat lantai 3', pct: lantaiPct },
-        { label: 'Bangunan Hitam (Sudah Mau Masuk Acian)', pct: 10 },
-        { label: 'Pengecatan Terakhir sebelum PDAM/PLN ter instal', pct: 10 }
-      ];
-      let assigned = dpValue;
-      for (let i = 0; i < parts.length; i++) {
-        if (i < parts.length - 1) {
-          const amt = Math.round((harga * parts[i].pct) / 100);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-          assigned += amt;
-        } else {
-          const amt = Math.max(harga - assigned, 0);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-        }
-      }
-    } else if (selectedSkemaNama.includes('Cash By progress 2 lantai')) {
-      const platPct = dpPercent >= 50 ? 30 : 40;
-      const parts = [
-        { label: 'Pengecoran Plat lantai 2', pct: platPct },
-        { label: 'Bata terpasang 100%', pct: 10 },
-        { label: 'Pengecatan Terakhir sebelum PDAM/PLN ter instal', pct: 10 }
-      ];
-      let assigned = dpValue;
-      for (let i = 0; i < parts.length; i++) {
-        if (i < parts.length - 1) {
-          const amt = Math.round((harga * parts[i].pct) / 100);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-          assigned += amt;
-        } else {
-          const amt = Math.max(harga - assigned, 0);
-          rows.push({ label: parts[i].label, amount: amt, periode: '-' });
-        }
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 3x')) {
-      const n = 3;
-      const total = sisaPembayaran;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 6x')) {
-      const n = 6;
-      const total = sisaPembayaran;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    } else if (selectedSkemaNama.includes('Inhouse 12x')) {
-      const n = 12;
-      const total = sisaPembayaran;
-      let assigned = 0;
-      for (let i = 1; i <= n; i++) {
-        const amt = i < n ? Math.round(total / n) : Math.max(total - assigned, 0);
-        rows.push({ label: 'Cicilan ' + i, amount: amt, periode: i + ' bulan' });
-        assigned += amt;
-      }
-    }
+    return selectedSkema.skema_pembayaran.details.map((detail) => ({
+      id: detail.id,
+      label: detail.nama,
+      amount: hargaSetelahDiskon * detail.persentase / 100,
+      periode: ''
+    }));
+  }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon]);
 
-    return rows;
-  }, [selectedSkemaNama, dpValue, sisaPembayaran, dpPercent, harga]);
+  // Reset payment dates when skema changes
+  useEffect(() => {
+    setPaymentDates({});
+  }, [selectedSkemaId]);
 
   const updatePenjualan = useUpdatePenjualan();
 
@@ -381,6 +332,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
       setSelectedProjekId(null);
       setSelectedTipeId(null);
       setSelectedSkemaId(null);
+      setPaymentDates({});
     }
     onOpenChange(val);
   };
@@ -388,6 +340,13 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   const handleSubmit = async () => {
     if (!transaksiId) return;
     const tipe_diskon_api = tipeDiskon === 'persen' ? 'percent' : 'fixed';
+
+    // Build detail_pembayaran array
+    const detail_pembayaran = paymentRows.map((row) => ({
+      skema_pembayaran_id: selectedSkemaId,
+      detail_skema_pembayaran_id: row.id,
+      tanggal: paymentDates[row.id] ? paymentDates[row.id]?.toISOString().split('T')[0] : undefined
+    })).filter((item) => item.tanggal !== undefined);
 
     const payload: any = {
       no_transaksi: Number(noTransaksi) || undefined,
@@ -401,7 +360,8 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
       ...(selectedSkemaId ? { skema_pembayaran_id: selectedSkemaId } : {}),
       ...(diskon !== '' ? { diskon: Number(diskon) } : {}),
       tipe_diskon: tipe_diskon_api,
-      dp: dpValue
+      dp: dpValue,
+      ...(detail_pembayaran.length > 0 ? { detail_pembayaran } : {})
     };
 
     try {
@@ -696,18 +656,24 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
               <div className='rounded-lg border'>
                 <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b px-4 py-3 text-sm'>
                   <div>Pembayaran</div>
-                  <div>Periode</div>
+                  <div>Tanggal</div>
                   <div className='text-right'>Angsuran</div>
                 </div>
                 {paymentRows.map((row, idx) => (
                   <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
                     <div>{row.label}</div>
                     <div>
-                      {row.periode && row.periode !== '-' ? (
-                        <Input value={row.periode} className={FIELD_SMALL_CLS} readOnly />
-                      ) : (
-                        <span>-</span>
-                      )}
+                      <DatePicker
+                        value={paymentDates[row.id]}
+                        onChange={(date) => {
+                          setPaymentDates((prev) => ({
+                            ...prev,
+                            [row.id]: date
+                          }));
+                        }}
+                        placeholder='Pilih tanggal'
+                        className='!h-9 !w-full'
+                      />
                     </div>
                     <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
                   </div>

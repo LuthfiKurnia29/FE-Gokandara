@@ -1,4 +1,5 @@
 export interface SkemaPembayaranDetail {
+  id: number;
   nama: string;
   persentase: number;
 }

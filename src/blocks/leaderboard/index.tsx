@@ -15,6 +15,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 
 import { Filter, Mail, MessageCircle, Phone, PhoneCall, User, Video, X } from 'lucide-react';
 import moment from 'moment';
+import { type DateRange } from 'react-day-picker';
 
 const columnHelper = createColumnHelper<LeaderboardItem>();
 
@@ -32,15 +33,14 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   // Use real backend endpoint
   const apiUrl = '/leaderboard';
   const [top3, setTop3] = useState<any[]>([]);
-  const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({
-    start: moment().startOf('year').format('YYYY-MM-DD'),
-    end: moment().endOf('year').format('YYYY-MM-DD')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+    to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
   });
-  const [startDate, setStartDate] = useState<Date>(new Date(moment().startOf('year').format('YYYY-MM-DD')));
-  const [endDate, setEndDate] = useState<Date>(new Date(moment().endOf('year').format('YYYY-MM-DD')));
 
   // Convert dates to string format for API
-  const formatDateForAPI = (date: Date) => {
+  const formatDateForAPI = (date: Date | undefined) => {
+    if (!date) return undefined;
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -48,29 +48,20 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   };
 
   // Handle date range change
-  const handleDateRangeChange = (start: Date, end: Date) => {
-    setStartDate(start);
-    setEndDate(end);
-    setDateRange({
-      start: formatDateForAPI(start),
-      end: formatDateForAPI(end)
-    });
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
   };
 
-  // Initialize date range on component mount
-  useEffect(() => {
-    setDateRange({
-      start: formatDateForAPI(startDate),
-      end: formatDateForAPI(endDate)
-    });
-  }, []);
+  // Get formatted dates for API
+  const startDateForAPI = formatDateForAPI(dateRange?.from);
+  const endDateForAPI = formatDateForAPI(dateRange?.to);
 
   useEffect(() => {
     const fetchTop3 = async () => {
       try {
         const data = await leaderboardService.getTop3({
-          dateStart: dateRange.start,
-          dateEnd: dateRange.end
+          dateStart: startDateForAPI,
+          dateEnd: endDateForAPI
         });
         setTop3(Array.isArray(data) ? data : []);
       } catch (e) {
@@ -78,7 +69,7 @@ const LeaderboardPage = memo(function LeaderboardPage() {
       }
     };
     fetchTop3();
-  }, [dateRange.start, dateRange.end]);
+  }, [startDateForAPI, endDateForAPI]);
 
   const handleClearFilter = () => setSelectedMember(null);
 
@@ -152,16 +143,16 @@ const LeaderboardPage = memo(function LeaderboardPage() {
   const payload = useMemo(
     () => ({
       ...(selectedMember?.id ? { member_id: selectedMember.id } : {}),
-      ...(dateRange.start && dateRange.end ? { dateStart: dateRange.start, dateEnd: dateRange.end } : {})
+      ...(startDateForAPI && endDateForAPI ? { dateStart: startDateForAPI, dateEnd: endDateForAPI } : {})
     }),
-    [selectedMember?.id, dateRange.start, dateRange.end]
+    [selectedMember?.id, startDateForAPI, endDateForAPI]
   );
 
   return (
     <section className='p-4'>
       <div className='mb-4 flex items-center justify-between'>
         <PageTitle title='Leaderboard' />
-        <DateRangePicker startDate={startDate} endDate={endDate} onChange={handleDateRangeChange} />
+        <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
       </div>
 
       {/* Top Sales Cards (Top 3 from API) */}

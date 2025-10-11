@@ -11,7 +11,6 @@ import { PaginateCustom } from '@/components/paginate-custom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -85,8 +84,10 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [selectedImageName, setSelectedImageName] = useState<string>('');
 
   // Filter states
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date(moment().startOf('year').format('YYYY-MM-DD')));
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date(moment().endOf('year').format('YYYY-MM-DD')));
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+    to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
+  });
   const [selectedProspekId, setSelectedProspekId] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
 
@@ -206,8 +207,12 @@ const KonsumenPage = memo(function KonsumenPage() {
 
   // Handle apply filters from modal
   const handleApplyFilters = (filters: FilterValues) => {
-    setStartDate(filters.startDate);
-    setEndDate(filters.endDate);
+    if (filters.dateRange) {
+      setDateRange({
+        from: filters.dateRange.from || new Date(moment().startOf('year').format('YYYY-MM-DD')),
+        to: filters.dateRange.to || new Date(moment().endOf('year').format('YYYY-MM-DD'))
+      });
+    }
     setSelectedProspekId(filters.selectedProspekId);
     setSelectedStatus(filters.selectedStatus);
     setSelectedMemberId(filters.selectedMemberId);
@@ -216,24 +221,22 @@ const KonsumenPage = memo(function KonsumenPage() {
 
   // Get current filter values for the modal
   const getCurrentFilters = (): FilterValues => ({
-    startDate,
-    endDate,
+    dateRange: {
+      from: dateRange.from,
+      to: dateRange.to
+    },
     selectedProspekId,
     selectedStatus,
     selectedMemberId,
     selectedMemberName
   });
 
-  // Handle date range change
-  const handleDateRangeChange = (start: Date, end: Date) => {
-    setStartDate(start);
-    setEndDate(end);
-  };
-
   // Handle clear all filters
   const handleClearAllFilters = () => {
-    setStartDate(new Date(moment().startOf('year').format('YYYY-MM-DD')));
-    setEndDate(new Date(moment().endOf('year').format('YYYY-MM-DD')));
+    setDateRange({
+      from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+      to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
+    });
     setSelectedProspekId('');
     setSelectedStatus('');
     handleClearFilter();
@@ -244,8 +247,8 @@ const KonsumenPage = memo(function KonsumenPage() {
     selectedProspekId ||
     selectedStatus ||
     selectedMemberId ||
-    (startDate && startDate.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
-    (endDate && endDate.getTime() !== new Date(moment().endOf('year').format('YYYY-MM-DD')).getTime());
+    (dateRange.from && dateRange.from.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
+    (dateRange.to && dateRange.to.getTime() !== new Date(moment().endOf('year').format('YYYY-MM-DD')).getTime());
 
   // Format date to YYYY-MM-DD for API
   const formatDateForAPI = (date: Date | undefined) => {
@@ -477,15 +480,15 @@ const KonsumenPage = memo(function KonsumenPage() {
         queryKey={[
           '/konsumen',
           selectedMemberId?.toString() || 'all',
-          formatDateForAPI(startDate) || 'no-start',
-          formatDateForAPI(endDate) || 'no-end',
+          formatDateForAPI(dateRange.from) || 'no-start',
+          formatDateForAPI(dateRange.to) || 'no-end',
           selectedProspekId || 'all-prospek',
           selectedStatus || 'all-status'
         ]}
         payload={{
           ...(selectedMemberId && { created_id: selectedMemberId }),
-          ...(startDate && { dateStart: formatDateForAPI(startDate) }),
-          ...(endDate && { dateEnd: formatDateForAPI(endDate) }),
+          ...(dateRange.from && { dateStart: formatDateForAPI(dateRange.from) }),
+          ...(dateRange.to && { dateEnd: formatDateForAPI(dateRange.to) }),
           ...(selectedProspekId && { prospek_id: selectedProspekId }),
           ...(selectedStatus && { status: selectedStatus })
         }}

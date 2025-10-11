@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProspekData } from '@/types/prospek';
 
 import moment from 'moment';
+import { type DateRange } from 'react-day-picker';
 
 interface FilterModalProps {
   open: boolean;
@@ -19,8 +20,7 @@ interface FilterModalProps {
 }
 
 export interface FilterValues {
-  startDate: Date | undefined;
-  endDate: Date | undefined;
+  dateRange: DateRange | undefined;
   selectedProspekId: string;
   selectedStatus: string;
   selectedMemberId: number | null;
@@ -37,11 +37,10 @@ export function FilterModal({ open, onOpenChange, onApplyFilters, initialFilters
   }, [initialFilters]);
 
   // Handle date range change
-  const handleDateRangeChange = (start: Date, end: Date) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setFilters((prev) => ({
       ...prev,
-      startDate: start,
-      endDate: end
+      dateRange: range
     }));
   };
 
@@ -73,8 +72,10 @@ export function FilterModal({ open, onOpenChange, onApplyFilters, initialFilters
   // Handle clear all filters
   const handleClearAllFilters = () => {
     const clearedFilters: FilterValues = {
-      startDate: new Date(moment().startOf('year').format('YYYY-MM-DD')),
-      endDate: new Date(moment().endOf('year').format('YYYY-MM-DD')),
+      dateRange: {
+        from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+        to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
+      },
       selectedProspekId: '',
       selectedStatus: '',
       selectedMemberId: null,
@@ -105,8 +106,7 @@ export function FilterModal({ open, onOpenChange, onApplyFilters, initialFilters
           <div className='space-y-2'>
             <label className='text-sm font-medium'>Tanggal Range</label>
             <DateRangePicker
-              startDate={filters.startDate}
-              endDate={filters.endDate}
+              value={filters.dateRange}
               onChange={handleDateRangeChange}
               className='w-full'
             />

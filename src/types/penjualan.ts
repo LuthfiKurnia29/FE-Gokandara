@@ -94,6 +94,11 @@ export interface CreatePenjualanData {
   jangka_waktu?: number | null; // dalam bulan, wajib saat Cash Tempo/Kredit
   grand_total?: number;
   status?: PenjualanStatus;
+  detail_pembayaran?: {
+    skema_pembayaran_id: number;
+    detail_skema_pembayaran_id: number;
+    tanggal: string;
+  }[];
 }
 
 export interface UpdatePenjualanData {
@@ -109,6 +114,11 @@ export interface UpdatePenjualanData {
   dp?: number | null;
   jangka_waktu?: number | null;
   grand_total?: number;
+  detail_pembayaran?: {
+    skema_pembayaran_id: number;
+    detail_skema_pembayaran_id: number;
+    tanggal: string;
+  }[];
 }
 
 export interface UpdatePenjualanStatusData {
