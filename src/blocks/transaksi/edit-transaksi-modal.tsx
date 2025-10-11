@@ -262,16 +262,16 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     setKelebihanTanah(String((detail as any)?.kelebihan_tanah ?? '0'));
     setHargaPerMeter(String((detail as any)?.harga_per_meter ?? '0'));
     const creator = (detail as any)?.created_by;
-    if (creator?.id) {
-      const roleId = Number(creator.roles[0].role_id);
-      if (roleId === 3) {
-        setSelectedSalesId(String(creator.id));
-        if (creator.parent_id) setSelectedSpvId(String(creator.parent_id));
-      } else if (roleId === 2) {
-        setSelectedSpvId(String(creator.id));
-        setSelectedSalesId('');
-      }
-    }
+    // if (creator?.id) {
+    //   const roleId = Number(creator.roles[0].role_id);
+    //   if (roleId === 3) {
+    //     setSelectedSalesId(String(creator.id));
+    //     if (creator.parent_id) setSelectedSpvId(String(creator.parent_id));
+    //   } else if (roleId === 2) {
+    //     setSelectedSpvId(String(creator.id));
+    //     setSelectedSalesId('');
+    //   }
+    // }
     const dp = Number(detail.dp ?? 0);
     const estHarga = Number((detail as any)?.harga ?? (detail.properti as any)?.harga ?? 0);
     if (dp > 0 && estHarga > 0) {
