@@ -16,7 +16,8 @@ const ProgressBar = React.memo(
     color,
     showUnit = false,
     percentage = 0,
-    barHeight = 'h-2'
+    barHeight = 'h-2',
+    total_unit
   }: {
     label: string;
     current: number;
@@ -25,15 +26,16 @@ const ProgressBar = React.memo(
     showUnit?: boolean;
     percentage?: number;
     barHeight?: string;
+    total_unit?: number;
   }) => {
-    const width = total > 0 ? `${Math.min((current / total) * 100, 100)}%` : '0%';
+    const width = total_unit > 0 ? `${Math.min((current / total_unit) * 100, 100)}%` : '0%';
 
     return (
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
           <span className='text-[15px] font-medium text-gray-700'>{label}</span>
           <span className='text-[15px] font-medium text-gray-500'>
-            {current.toLocaleString()}/{total.toLocaleString()}
+            {current.toLocaleString()}/{total_unit.toLocaleString()}
             {showUnit ? ' Unit' : ''}
           </span>
         </div>
@@ -75,6 +77,7 @@ export function PropertiSection({ dashboardData }: ComponentWithDashboardProps) 
 
     return transaksiByPropertiData.chart_data.map((item) => ({
       label: item.name,
+      total_unit: item.total_unit,
       current: item.value,
       total: maxTransaksi, // Use max value as total for visual comparison
       color: item.color,
