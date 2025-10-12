@@ -87,6 +87,7 @@ export interface SalesOverviewResponse {
 export interface TransaksiByPropertiItem {
   name: string;
   value: number;
+  total_unit: number;
   percentage: string;
   color: string;
 }
