@@ -688,25 +688,31 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                     <div>Tanggal</div>
                     <div className='text-right'>Angsuran</div>
                   </div>
-                  {paymentRows.map((row, idx) => (
-                    <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
-                      <div>{row.label}</div>
-                      <div>
-                        <DatePicker
-                          value={paymentDates[row.id]}
-                          onChange={(date) => {
-                            setPaymentDates((prev) => ({
-                              ...prev,
-                              [row.id]: date
-                            }));
-                          }}
-                          placeholder='Pilih tanggal'
-                          className='!h-9 !w-full'
-                        />
-                      </div>
-                      <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
+                  {paymentRows.length === 0 ? (
+                    <div className='px-4 py-8 text-center text-muted-foreground text-sm'>
+                      Detail untuk Skema Pembayaran ini belum diisi. Silakan isi terlebih dahulu.
                     </div>
-                  ))}
+                  ) : (
+                    paymentRows.map((row, idx) => (
+                      <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
+                        <div>{row.label}</div>
+                        <div>
+                          <DatePicker
+                            value={paymentDates[row.id]}
+                            onChange={(date) => {
+                              setPaymentDates((prev) => ({
+                                ...prev,
+                                [row.id]: date
+                              }));
+                            }}
+                            placeholder='Pilih tanggal'
+                            className='!h-9 !w-full'
+                          />
+                        </div>
+                        <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
