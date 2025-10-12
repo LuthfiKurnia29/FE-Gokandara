@@ -63,11 +63,11 @@ export function PropertiSection({ dashboardData }: ComponentWithDashboardProps) 
     if (!transaksiByPropertiData?.chart_data || transaksiByPropertiData.chart_data.length === 0) {
       // Fallback data
       return [
-        { label: 'HOONIAN Sigura-Gura', current: 0, total: 100, color: '#FF6384', percentage: 0 },
-        { label: 'HOONIAN Bumi Palapa', current: 0, total: 100, color: '#36A2EB', percentage: 0 },
-        { label: 'HOONIAN Bunga Kosmea', current: 0, total: 100, color: '#FFCE56', percentage: 0 },
-        { label: 'HOONIAN Borobudur', current: 0, total: 100, color: '#4BC0C0', percentage: 0 },
-        { label: 'RHUMA Arumba', current: 0, total: 100, color: '#9966FF', percentage: 0 }
+        { label: 'HOONIAN Sigura-Gura', current: 0, total_unit: 0, total: 100, color: '#FF6384', percentage: 0 },
+        { label: 'HOONIAN Bumi Palapa', current: 0, total_unit: 0, total: 100, color: '#36A2EB', percentage: 0 },
+        { label: 'HOONIAN Bunga Kosmea', current: 0, total_unit: 0, total: 100, color: '#FFCE56', percentage: 0 },
+        { label: 'HOONIAN Borobudur', current: 0, total_unit: 0, total: 100, color: '#4BC0C0', percentage: 0 },
+        { label: 'RHUMA Arumba', current: 0, total_unit: 0, total: 100, color: '#9966FF', percentage: 0 }
       ];
     }
 

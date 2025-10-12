@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 import { FilterModal, FilterValues } from '@/blocks/konsumen/filter-modal';
 import { KonsumenForm } from '@/blocks/konsumen/form';
@@ -27,6 +27,7 @@ import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { ProspekData } from '@/types/prospek';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
+import { useSearchParams } from 'next/navigation';
 
 import { CheckCircle, Clock, Filter, History, Mail, MessageSquare, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
 import moment from 'moment';
@@ -82,6 +83,17 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedImageName, setSelectedImageName] = useState<string>('');
+
+  const searchParams = useSearchParams();
+  const createdId = searchParams.get('created_id');
+  const createdName = searchParams.get('created_name');
+
+  useEffect(() => {
+    if (createdId) {
+      setSelectedMemberId(Number(createdId));
+      setSelectedMemberName(createdName || '');
+    }
+  }, [createdId, createdName]);
 
   // Filter states
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({

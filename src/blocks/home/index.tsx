@@ -144,7 +144,7 @@ const HomePage = React.memo(() => {
         </div>
       )}
 
-      <MetricCards dashboardData={dashboardProps} />
+      <MetricCards dashboardData={dashboardProps} selectedMemberId={selectedMemberId} selectedMemberName={selectedMemberName} />
 
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
         {/* <Card className='border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md'>

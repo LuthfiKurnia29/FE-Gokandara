@@ -83,7 +83,7 @@ const StatCard = React.memo(
 
 StatCard.displayName = 'StatCard';
 
-export default function MetricCards({ dashboardData }: ComponentWithDashboardProps) {
+export default function MetricCards({ dashboardData, selectedMemberId, selectedMemberName }: ComponentWithDashboardProps & { selectedMemberId: number | null, selectedMemberName: string }  ) {
   const router = useRouter();
 
   const handleFollowUpClick = () => {
@@ -107,11 +107,11 @@ export default function MetricCards({ dashboardData }: ComponentWithDashboardPro
   };
 
   const handleNewKonsumensClick = () => {
-    router.push('/konsumen');
+    router.push(`/konsumen?created_id=${selectedMemberId}&created_name=${selectedMemberName}`);
   };
 
   const handleKonsumenProspekClick = () => {
-    router.push('/konsumen');
+    router.push(`/konsumen?created_id=${selectedMemberId}&created_name=${selectedMemberName}`);
   };
 
   const stats = [

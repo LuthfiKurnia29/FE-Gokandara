@@ -30,7 +30,7 @@ const getMessage = (n: NotificationItem) => {
     return `${n.chatting.pengirim?.name ?? 'Pengirim'} mengirim pesan ${n.chatting.pesan ? `: ${n.chatting.pesan}` : ''}`;
   }
   if (n.jenis_notifikasi === 'konsumen') {
-    return `Mitra berusaha menginputkan data Konsumen yang sudah ada. Konsumen dengan nama ${n.konsumen?.name ?? '-'} dan no. telp ${n.konsumen?.phone ?? n.phone ?? '-'}`;
+    return `Mitra berusaha menginputkan data Konsumen yang sudah ada milik Sales ${n.konsumen?.created_by?.name ?? '-'} . Konsumen dengan nama ${n.konsumen?.name ?? '-'} dan no. telp ${n.konsumen?.phone ?? n.phone ?? '-'}`;
   }
   if (n.jenis_notifikasi === 'claim') {
     return `${n.user?.name} ingin Claim bonus ${n.target?.hadiah}`;
