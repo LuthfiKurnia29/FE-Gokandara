@@ -87,7 +87,7 @@ export default function MetricCards({ dashboardData, selectedMemberId, selectedM
   const router = useRouter();
 
   const handleFollowUpClick = () => {
-    router.push('/kalender');
+    router.push(`/kalender?created_id=${selectedMemberId}&created_name=${selectedMemberName}`);
   };
 
   // Extract data from dashboard API responses

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { MemberFilterModal } from '@/blocks/home/member-filter-modal';
 import { ChangeBadgeVariantInput } from '@/calendar/components/change-badge-variant-input';
@@ -15,6 +15,7 @@ import { usePermissions } from '@/services/auth';
 
 import KalenderContainer from './container';
 import { Filter, Settings, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 const KalenderPage = memo(function KalenderPage() {
   const [events, setEvents] = useState<IEvent[]>([]);
@@ -24,6 +25,17 @@ const KalenderPage = memo(function KalenderPage() {
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const { getUserData } = usePermissions();
+
+  const searchParams = useSearchParams();
+  const createdId = searchParams.get('created_id');
+  const createdName = searchParams.get('created_name');
+
+  useEffect(() => {
+    if (createdId) {
+      setSelectedMemberId(Number(createdId));
+      setSelectedMemberName(createdName || '');
+    }
+  }, [createdId, createdName]);
 
   // Get current user data for role checking
   const userData = getUserData();
