@@ -26,7 +26,7 @@ const ProgressBar = React.memo(
     showUnit?: boolean;
     percentage?: number;
     barHeight?: string;
-    total_unit?: number;
+    total_unit: number;
   }) => {
     const width = total_unit > 0 ? `${Math.min((current / total_unit) * 100, 100)}%` : '0%';
 
