@@ -19,7 +19,13 @@ const chartConfig = {
 type TimePeriod = 'harian' | 'mingguan' | 'bulanan';
 
 interface OrderChartComponentProps {
-  filterParams?: { created_id?: number };
+  filterParams?: {
+    created_id?: number;
+    dateStart?: string;
+    dateEnd?: string;
+    prospek_id?: string;
+    status?: string;
+  };
 }
 
 export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentProps) => {

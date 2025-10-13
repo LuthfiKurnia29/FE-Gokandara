@@ -27,7 +27,13 @@ const getProspectColor = (prospectName: string | null) => {
 };
 
 interface RingkasanPenjualanComponentProps {
-  filterParams?: { created_id?: number };
+  filterParams?: {
+    created_id?: number;
+    dateStart?: string;
+    dateEnd?: string;
+    prospek_id?: string;
+    status?: string;
+  };
 }
 
 export const RingkasanPenjualanComponent = ({ filterParams = {} }: RingkasanPenjualanComponentProps) => {

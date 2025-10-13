@@ -7,6 +7,10 @@ export interface AnalisaQueryParams {
   created_id?: number; // sales ID filter
   waktu?: 'today' | 'tomorrow'; // for followup filter
   filter?: 'harian' | 'mingguan' | 'bulanan'; // for statistics filters
+  dateStart?: string; // start date filter (YYYY-MM-DD)
+  dateEnd?: string; // end date filter (YYYY-MM-DD)
+  prospek_id?: string; // prospek filter
+  status?: string; // status filter
 }
 
 // New Konsumen Response
@@ -126,4 +130,8 @@ export interface UseAnalisaParams {
   created_id?: number;
   waktu?: 'today' | 'tomorrow';
   filter?: 'harian' | 'mingguan' | 'bulanan';
+  dateStart?: string; // start date filter (YYYY-MM-DD)
+  dateEnd?: string; // end date filter (YYYY-MM-DD)
+  prospek_id?: string; // prospek filter
+  status?: string; // status filter
 }

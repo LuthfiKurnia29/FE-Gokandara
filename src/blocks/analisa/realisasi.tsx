@@ -7,7 +7,13 @@ import { getRealisasi } from '@/services/realisasi';
 import { useQuery } from '@tanstack/react-query';
 
 interface RealisasiComponentProps {
-  filterParams?: { created_id?: number };
+  filterParams?: {
+    created_id?: number;
+    dateStart?: string;
+    dateEnd?: string;
+    prospek_id?: string;
+    status?: string;
+  };
 }
 
 const RealisasiComponent = React.memo(({ filterParams = {} }: RealisasiComponentProps) => {

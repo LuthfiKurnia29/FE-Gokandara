@@ -11,7 +11,13 @@ import { KonsumenData } from '@/types/konsumen';
 import { MoreVertical, Plus } from 'lucide-react';
 
 interface CustomerListComponentProps {
-  filterParams?: { created_id?: number };
+  filterParams?: {
+    created_id?: number;
+    dateStart?: string;
+    dateEnd?: string;
+    prospek_id?: string;
+    status?: string;
+  };
 }
 
 export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListComponentProps) => {

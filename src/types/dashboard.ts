@@ -110,6 +110,8 @@ export interface DashboardQueryParams {
   created_id?: number;
   dateStart?: string;
   dateEnd?: string;
+  prospek_id?: string;
+  status?: string;
 }
 
 // Dashboard props interface for components

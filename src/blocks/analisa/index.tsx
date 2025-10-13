@@ -6,6 +6,7 @@ import { AreaChartComponent } from '@/blocks/analisa/area-chart';
 // import { BarChartComponent } from '@/blocks/analisa/bar-chart';
 import { CustomerListComponent } from '@/blocks/analisa/customer-list';
 // import { DiagramPenjualanComponent } from '@/blocks/analisa/diagram-penjualan';
+import { FilterModal, FilterValues } from '@/blocks/analisa/filter-modal';
 import { AnalysisMetricCards } from '@/blocks/analisa/metric-cards';
 import { OrderChartComponent } from '@/blocks/analisa/order-chart';
 import { RealisasiComponent } from '@/blocks/analisa/realisasi';
@@ -15,14 +16,33 @@ import { PageTitle } from '@/components/page-title';
 // import { TotalOmzetComponent } from '@/blocks/analisa/total-omzet';
 import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/services/auth';
+import { getAllProspek } from '@/services/prospek';
+import { ProspekData } from '@/types/prospek';
+import { useQuery } from '@tanstack/react-query';
 
 import { Filter, X } from 'lucide-react';
+import moment from 'moment';
 
 export const AnalisaContent = () => {
   const [showMemberFilter, setShowMemberFilter] = useState<boolean>(false);
+  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const { getUserData } = usePermissions();
+
+  // Filter states
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+    to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
+  });
+  const [selectedProspekId, setSelectedProspekId] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+
+  // Fetch prospek data for filter
+  const { data: prospekData = [] } = useQuery<ProspekData[]>({
+    queryKey: ['/prospek'],
+    queryFn: () => getAllProspek()
+  });
 
   // Get current user data for role checking
   const userData = getUserData();
@@ -40,15 +60,43 @@ export const AnalisaContent = () => {
     );
   };
 
-  // Prepare filter parameters based on user role
+  // Format date to YYYY-MM-DD for API
+  const formatDateForAPI = (date: Date | undefined) => {
+    if (!date) return undefined;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Prepare filter parameters based on user role and selected filters
   const getFilterParams = () => {
-    // If user is Admin/Supervisor and has selected a member filter, use that
-    if (canSeeFilterButton() && selectedMemberId) {
-      return { created_id: selectedMemberId };
+    const baseParams: any = {};
+
+    // Add date range filters
+    if (dateRange.from) {
+      baseParams.dateStart = formatDateForAPI(dateRange.from);
+    }
+    if (dateRange.to) {
+      baseParams.dateEnd = formatDateForAPI(dateRange.to);
     }
 
+    // Add prospek filter
+    if (selectedProspekId) {
+      baseParams.prospek_id = selectedProspekId;
+    }
+
+    // Add status filter
+    if (selectedStatus) {
+      baseParams.status = selectedStatus;
+    }
+
+    // If user is Admin/Supervisor and has selected a member filter, use that
+    if (canSeeFilterButton() && selectedMemberId) {
+      baseParams.created_id = selectedMemberId;
+    }
     // If user is Sales/Mitra/Telemarketing, automatically filter by their own data
-    if (
+    else if (
       userRole === 'Sales' ||
       userRole === 'Mitra' ||
       userRole === 'Telemarketing' ||
@@ -56,11 +104,12 @@ export const AnalisaContent = () => {
       userRoleId === 4
     ) {
       const userId = userData?.user?.id;
-      return userId ? { created_id: userId } : {};
+      if (userId) {
+        baseParams.created_id = userId;
+      }
     }
 
-    // If user is Admin/Supervisor and no filter selected, show all data
-    return {};
+    return baseParams;
   };
 
   const filterParams = getFilterParams();
@@ -77,27 +126,96 @@ export const AnalisaContent = () => {
     setSelectedMemberName('');
   };
 
+  // Handle apply filters from modal
+  const handleApplyFilters = (filters: FilterValues) => {
+    if (filters.dateRange) {
+      setDateRange({
+        from: filters.dateRange.from || new Date(moment().startOf('year').format('YYYY-MM-DD')),
+        to: filters.dateRange.to || new Date(moment().endOf('year').format('YYYY-MM-DD'))
+      });
+    }
+    setSelectedProspekId(filters.selectedProspekId);
+    setSelectedStatus(filters.selectedStatus);
+    setSelectedMemberId(filters.selectedMemberId);
+    setSelectedMemberName(filters.selectedMemberName);
+  };
+
+  // Get current filter values for the modal
+  const getCurrentFilters = (): FilterValues => ({
+    dateRange: {
+      from: dateRange.from,
+      to: dateRange.to
+    },
+    selectedProspekId,
+    selectedStatus,
+    selectedMemberId,
+    selectedMemberName
+  });
+
+  // Handle clear all filters
+  const handleClearAllFilters = () => {
+    setDateRange({
+      from: new Date(moment().startOf('year').format('YYYY-MM-DD')),
+      to: new Date(moment().endOf('year').format('YYYY-MM-DD'))
+    });
+    setSelectedProspekId('');
+    setSelectedStatus('');
+    handleClearFilter();
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    selectedProspekId ||
+    selectedStatus ||
+    selectedMemberId ||
+    (dateRange.from && dateRange.from.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
+    (dateRange.to && dateRange.to.getTime() !== new Date(moment().endOf('year').format('YYYY-MM-DD')).getTime());
+
   return (
     <div className='min-h-screen space-y-6 bg-gray-50 p-4'>
       <PageTitle title='Analisa' />
 
-      {/* Member Filter Section - Only show for Admin and Supervisor */}
-      {canSeeFilterButton() && (
-        <div className='flex flex-wrap items-center gap-2'>
-          {selectedMemberId && (
-            <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
-              <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
-              <Button variant='ghost' size='sm' onClick={handleClearFilter} className='hover:bg-primary/20 h-6 w-6 p-0'>
-                <X className='h-3 w-3' />
-              </Button>
-            </div>
+      {/* Filter Section */}
+      <div className='flex flex-wrap items-center gap-2'>
+        {/* Open Filter Modal Button */}
+        <Button variant='outline' onClick={() => setShowFilterModal(true)} className='flex items-center gap-2'>
+          <Filter className='h-4 w-4' />
+          Filter Data
+          {hasActiveFilters && (
+            <span className='bg-primary text-primary-foreground ml-1 rounded-full px-2 py-0.5 text-xs'>
+              Aktif
+            </span>
           )}
-          <Button variant='outline' onClick={() => setShowMemberFilter(true)} className='flex items-center gap-2'>
-            <Filter className='h-4 w-4' />
-            Filter Berdasarkan Member
+        </Button>
+
+        {/* Clear All Filters Button */}
+        {hasActiveFilters && (
+          <Button variant='ghost' size='sm' onClick={handleClearAllFilters} className='flex items-center gap-2'>
+            <X className='h-4 w-4' />
+            Clear All
           </Button>
-        </div>
-      )}
+        )}
+
+        {/* Member Filter Button - Only show for Admin and Supervisor */}
+        {canSeeFilterButton() && (
+          <>
+            {selectedMemberId && (
+              <div className='bg-primary/10 text-primary flex items-center gap-2 rounded-lg px-3 py-1'>
+                <span className='text-sm font-medium'>Filter: {selectedMemberName}</span>
+                <Button variant='ghost' size='sm' onClick={handleClearFilter} className='hover:bg-primary/20 h-6 w-6 p-0'>
+                  <X className='h-3 w-3' />
+                </Button>
+              </div>
+            )}
+            {!selectedMemberId && (
+              <Button variant='outline' onClick={() => setShowMemberFilter(true)} className='flex items-center gap-2'>
+                <Filter className='h-4 w-4' />
+                Filter Berdasarkan Member
+              </Button>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Metric Cards and Bar Chart */}
       <div className='grid grid-cols-12 gap-6'>
@@ -134,6 +252,15 @@ export const AnalisaContent = () => {
         </div>
         <div className='col-span-12 lg:col-span-6'>{/* <DiagramPenjualanComponent /> */}</div>
       </div>
+
+      {/* Filter Modal */}
+      <FilterModal
+        open={showFilterModal}
+        onOpenChange={setShowFilterModal}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={getCurrentFilters()}
+        prospekData={prospekData}
+      />
 
       {/* Member Filter Modal */}
       <MemberFilterModal

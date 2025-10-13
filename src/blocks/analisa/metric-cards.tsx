@@ -73,7 +73,13 @@ const StatCard = React.memo(
 StatCard.displayName = 'StatCard';
 
 interface AnalysisMetricCardsProps {
-  filterParams?: { created_id?: number };
+  filterParams?: {
+    created_id?: number;
+    dateStart?: string;
+    dateEnd?: string;
+    prospek_id?: string;
+    status?: string;
+  };
 }
 
 export const AnalysisMetricCards = ({ filterParams = {} }: AnalysisMetricCardsProps) => {
