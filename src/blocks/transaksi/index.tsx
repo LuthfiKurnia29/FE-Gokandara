@@ -36,6 +36,7 @@ import MetricsSection from './metric-section';
 import {
   CheckCircle,
   Clock,
+  Download,
   Eye,
   Filter,
   History,
@@ -161,7 +162,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
   const paymentRowsDetail = useMemo(() => {
     const rows: { id: number; label: string; amount: number; tanggal: string | null }[] = [];
-    
+
     if (!detail) return rows;
 
     const skemaPembayaran = (detail as any)?.skema_pembayaran;
@@ -279,6 +280,48 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     }
   };
 
+  const handleDownloadPDF = async (penjualan: PenjualanWithRelations) => {
+    try {
+      toast.info('Sedang membuat PDF...');
+
+      // Get token from localStorage
+      const token = localStorage.getItem('auth-token');
+
+      if (!token) {
+        toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
+        return;
+      }
+
+      const response = await fetch(`/api/transaksi/${penjualan.id}/generate-pdf`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
+          return;
+        }
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SPR-${penjualan.no_transaksi || penjualan.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('PDF berhasil diunduh');
+    } catch (error: any) {
+      toast.error('Terjadi kesalahan saat mengunduh PDF');
+    }
+  };
+
   const handleCloseForm = () => {
     setOpenForm(false);
     setShowBookingForm(false);
@@ -325,10 +368,17 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             <Eye className='mr-2 h-4 w-4' />
             Detail
           </DropdownMenuItem>
+          {['Approved', 'ITJ', 'Akad'].includes(row.original.status) && (
+            <DropdownMenuItem onClick={() => handleDownloadPDF(row.original)} className='text-blue-600'>
+              <Download className='mr-2 h-4 w-4' />
+              Download PDF
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => handleEdit(row.original)}
             disabled={
-              updatePenjualan.isPending || ['Approved', 'Rejected', 'ITJ', 'Akad', 'Refund'].includes(row.original.status)
+              updatePenjualan.isPending ||
+              ['Approved', 'Rejected', 'ITJ', 'Akad', 'Refund'].includes(row.original.status)
             }>
             <Pencil className='mr-2 h-4 w-4' />
             Edit
