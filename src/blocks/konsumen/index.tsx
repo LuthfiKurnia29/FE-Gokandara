@@ -2,6 +2,8 @@
 
 import { memo, useEffect, useState } from 'react';
 
+import { useSearchParams } from 'next/navigation';
+
 import { FilterModal, FilterValues } from '@/blocks/konsumen/filter-modal';
 import { KonsumenForm } from '@/blocks/konsumen/form';
 import { HistoryFollowUp } from '@/blocks/konsumen/history_follow_up';
@@ -20,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/primitive-select';
 import { useDelete } from '@/hooks/use-delete';
+import axios from '@/lib/axios';
 import { usePermissions } from '@/services/auth';
 import { useCreateKonsumen, useDeleteKonsumen, useUpdateKonsumen } from '@/services/konsumen';
 import { getAllProspek } from '@/services/prospek';
@@ -27,9 +30,23 @@ import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
 import { ProspekData } from '@/types/prospek';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
-import { useSearchParams } from 'next/navigation';
 
-import { CheckCircle, Clock, Filter, History, Mail, MessageSquare, MoreHorizontal, Pencil, PhoneCall, Plus, Trash, Video, X } from 'lucide-react';
+import {
+  CheckCircle,
+  Clock,
+  FileDown,
+  Filter,
+  History,
+  Mail,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  PhoneCall,
+  Plus,
+  Trash,
+  Video,
+  X
+} from 'lucide-react';
 import moment from 'moment';
 import { WhatsappLogo } from 'phosphor-react';
 import { toast } from 'react-toastify';
@@ -83,6 +100,7 @@ const KonsumenPage = memo(function KonsumenPage() {
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedImageName, setSelectedImageName] = useState<string>('');
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const searchParams = useSearchParams();
   const createdId = searchParams.get('created_id');
@@ -205,6 +223,39 @@ const KonsumenPage = memo(function KonsumenPage() {
     handleDelete(`/konsumen/${konsumen.id}`, 'delete');
   };
 
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const response = await axios.get('/konsumen-export', {
+        responseType: 'blob',
+        params: {
+          ...(selectedMemberId && { created_id: selectedMemberId }),
+          ...(dateRange.from && { dateStart: formatDateForAPI(dateRange.from) }),
+          ...(dateRange.to && { dateEnd: formatDateForAPI(dateRange.to) }),
+          ...(selectedProspekId && { prospek_id: selectedProspekId }),
+          ...(selectedStatus && { status: selectedStatus })
+        }
+      });
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `konsumen-export-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Data berhasil diekspor');
+    } catch (error) {
+      toast.error('Gagal mengekspor data');
+      console.error('Export error:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Handle member filter selection
   const handleSelectMember = (userId: number, userName: string) => {
     setSelectedMemberId(userId);
@@ -259,7 +310,8 @@ const KonsumenPage = memo(function KonsumenPage() {
     selectedProspekId ||
     selectedStatus ||
     selectedMemberId ||
-    (dateRange.from && dateRange.from.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
+    (dateRange.from &&
+      dateRange.from.getTime() !== new Date(moment().startOf('year').format('YYYY-MM-DD')).getTime()) ||
     (dateRange.to && dateRange.to.getTime() !== new Date(moment().endOf('year').format('YYYY-MM-DD')).getTime());
 
   // Format date to YYYY-MM-DD for API
@@ -367,7 +419,8 @@ const KonsumenPage = memo(function KonsumenPage() {
                   )}
                   {item.latest_transaksi && (
                     <div className='mb-1'>
-                      <Badge className={`${getStatusStyle(item.latest_transaksi.status)} flex items-center gap-1 rounded-full px-3 py-1 text-xs`}>
+                      <Badge
+                        className={`${getStatusStyle(item.latest_transaksi.status)} flex items-center gap-1 rounded-full px-3 py-1 text-xs`}>
                         {getStatusIcon(item.latest_transaksi.status)}
                         {item.latest_transaksi.status}
                       </Badge>
@@ -558,6 +611,14 @@ const KonsumenPage = memo(function KonsumenPage() {
                   )}
                 </div>
               )}
+              <Button
+                onClick={handleExportExcel}
+                disabled={isExporting}
+                variant='outline'
+                className='flex items-center gap-2'>
+                <FileDown className='h-4 w-4' />
+                {isExporting ? 'Mengekspor...' : 'Export Excel'}
+              </Button>
               <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
                 <Plus />
                 Tambah Konsumen
