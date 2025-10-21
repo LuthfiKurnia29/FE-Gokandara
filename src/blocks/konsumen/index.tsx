@@ -223,7 +223,7 @@ const KonsumenPage = memo(function KonsumenPage() {
     handleDelete(`/konsumen/${konsumen.id}`, 'delete');
   };
 
-  const handleExportExcel = async () => {
+  const handleExportCSV = async () => {
     setIsExporting(true);
     try {
       const response = await axios.get('/konsumen-export', {
@@ -241,7 +241,7 @@ const KonsumenPage = memo(function KonsumenPage() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `konsumen-export-${moment().format('YYYY-MM-DD-HHmmss')}.xlsx`);
+      link.setAttribute('download', `konsumen-export-${moment().format('YYYY-MM-DD-HHmmss')}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -612,12 +612,12 @@ const KonsumenPage = memo(function KonsumenPage() {
                 </div>
               )}
               <Button
-                onClick={handleExportExcel}
+                onClick={handleExportCSV}
                 disabled={isExporting}
                 variant='outline'
                 className='flex items-center gap-2'>
                 <FileDown className='h-4 w-4' />
-                {isExporting ? 'Mengekspor...' : 'Export Excel'}
+                {isExporting ? 'Mengekspor...' : 'Export CSV'}
               </Button>
               <Button onClick={handleCreate} disabled={isFormLoading} className='text-white'>
                 <Plus />
