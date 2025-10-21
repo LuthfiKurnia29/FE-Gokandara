@@ -598,9 +598,9 @@ function createPage2(doc: typeof PDFDocument.prototype, transaksi: TransaksiData
   doc.text('• Bukti Pembayaran Booking Fee', margin + 10, y);
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
 
     // Extract token from request headers
     const authHeader = req.headers.get('Authorization');
