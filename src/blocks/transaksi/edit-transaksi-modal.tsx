@@ -654,10 +654,10 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
               <Separator />
 
               <div className='rounded-lg border'>
-                <div className='text-muted-foreground grid grid-cols-3 gap-2 border-b px-4 py-3 text-sm'>
-                  <div>Pembayaran</div>
-                  <div>Tanggal</div>
-                  <div className='text-right'>Angsuran</div>
+                <div className='text-muted-foreground grid grid-cols-1 gap-2 border-b px-4 py-3 text-sm md:grid-cols-3'>
+                  <div className='font-medium'>Pembayaran</div>
+                  <div className='font-medium md:font-normal'>Tanggal</div>
+                  <div className='font-medium text-right md:font-normal'>Angsuran</div>
                 </div>
                 {paymentRows.length === 0 ? (
                   <div className='px-4 py-8 text-center text-muted-foreground text-sm'>
@@ -665,9 +665,13 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                   </div>
                 ) : (
                   paymentRows.map((row, idx) => (
-                    <div key={idx} className='grid grid-cols-3 items-center gap-2 px-4 py-3'>
-                      <div>{row.label}</div>
+                    <div key={idx} className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
+                      <div className='flex justify-between md:block'>
+                        <span className='text-xs text-muted-foreground md:hidden'>Pembayaran</span>
+                        <span>{row.label}</span>
+                      </div>
                       <div>
+                        <div className='text-xs text-muted-foreground mb-1 md:hidden'>Tanggal</div>
                         <DatePicker
                           value={paymentDates[row.id]}
                           onChange={(date) => {
@@ -680,7 +684,10 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                           className='!h-9 !w-full'
                         />
                       </div>
-                      <div className='text-right font-medium'>Rp {row.amount.toLocaleString('id-ID')}</div>
+                      <div className='flex justify-between md:text-right'>
+                        <span className='text-xs text-muted-foreground md:hidden'>Angsuran</span>
+                        <span className='font-medium'>Rp {row.amount.toLocaleString('id-ID')}</span>
+                      </div>
                     </div>
                   ))
                 )}

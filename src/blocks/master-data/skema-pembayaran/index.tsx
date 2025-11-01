@@ -137,19 +137,21 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
 
       {/* Edit Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-w-lg max-h-[90vh] overflow-hidden flex flex-col'>
           <DialogHeader>
             <DialogTitle>Edit Skema Pembayaran</DialogTitle>
             <DialogDescription>Edit data skema pembayaran di form berikut.</DialogDescription>
           </DialogHeader>
 
-          <SkemaPembayaranForm
-            selectedId={selectedId}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={updateSkemaPembayaran.isPending}
-            defaultValues={selectedData ? { nama: selectedData.nama, details: selectedData.details } : undefined}
-          />
+          <div className='flex-1 overflow-hidden'>
+            <SkemaPembayaranForm
+              selectedId={selectedId}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCloseForm}
+              isLoading={updateSkemaPembayaran.isPending}
+              defaultValues={selectedData ? { nama: selectedData.nama, details: selectedData.details } : undefined}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -206,18 +208,20 @@ const SkemaPembayaranPage = memo(function SkemaPembayaranPage() {
 
       {/* Form Dialog */}
       <Dialog open={openForm} onOpenChange={setOpenForm}>
-        <DialogContent className='max-w-lg'>
+        <DialogContent className='max-w-lg max-h-[90vh] overflow-hidden flex flex-col'>
           <DialogHeader>
             <DialogTitle>Tambah Skema Pembayaran</DialogTitle>
             <DialogDescription>Isi form berikut untuk menambah skema pembayaran baru.</DialogDescription>
           </DialogHeader>
 
-          <SkemaPembayaranForm
-            selectedId={null}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCloseForm}
-            isLoading={isFormLoading}
-          />
+          <div className='flex-1 overflow-hidden'>
+            <SkemaPembayaranForm
+              selectedId={null}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCloseForm}
+              isLoading={isFormLoading}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </section>

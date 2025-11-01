@@ -5,10 +5,12 @@ import { memo, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CreateSkemaPembayaranData, UpdateSkemaPembayaranData, SkemaPembayaranDetail } from '@/types/skema-pembayaran';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Trash2, Plus } from 'lucide-react';
 
@@ -18,7 +20,7 @@ const skemaPembayaranSchema = z.object({
   details: z.array(
     z.object({
       nama: z.string().min(1, 'Nama detail wajib diisi'),
-      persentase: z.number().min(1, 'Persentase minimal 1').max(100, 'Persentase maksimal 100')
+      persentase: z.number().min(0, 'Persentase minimal 0').max(100, 'Persentase maksimal 100')
     })
   ).min(1, 'Minimal harus ada 1 detail')
 });
@@ -129,54 +131,67 @@ export const SkemaPembayaranForm = memo(function SkemaPembayaranForm({
           </Button>
         </div>
 
-        <div className='space-y-3'>
-          {fields.map((field, index) => (
-            <div key={field.id} className='flex items-start gap-2 p-3 border rounded-lg'>
-              <div className='flex-1 space-y-3 grid grid-cols-2 gap-2'>
-                <div className='space-y-2'>
-                  <Label htmlFor={`details.${index}.nama`}>Nama Detail *</Label>
-                  <Input
-                    id={`details.${index}.nama`}
-                    type='text'
-                    {...register(`details.${index}.nama`)}
-                    placeholder='Masukkan nama detail'
-                    disabled={isLoading}
-                  />
-                  {errors.details?.[index]?.nama && (
-                    <p className='text-sm text-red-600'>{errors.details[index]?.nama?.message}</p>
-                  )}
+        <ScrollArea className="h-96 w-full rounded-md border">
+          <div className='space-y-3 p-4'>
+            {fields.map((field, index) => (
+              <div key={field.id} className='flex items-start gap-2 p-3 border rounded-lg'>
+                <div className='flex-1 space-y-3'>
+                  <div className='space-y-2'>
+                    <Label htmlFor={`details.${index}.nama`}>Nama Detail *</Label>
+                    <Input
+                      id={`details.${index}.nama`}
+                      type='text'
+                      {...register(`details.${index}.nama`)}
+                      placeholder='Masukkan nama detail'
+                      disabled={isLoading}
+                    />
+                    {errors.details?.[index]?.nama && (
+                      <p className='text-sm text-red-600'>{errors.details[index]?.nama?.message}</p>
+                    )}
+                  </div>
+
+                  <div className='space-y-2'>
+                    <Label htmlFor={`details.${index}.persentase`}>Persentase (%) *</Label>
+                    <div className='flex items-center gap-3'>
+                      <Controller
+                        control={control}
+                        name={`details.${index}.persentase`}
+                        render={({ field }) => (
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={(value: number[]) => field.onChange(value[0])}
+                            disabled={isLoading}
+                            className="flex-1"
+                          />
+                        )}
+                      />
+                      <span className='w-12 text-sm font-medium text-right'>
+                        {watchDetails?.[index]?.persentase || 0}%
+                      </span>
+                    </div>
+                    {errors.details?.[index]?.persentase && (
+                      <p className='text-sm text-red-600'>{errors.details[index]?.persentase?.message}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className='space-y-2'>
-                  <Label htmlFor={`details.${index}.persentase`}>Persentase (%) *</Label>
-                  <Input
-                    id={`details.${index}.persentase`}
-                    type='number'
-                    min='1'
-                    max='100'
-                    {...register(`details.${index}.persentase`, { valueAsNumber: true })}
-                    placeholder='Masukkan persentase (1-100)'
-                    disabled={isLoading}
-                  />
-                  {errors.details?.[index]?.persentase && (
-                    <p className='text-sm text-red-600'>{errors.details[index]?.persentase?.message}</p>
-                  )}
-                </div>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  onClick={() => handleRemoveDetail(index)}
+                  disabled={isLoading || fields.length === 1}
+                  className='mt-8'
+                >
+                  <Trash2 className='h-4 w-4 text-red-600' />
+                </Button>
               </div>
-
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                onClick={() => handleRemoveDetail(index)}
-                disabled={isLoading || fields.length === 1}
-                className='mt-8'
-              >
-                <Trash2 className='h-4 w-4 text-red-600' />
-              </Button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
 
         {errors.details && typeof errors.details.message === 'string' && (
           <p className='text-sm text-red-600'>{errors.details.message}</p>
