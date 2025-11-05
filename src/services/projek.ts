@@ -1,7 +1,7 @@
 import axios from '@/lib/axios';
 import { CreateProjekData, ProjekData } from '@/types/projek';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { SkemaPembayaran } from '@/types/skema-pembayaran';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { toast } from 'react-toastify';
 
@@ -24,7 +24,15 @@ export const getTipesByProjek = async (id: number): Promise<any[]> => {
 export const getPembayaranByProjekTipe = async (
   projekId: number,
   tipeId: number
-): Promise<Array<{ id: number; nama: string; harga: number | string, skema_pembayaran: SkemaPembayaran }>> => {
+): Promise<
+  Array<{
+    id: number;
+    nama: string;
+    harga: number | string;
+    skema_pembayaran: SkemaPembayaran;
+    skema_pembayaran_id: number;
+  }>
+> => {
   const { data } = await axios.get(`/projek/${projekId}/tipe/${tipeId}/pembayaran`);
   return data.data || data;
 };
