@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import PDFDocument from 'pdfkit';
+import jsPDF from 'jspdf';
 
 interface TransaksiData {
   id: number;
@@ -137,283 +136,159 @@ async function fetchTransaksiData(id: string, token: string): Promise<TransaksiD
   }
 }
 
-// Create PDF header with RHUMA branding
-function createHeader(doc: typeof PDFDocument.prototype, transaksi: TransaksiData) {
-  const pageWidth = doc.page.width;
-  const pageHeight = doc.page.height;
-  const margin = 50;
+// Create PDF using jsPDF
+function createPDF(transaksi: TransaksiData): jsPDF {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  let y = margin;
+
+  // Set font to support Unicode characters
+  doc.setFont('helvetica');
 
   // Header - RHUMA branding
-  doc.fontSize(24).font('Helvetica-Bold').text('RHUMA', margin, margin);
-  doc
-    .fontSize(10)
-    .font('Helvetica')
-    .text('by Kardara', margin, margin + 25);
+  doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
+  doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
 
   // Contact info on the right
-  doc.fontSize(9);
-  const rightX = pageWidth - margin - 200;
-  doc.text('0811 9000 8000', rightX, margin, { align: 'right', width: 200 });
-  doc.text('rhuma.bykardara@gmail.com', rightX, margin + 12, { align: 'right', width: 200 });
-  doc.text('@rhumabykardara', rightX, margin + 24, { align: 'right', width: 200 });
-  doc.text('www.rhuma.id', rightX, margin + 36, { align: 'right', width: 200 });
-
-  doc.fontSize(8).text('Jl. Kapatenku No. 34, Lowokwaru,', rightX, margin + 52, { align: 'right', width: 200 });
-  doc.text('Malang, Jawa Timur 65141', rightX, margin + 64, { align: 'right', width: 200 });
+  doc.setFontSize(7);
+  const rightX = pageWidth - margin - 50;
+  doc.text('0811 9000 8000', rightX, y, { align: 'right' });
+  doc.text('rhuma.bykardara@gmail.com', rightX, y + 5, { align: 'right' });
+  doc.text('@rhumabykardara', rightX, y + 10, { align: 'right' });
+  doc.text('www.rhuma.id', rightX, y + 15, { align: 'right' });
+  doc.setFontSize(6).text('Jl. Kapatenku No. 34, Lowokwaru,', rightX, y + 20, { align: 'right' });
+  doc.text('Malang, Jawa Timur 65141', rightX, y + 24, { align: 'right' });
 
   // Horizontal line
-  doc
-    .moveTo(margin, margin + 85)
-    .lineTo(pageWidth - margin, margin + 85)
-    .stroke();
+  doc.setLineWidth(0.5);
+  doc.line(margin, y + 30, pageWidth - margin, y + 30);
 
-  return margin + 95;
-}
+  y += 40;
 
-// Create document title
-function createTitle(doc: typeof PDFDocument.prototype, y: number, transaksi: TransaksiData) {
-  const pageWidth = doc.page.width;
-  const margin = 50;
-
-  doc
-    .fontSize(14)
-    .font('Helvetica-Bold')
-    .text('SURAT PEMESANAN RUMAH (SPR)', margin, y, { align: 'center', width: pageWidth - 2 * margin });
-
+  // Document title
+  doc.setFontSize(12).setFont('helvetica', 'bold').text('SURAT PEMESANAN RUMAH (SPR)', pageWidth / 2, y, { align: 'center' });
   const docNumber = generateDocNumber(transaksi);
-  doc
-    .fontSize(10)
-    .font('Helvetica')
-    .text(`Nomor: ${docNumber}`, margin, y + 25, { align: 'center', width: pageWidth - 2 * margin });
+  doc.setFontSize(8).setFont('helvetica', 'normal').text(`Nomor: ${docNumber}`, pageWidth / 2, y + 8, { align: 'center' });
+  y += 20;
 
-  return y + 50;
-}
+  // Section I: Buyer Data
+  doc.setFontSize(10).setFont('helvetica', 'bold').text('I. DATA PEMBELI', margin, y);
+  y += 10;
+  doc.setFontSize(9).setFont('helvetica', 'normal');
 
-// Section I: Buyer Data
-function createBuyerSection(doc: typeof PDFDocument.prototype, y: number, transaksi: TransaksiData) {
-  const margin = 50;
-  const pageWidth = doc.page.width;
-  const labelX = margin;
-  const valueX = margin + 150;
-  const lineHeight = 20;
+  // Buyer information
+  const buyerFields = [
+    { label: 'Nama Lengkap', value: transaksi.konsumen?.name || transaksi.konsumen?.nama || '' },
+    { label: 'Alamat', value: transaksi.konsumen?.alamat || transaksi.konsumen?.address || '' },
+    { label: 'Nomor KTP', value: transaksi.konsumen?.nomor_ktp || transaksi.konsumen?.ktp_number || '' },
+    { label: 'Nomor Telepon/HP', value: transaksi.konsumen?.telepon || transaksi.konsumen?.phone || '' }
+  ];
 
-  doc.fontSize(11).font('Helvetica-Bold').text('I. DATA PEMBELI', margin, y);
-  y += 25;
+  buyerFields.forEach(field => {
+    doc.text(`${field.label}:`, margin, y);
+    doc.text(field.value || '_________________________', margin + 40, y);
+    y += 7;
+  });
 
-  doc.fontSize(10).font('Helvetica');
+  y += 5;
 
-  // Nama Lengkap
-  doc.text('Nama Lengkap', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  if (transaksi.konsumen?.name || transaksi.konsumen?.nama) {
-    doc.text(transaksi.konsumen?.name || transaksi.konsumen?.nama || '', valueX, y);
-  }
-  y += lineHeight;
+  // Section II: Unit Data
+  doc.setFontSize(10).setFont('helvetica', 'bold').text('II. DATA UNIT YANG DIPESAN', margin, y);
+  y += 10;
+  doc.setFontSize(9).setFont('helvetica', 'normal');
 
-  // Alamat
-  doc.text('Alamat', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  if (transaksi.konsumen?.alamat || transaksi.konsumen?.address) {
-    doc.text(transaksi.konsumen?.alamat || transaksi.konsumen?.address || '', valueX, y);
-  }
-  y += lineHeight;
-
-  // Nomor KTP
-  doc.text('Nomor KTP', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  if (transaksi.konsumen?.nomor_ktp || transaksi.konsumen?.ktp_number) {
-    doc.text(transaksi.konsumen?.nomor_ktp || transaksi.konsumen?.ktp_number || '', valueX, y);
-  }
-  y += lineHeight;
-
-  // Nomor Telepon/HP
-  doc.text('Nomor Telepon/HP', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  if (transaksi.konsumen?.telepon || transaksi.konsumen?.phone) {
-    doc.text(transaksi.konsumen?.telepon || transaksi.konsumen?.phone || '', valueX, y);
-  }
-  y += lineHeight + 10;
-
-  return y;
-}
-
-// Section II: Unit Data
-function createUnitSection(doc: typeof PDFDocument.prototype, y: number, transaksi: TransaksiData) {
-  const margin = 50;
-  const pageWidth = doc.page.width;
-  const labelX = margin;
-  const valueX = margin + 150;
-  const lineHeight = 20;
-
-  doc.fontSize(11).font('Helvetica-Bold').text('II. DATA UNIT YANG DIPESAN', margin, y);
-  y += 25;
-
-  doc.fontSize(10).font('Helvetica');
-
-  // Nama Proyek
-  doc.text('Nama Proyek', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
   const projectName = transaksi.projek?.name || transaksi.properti?.name || '';
-  if (projectName) {
-    doc.text(projectName, valueX, y);
-  }
-  y += lineHeight;
-
-  // Alamat Lokasi
-  doc.text('Alamat Lokasi', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
   const projectAddress = transaksi.projek?.address || transaksi.properti?.lokasi || transaksi.properti?.address || '';
-  if (projectAddress) {
-    doc.text(projectAddress, valueX, y);
-  }
-  y += lineHeight;
-
-  // Nomor Kavling/Unit
-  doc.text('Nomor Kavling/Unit', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  const unitInfo =
-    `${transaksi.blok?.name || ''} ${transaksi.unit?.name || ''}`.trim() || transaksi.kavling_dipesan || '';
-  if (unitInfo) {
-    doc.text(unitInfo, valueX, y);
-  }
-  y += lineHeight;
-
-  // Tipe Bangunan
-  doc.text('Tipe Bangunan', labelX, y);
-  doc.text(': ', valueX - 10, y);
+  const unitInfo = `${transaksi.blok?.name || ''} ${transaksi.unit?.name || ''}`.trim() || transaksi.kavling_dipesan || '';
   const luasBangunan = transaksi.tipe?.luas_bangunan || '';
   const luasTanah = transaksi.tipe?.luas_tanah || '';
-  const tipeText = `_________ m² (Luas Bangunan)  /  _________ m² (Luas Tanah)`;
-  doc.text(tipeText, valueX, y);
-  if (luasBangunan && luasTanah) {
-    doc.text(`${luasBangunan} m² (Luas Bangunan)  /  ${luasTanah} m² (Luas Tanah)`, valueX, y);
-  }
-  y += lineHeight;
 
-  // Harga Jual
-  doc.text('Harga Jual', labelX, y);
-  doc.text(': Rp ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  if (transaksi.grand_total) {
-    doc.text(formatRupiah(transaksi.grand_total), valueX, y);
-  }
-  y += lineHeight;
+  const unitFields = [
+    { label: 'Nama Proyek', value: projectName },
+    { label: 'Alamat Lokasi', value: projectAddress },
+    { label: 'Nomor Kavling/Unit', value: unitInfo },
+    { label: 'Tipe Bangunan', value: luasBangunan && luasTanah ? `${luasBangunan} m² / ${luasTanah} m²` : '________ m² / ________ m²' },
+    { label: 'Harga Jual', value: transaksi.grand_total ? formatRupiah(transaksi.grand_total) : '' }
+  ];
 
-  // Metode Pembayaran
-  doc.text('Metode Pembayaran', labelX, y);
-  doc.text(': ', valueX - 10, y);
+  unitFields.forEach(field => {
+    doc.text(`${field.label}:`, margin, y);
+    if (field.label === 'Harga Jual') {
+      doc.text('Rp ', margin + 40, y);
+      doc.text(field.value || '_________________________', margin + 50, y);
+    } else {
+      doc.text(field.value || '_________________________', margin + 40, y);
+    }
+    y += 7;
+  });
+
+  // Payment method checkboxes
+  doc.text('Metode Pembayaran:', margin, y);
   y += 5;
 
   const skemaName = (transaksi.skema_pembayaran?.nama || transaksi.skemaPembayaran?.nama || '').toLowerCase();
   const checkboxY = y;
-  const checkboxSize = 12;
-  const checkboxSpacing = 100;
+  const checkboxSize = 3;
 
   // Cash Keras
-  doc.rect(valueX, checkboxY, checkboxSize, checkboxSize).stroke();
+  doc.rect(margin + 40, checkboxY - 2, checkboxSize, checkboxSize);
   if (skemaName.includes('cash keras') || skemaName.includes('hard cash')) {
-    doc.text('✓', valueX + 2, checkboxY);
+    doc.text('✓', margin + 40.5, checkboxY + 0.5);
   }
-  doc.text('Cash Keras', valueX + checkboxSize + 5, checkboxY);
+  doc.text('Cash Keras', margin + 45, checkboxY);
 
   // Cash by Progress
-  doc.rect(valueX + checkboxSpacing, checkboxY, checkboxSize, checkboxSize).stroke();
+  doc.rect(margin + 80, checkboxY - 2, checkboxSize, checkboxSize);
   if (skemaName.includes('progress') || skemaName.includes('bertahap')) {
-    doc.text('✓', valueX + checkboxSpacing + 2, checkboxY);
+    doc.text('✓', margin + 80.5, checkboxY + 0.5);
   }
-  doc.text('Cash by Progress', valueX + checkboxSpacing + checkboxSize + 5, checkboxY);
+  doc.text('Cash by Progress', margin + 85, checkboxY);
 
   // KPR
-  doc.rect(valueX + checkboxSpacing * 2, checkboxY, checkboxSize, checkboxSize).stroke();
+  doc.rect(margin + 130, checkboxY - 2, checkboxSize, checkboxSize);
   if (skemaName.includes('kpr')) {
-    doc.text('✓', valueX + checkboxSpacing * 2 + 2, checkboxY);
+    doc.text('✓', margin + 130.5, checkboxY + 0.5);
   }
-  doc.text('KPR', valueX + checkboxSpacing * 2 + checkboxSize + 5, checkboxY);
+  doc.text('KPR', margin + 135, checkboxY);
 
   // Inhouse
-  doc.rect(valueX + checkboxSpacing * 2.6, checkboxY, checkboxSize, checkboxSize).stroke();
+  doc.rect(margin + 150, checkboxY - 2, checkboxSize, checkboxSize);
   if (skemaName.includes('inhouse') || skemaName.includes('in house') || skemaName.includes('kredit')) {
-    doc.text('✓', valueX + checkboxSpacing * 2.6 + 2, checkboxY);
+    doc.text('✓', margin + 150.5, checkboxY + 0.5);
   }
-  doc.text('Inhouse (___)', valueX + checkboxSpacing * 2.6 + checkboxSize + 5, checkboxY);
+  doc.text('Inhouse', margin + 155, checkboxY);
 
-  y += lineHeight + 5;
+  y += 10;
 
-  // Booking Fee/Tanda Jadi
-  doc.text('Booking Fee/Tanda Jadi', labelX, y);
-  doc.text(': Rp ', valueX - 10, y);
-  doc.text('_____________________________________________', valueX, y);
-  // Booking fee is typically a fixed amount or the first payment
-  y += lineHeight;
-
-  // Detail Tahap Akhir
-  doc.text('Detail Tahap Akhir', labelX, y);
-  doc.text(': ', valueX - 10, y);
-  y += 5;
-
-  // Furnish / Non Furnish checkboxes
-  doc.rect(valueX, y, checkboxSize, checkboxSize).stroke();
-  doc.text('Furnish', valueX + checkboxSize + 5, y);
-
-  doc.rect(valueX + 100, y, checkboxSize, checkboxSize).stroke();
-  doc.text('Non Furnish', valueX + 100 + checkboxSize + 5, y);
-
-  y += lineHeight + 10;
-
-  return y;
-}
-
-// Section III: Payment Schedule
-function createPaymentSection(doc: typeof PDFDocument.prototype, y: number, transaksi: TransaksiData) {
-  const margin = 50;
-  const pageWidth = doc.page.width;
-  const tableWidth = pageWidth - 2 * margin;
-
-  doc.fontSize(11).font('Helvetica-Bold').text('III. RINCIAN PEMBAYARAN', margin, y);
-  y += 25;
+  // Section III: Payment Schedule
+  doc.setFontSize(10).setFont('helvetica', 'bold').text('III. RINCIAN PEMBAYARAN', margin, y);
+  y += 10;
 
   // Table headers
-  const colWidths = [30, 150, 100, 120, 140];
+  const tableHeaders = ['No', 'Pembayaran', 'Tanggal', 'Nominal (Rp)', 'Keterangan'];
+  const colWidths = [10, 40, 25, 35, 30];
   const tableX = margin;
-  const rowHeight = 25;
-
-  // Header row
-  doc.rect(tableX, y, tableWidth, rowHeight).stroke();
-  doc.fontSize(9).font('Helvetica-Bold');
-
+  const rowHeight = 8;
   let currentX = tableX;
-  doc.text('No', currentX + 5, y + 8, { width: colWidths[0] - 10, align: 'center' });
-  currentX += colWidths[0];
 
-  doc.rect(currentX, y, 0, rowHeight).stroke();
-  doc.text('Pembayaran', currentX + 5, y + 8, { width: colWidths[1] - 10, align: 'left' });
-  currentX += colWidths[1];
-
-  doc.rect(currentX, y, 0, rowHeight).stroke();
-  doc.text('Tanggal', currentX + 5, y + 8, { width: colWidths[2] - 10, align: 'center' });
-  currentX += colWidths[2];
-
-  doc.rect(currentX, y, 0, rowHeight).stroke();
-  doc.text('Nominal (Rp)', currentX + 5, y + 8, { width: colWidths[3] - 10, align: 'center' });
-  currentX += colWidths[3];
-
-  doc.rect(currentX, y, 0, rowHeight).stroke();
-  doc.text('Keterangan', currentX + 5, y + 8, { width: colWidths[4] - 10, align: 'center' });
+  doc.setFontSize(8).setFont('helvetica', 'bold');
+  tableHeaders.forEach((header, index) => {
+    doc.text(header, currentX + 1, y);
+    currentX += colWidths[index];
+  });
 
   y += rowHeight;
 
-  // Calculate payment rows
+  // Calculate payment details
   const skemaPembayaran = transaksi.skema_pembayaran || transaksi.skemaPembayaran;
   const detailPembayaran = transaksi.detail_pembayaran || [];
-
-  // Create a map of detail_pembayaran by detail_skema_pembayaran_id
   const detailPembayaranMap = new Map();
   detailPembayaran.forEach((dp: any) => {
     detailPembayaranMap.set(dp.detail_skema_pembayaran_id, dp);
@@ -423,7 +298,6 @@ function createPaymentSection(doc: typeof PDFDocument.prototype, y: number, tran
   const kelebihanMeter = Number(transaksi.kelebihan_tanah ?? 0);
   const hargaPerMeter = Number(transaksi.harga_per_meter ?? 0);
   const subtotal = Math.max(basePrice + Math.max(0, kelebihanMeter) * Math.max(0, hargaPerMeter), 0);
-
   const diskonVal = Number(transaksi.diskon ?? 0);
   const tipeDiskon = String(transaksi.tipe_diskon ?? '').toLowerCase();
   const isPercentDiskon = tipeDiskon === 'percent' || tipeDiskon === 'persen';
@@ -439,10 +313,10 @@ function createPaymentSection(doc: typeof PDFDocument.prototype, y: number, tran
 
   const finalPrice = Math.max(subtotal - discountAmount, 0);
 
-  // Data rows
-  doc.font('Helvetica');
+  // Payment rows
+  doc.setFontSize(7).setFont('helvetica', 'normal');
   let rowNumber = 1;
-  const maxRows = 6; // Leave space for page 2
+  const maxRows = 6;
 
   if (skemaPembayaran?.details && Array.isArray(skemaPembayaran.details)) {
     for (let i = 0; i < Math.min(skemaPembayaran.details.length, maxRows); i++) {
@@ -451,77 +325,60 @@ function createPaymentSection(doc: typeof PDFDocument.prototype, y: number, tran
       const detailPembayaranItem = detailPembayaranMap.get(detail.id);
       const tanggal = detailPembayaranItem?.tanggal ? formatDate(detailPembayaranItem.tanggal) : '';
 
-      doc.rect(tableX, y, tableWidth, rowHeight).stroke();
-
       currentX = tableX;
-      doc.text(rowNumber.toString(), currentX + 5, y + 8, { width: colWidths[0] - 10, align: 'center' });
+      doc.text(rowNumber.toString(), currentX + 1, y);
       currentX += colWidths[0];
 
-      doc.rect(currentX, y, 0, rowHeight).stroke();
-      doc.text(detail.nama || '', currentX + 5, y + 8, { width: colWidths[1] - 10, align: 'left' });
+      doc.text(detail.nama || '', currentX + 1, y);
       currentX += colWidths[1];
 
-      doc.rect(currentX, y, 0, rowHeight).stroke();
-      doc.text(tanggal, currentX + 5, y + 8, { width: colWidths[2] - 10, align: 'center' });
+      doc.text(tanggal, currentX + 1, y, { align: 'center' });
       currentX += colWidths[2];
 
-      doc.rect(currentX, y, 0, rowHeight).stroke();
-      doc.text(amount.toLocaleString('id-ID'), currentX + 5, y + 8, { width: colWidths[3] - 10, align: 'right' });
+      doc.text(amount.toLocaleString('id-ID'), currentX + 1, y, { align: 'right' });
       currentX += colWidths[3];
 
-      doc.rect(currentX, y, 0, rowHeight).stroke();
-      doc.text('', currentX + 5, y + 8, { width: colWidths[4] - 10, align: 'left' });
+      doc.text('', currentX + 1, y);
 
       y += rowHeight;
       rowNumber++;
     }
   }
 
-  // Fill empty rows to maintain table structure
+  // Fill empty rows
   while (rowNumber <= maxRows) {
-    doc.rect(tableX, y, tableWidth, rowHeight).stroke();
-
     currentX = tableX;
-    doc.text('', currentX + 5, y + 8, { width: colWidths[0] - 10, align: 'center' });
-    currentX += colWidths[0];
-
-    for (let j = 1; j < colWidths.length; j++) {
-      doc.rect(currentX, y, 0, rowHeight).stroke();
+    for (let j = 0; j < colWidths.length; j++) {
+      doc.text('', currentX + 1, y);
       currentX += colWidths[j];
     }
-
     y += rowHeight;
     rowNumber++;
   }
 
-  return y + 10;
-}
-
-// Create Page 2: Terms and Signatures
-function createPage2(doc: typeof PDFDocument.prototype, transaksi: TransaksiData) {
+  // Add new page for terms and signatures
   doc.addPage();
-
-  const margin = 50;
-  const pageWidth = doc.page.width;
-  let y = margin;
+  y = margin;
 
   // Header on page 2
-  y = createHeader(doc, transaksi);
-
-  // Section IV: Terms
-  doc.fontSize(11).font('Helvetica-Bold').text('IV. KETENTUAN', margin, y);
+  doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
+  doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
   y += 20;
 
-  doc.fontSize(9).font('Helvetica');
+  // Section IV: Terms
+  doc.setFontSize(10).setFont('helvetica', 'bold').text('IV. KETENTUAN', margin, y);
+  y += 10;
+
+  doc.setFontSize(7).setFont('helvetica', 'normal');
 
   const terms = [
     {
       label: 'A. NUP (Nomor Urut Pemesanan)',
-      text: 'sebesar Rp 5.000.000,- berlaku selama 2 hari sebagai tanda minat awal pembelian unit dan bersifat refundable 100%. Apabila NUP sudah dibayarkan, konsumen akan dilakukan sebelum pemilihan unit dan akan dikonversi menjadi Booking Fee / Ikatan Tanda Jadi (ITJ) setelah pemilihan unit dilakukan dan formulir pemesanan ditandatangani.'
+      text: 'sebesar Rp 5.000.000,- berlaku selama 2 hari sebagai tanda minat awal pembelian unit dan bersifat refundable 100%.'
     },
     {
       label: 'B. Booking Fee / Ikatan Tanda Jadi (ITJ)',
-      text: 'sebesar Rp 10.000.000,- berlaku selama 7 hari sejak ditandatangani form pemesanan. Booking Fee / Ikatan Tanda Jadi (ITJ) bersifat refundable (100%) dengan ketentuan bahwa pembeli membatalkan pemesanan sebelum melewati batas waktu tersebut. Apabila pembeli mengundurkan diri setelah melewati batas waktu atau pihak Developer terkait harga dan posisi kavling, maka Booking Fee / Ikatan Tanda Jadi (ITJ) tidak dapat dikembalikan.'
+      text: 'sebesar Rp 10.000.000,- berlaku selama 7 hari sejak ditandatangani form pemesanan. Booking Fee / Ikatan Tanda Jadi (ITJ) bersifat refundable (100%).'
     },
     {
       label: 'C. Pembayaran Down Payment (DP)',
@@ -529,73 +386,88 @@ function createPage2(doc: typeof PDFDocument.prototype, transaksi: TransaksiData
     },
     {
       label: 'D. Serah Terima Unit',
-      text: 'rumah akan dilakukan oleh pihak developer kepada user, setelah bangunan unit rumah selesai 100% dan semua fasilitas rumah (PDAM, PLN) sudah terpasang/berfungsi, yang diikuti dengan perlantantanganan Berita Acara Serah Terima Unit Rumah.'
+      text: 'rumah akan dilakukan oleh pihak developer kepada user, setelah bangunan unit rumah selesai 100% dan semua fasilitas rumah (PDAM, PLN) sudah terpasang/berfungsi.'
     }
   ];
 
   terms.forEach((term, index) => {
-    const labelHeight = doc.heightOfString(term.label, { width: pageWidth - 2 * margin });
-    doc.font('Helvetica-Bold').text(term.label, margin, y, { width: pageWidth - 2 * margin });
-    y += labelHeight + 2;
+    if (y > pageHeight - 30) {
+      doc.addPage();
+      y = margin;
+    }
 
-    const textHeight = doc.heightOfString(term.text, { width: pageWidth - 2 * margin - 15 });
-    doc.font('Helvetica').text(term.text, margin + 15, y, { width: pageWidth - 2 * margin - 15, align: 'justify' });
-    y += textHeight + 10;
+    doc.setFont('helvetica', 'bold').text(term.label, margin, y);
+    y += 5;
+
+    // Split long text into lines
+    const lines = doc.splitTextToSize(term.text, pageWidth - 2 * margin - 10);
+    doc.setFont('helvetica', 'normal');
+    lines.forEach((line: string) => {
+      if (y > pageHeight - 15) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, margin + 10, y);
+      y += 4;
+    });
+    y += 3;
   });
 
   y += 10;
 
   // Section V: Signatures
-  doc.fontSize(11).font('Helvetica-Bold').text('V. TANDA TANGAN', margin, y);
-  y += 30;
+  doc.setFontSize(10).setFont('helvetica', 'bold').text('V. TANDA TANGAN', margin, y);
+  y += 15;
 
   const col1X = margin;
-  const col2X = margin + 180;
-  const col3X = margin + 360;
+  const col2X = margin + 50;
+  const col3X = margin + 100;
 
   // Pembeli
-  doc.fontSize(10).font('Helvetica').text('Pembeli', col1X, y);
-  y += 60;
-  doc.text(`Nama    : ${'_'.repeat(20)}`, col1X, y);
-  y += 15;
+  doc.setFontSize(8).setFont('helvetica', 'normal').text('Pembeli', col1X, y);
+  y += 20;
+  doc.text(`Nama    : ${'_'.repeat(15)}`, col1X, y);
+  y += 5;
   doc.text(`Tanggal : ___ / ___ / 2025`, col1X, y);
 
   // Developer - Sales Supervisor
-  y = doc.y - 75; // Reset y for next column
+  y = y - 25;
   doc.text('Developer', col2X, y);
-  y += 60;
-  doc.text(`Nama    : ${'_'.repeat(20)}`, col2X, y);
+  y += 20;
+  doc.text(`Nama    : ${'_'.repeat(15)}`, col2X, y);
   const supervisorName = transaksi.created_by?.parent?.name || transaksi.created_by?.parent?.nama || '';
   if (supervisorName) {
     doc.text(`Nama    : ${supervisorName}`, col2X, y);
   }
-  y += 15;
+  y += 5;
   doc.text('Jabatan : Sales Supervisor', col2X, y);
-  y += 15;
+  y += 5;
   doc.text(`Tanggal : ___ / ___ / 2025`, col2X, y);
 
   // Developer - Sales Staff
-  y = doc.y - 90; // Reset y for next column
+  y = y - 30;
   doc.text('Developer', col3X, y);
-  y += 60;
-  doc.text(`Nama    : ${'_'.repeat(20)}`, col3X, y);
+  y += 20;
+  doc.text(`Nama    : ${'_'.repeat(15)}`, col3X, y);
   const salesName = transaksi.created_by?.name || transaksi.created_by?.nama || '';
   if (salesName) {
     doc.text(`Nama    : ${salesName}`, col3X, y);
   }
-  y += 15;
+  y += 5;
   doc.text('Jabatan : Sales Staff', col3X, y);
-  y += 15;
+  y += 5;
   doc.text(`Tanggal : ___ / ___ / 2025`, col3X, y);
 
   // Lampiran
-  y = doc.y + 30;
-  doc.fontSize(10).font('Helvetica-Bold').text('Lampiran:', margin, y);
-  y += 20;
-  doc.fontSize(9).font('Helvetica');
-  doc.text('• Fotokopi KTP Pembeli', margin + 10, y);
   y += 15;
-  doc.text('• Bukti Pembayaran Booking Fee', margin + 10, y);
+  doc.setFontSize(8).setFont('helvetica', 'bold').text('Lampiran:', margin, y);
+  y += 8;
+  doc.setFontSize(7).setFont('helvetica', 'normal');
+  doc.text('• Fotokopi KTP Pembeli', margin + 5, y);
+  y += 5;
+  doc.text('• Bukti Pembayaran Booking Fee', margin + 5, y);
+
+  return doc;
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -617,40 +489,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Transaksi not found' }, { status: 404 });
     }
 
-    // Create PDF
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: { top: 50, bottom: 50, left: 50, right: 50 }
-    });
+    // Create PDF using jsPDF
+    const doc = createPDF(transaksi);
 
-    // Set response headers
-    const chunks: Buffer[] = [];
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    // Generate PDF as buffer
+    const pdfBuffer = doc.output('arraybuffer');
 
-    const pdfPromise = new Promise<Buffer>((resolve, reject) => {
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
-    });
-
-    // Generate PDF content
-    let y = createHeader(doc, transaksi);
-    y = createTitle(doc, y, transaksi);
-    y = createBuyerSection(doc, y, transaksi);
-    y = createUnitSection(doc, y, transaksi);
-    y = createPaymentSection(doc, y, transaksi);
-
-    // Page 2: Terms and Signatures
-    createPage2(doc, transaksi);
-
-    // Finalize PDF
-    doc.end();
-
-    const pdfBuffer = await pdfPromise;
-
-    // Convert Buffer to Uint8Array for NextResponse
-    const uint8Array = new Uint8Array(pdfBuffer);
-
-    return new NextResponse(uint8Array, {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="SPR-${transaksi.no_transaksi || transaksi.id}.pdf"`

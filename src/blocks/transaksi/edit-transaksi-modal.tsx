@@ -93,7 +93,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   }, [tipeList, selectedTipeId]);
 
   const harga = useMemo(() => {
-    const skema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
+    const skema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
     const skemaHarga = Number(skema?.harga);
     const base = Number.isFinite(skemaHarga) ? skemaHarga : Number((selectedTipe as any)?.harga ?? 0);
     return base;
@@ -117,13 +117,10 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     () => Math.max(harga + kelebihanTanahAmount - discountAmount, 0),
     [harga, kelebihanTanahAmount, discountAmount]
   );
-  const dpValue = useMemo(
-    () => Math.round((hargaSetelahDiskon * dpPercent) / 100),
-    [hargaSetelahDiskon, dpPercent]
-  );
+  const dpValue = useMemo(() => Math.round((hargaSetelahDiskon * dpPercent) / 100), [hargaSetelahDiskon, dpPercent]);
   const sisaPembayaran = useMemo(() => Math.max(hargaSetelahDiskon - dpValue, 0), [hargaSetelahDiskon, dpValue]);
   const selectedSkemaNama = useMemo(() => {
-    const skema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
+    const skema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
     return skema?.skema_pembayaran?.nama || '';
   }, [skemaPembayaranOptions, selectedSkemaId]);
   const sisaLabel = useMemo(() => {
@@ -295,14 +292,14 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   const paymentRows = useMemo(() => {
     if (!selectedSkemaId) return [] as { id: number; label: string; amount: number; periode: string }[];
 
-    const selectedSkema = skemaPembayaranOptions.find((s) => s.id === selectedSkemaId);
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
 
     if (!selectedSkema?.skema_pembayaran?.details) return [];
 
     return selectedSkema.skema_pembayaran.details.map((detail) => ({
       id: detail.id,
       label: detail.nama,
-      amount: hargaSetelahDiskon * detail.persentase / 100,
+      amount: (hargaSetelahDiskon * detail.persentase) / 100,
       periode: ''
     }));
   }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon]);
@@ -342,11 +339,13 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     const tipe_diskon_api = tipeDiskon === 'persen' ? 'percent' : 'fixed';
 
     // Build detail_pembayaran array
-    const detail_pembayaran = paymentRows.map((row) => ({
-      skema_pembayaran_id: selectedSkemaId,
-      detail_skema_pembayaran_id: row.id,
-      tanggal: paymentDates[row.id] ? paymentDates[row.id]?.toISOString().split('T')[0] : undefined
-    })).filter((item) => item.tanggal !== undefined);
+    const detail_pembayaran = paymentRows
+      .map((row) => ({
+        skema_pembayaran_id: selectedSkemaId,
+        detail_skema_pembayaran_id: row.id,
+        tanggal: paymentDates[row.id] ? paymentDates[row.id]?.toISOString().split('T')[0] : undefined
+      }))
+      .filter((item) => item.tanggal !== undefined);
 
     const payload: any = {
       no_transaksi: noTransaksi || undefined,
@@ -641,7 +640,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                       </SelectTrigger>
                       <SelectContent>
                         {skemaPembayaranOptions.map((s: any) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
+                          <SelectItem key={s.id} value={String(s.skema_pembayaran_id)}>
                             {s.skema_pembayaran.nama}
                           </SelectItem>
                         ))}
@@ -657,21 +656,21 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                 <div className='text-muted-foreground grid grid-cols-1 gap-2 border-b px-4 py-3 text-sm md:grid-cols-3'>
                   <div className='font-medium'>Pembayaran</div>
                   <div className='font-medium md:font-normal'>Tanggal</div>
-                  <div className='font-medium text-right md:font-normal'>Angsuran</div>
+                  <div className='text-right font-medium md:font-normal'>Angsuran</div>
                 </div>
                 {paymentRows.length === 0 ? (
-                  <div className='px-4 py-8 text-center text-muted-foreground text-sm'>
+                  <div className='text-muted-foreground px-4 py-8 text-center text-sm'>
                     Detail untuk Skema Pembayaran ini belum diisi. Silakan isi terlebih dahulu.
                   </div>
                 ) : (
                   paymentRows.map((row, idx) => (
                     <div key={idx} className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
                       <div className='flex justify-between md:block'>
-                        <span className='text-xs text-muted-foreground md:hidden'>Pembayaran</span>
+                        <span className='text-muted-foreground text-xs md:hidden'>Pembayaran</span>
                         <span>{row.label}</span>
                       </div>
                       <div>
-                        <div className='text-xs text-muted-foreground mb-1 md:hidden'>Tanggal</div>
+                        <div className='text-muted-foreground mb-1 text-xs md:hidden'>Tanggal</div>
                         <DatePicker
                           value={paymentDates[row.id]}
                           onChange={(date) => {
@@ -685,7 +684,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                         />
                       </div>
                       <div className='flex justify-between md:text-right'>
-                        <span className='text-xs text-muted-foreground md:hidden'>Angsuran</span>
+                        <span className='text-muted-foreground text-xs md:hidden'>Angsuran</span>
                         <span className='font-medium'>Rp {row.amount.toLocaleString('id-ID')}</span>
                       </div>
                     </div>
