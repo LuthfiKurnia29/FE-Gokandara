@@ -28,14 +28,16 @@ const ProgressBar = React.memo(
     barHeight?: string;
     total_unit: number;
   }) => {
-    const width = total_unit > 0 ? `${Math.min((current / total_unit) * 100, 100)}%` : '0%';
+    const safeCurrent = Number.isFinite(current) ? current : 0;
+    const safeTotalUnit = Number.isFinite(total_unit) ? total_unit : 0;
+    const width = safeTotalUnit > 0 ? `${Math.min((safeCurrent / safeTotalUnit) * 100, 100)}%` : '0%';
 
     return (
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
           <span className='text-[15px] font-medium text-gray-700'>{label}</span>
           <span className='text-[15px] font-medium text-gray-500'>
-            {current.toLocaleString()}/{total_unit.toLocaleString()}
+            {safeCurrent.toLocaleString()}/{safeTotalUnit.toLocaleString()}
             {showUnit ? ' Unit' : ''}
           </span>
         </div>
@@ -75,14 +77,20 @@ export function PropertiSection({ dashboardData }: ComponentWithDashboardProps) 
     const totalTransaksi = transaksiByPropertiData.values.reduce((sum, value) => sum + value, 0);
     const maxTransaksi = Math.max(...transaksiByPropertiData.values) || 100;
 
-    return transaksiByPropertiData.chart_data.map((item) => ({
-      label: item.name,
-      total_unit: item.total_unit,
-      current: item.value,
-      total: maxTransaksi, // Use max value as total for visual comparison
-      color: item.color,
-      percentage: parseFloat(item.percentage.replace('%', ''))
-    }));
+    return transaksiByPropertiData.chart_data.map((item) => {
+      const totalUnitValue = typeof item.total_unit === 'number' ? item.total_unit : 0;
+      const currentValue = typeof item.value === 'number' ? item.value : 0;
+      const percentageValue = typeof item.percentage === 'string' ? parseFloat(item.percentage.replace('%', '')) : 0;
+
+      return {
+        label: item.name,
+        total_unit: totalUnitValue,
+        current: currentValue,
+        total: maxTransaksi, // Use max value as total for visual comparison
+        color: item.color,
+        percentage: Number.isFinite(percentageValue) ? percentageValue : 0
+      };
+    });
   }, [transaksiByPropertiData]);
 
   return (
