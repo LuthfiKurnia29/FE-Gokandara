@@ -42,6 +42,7 @@ export interface PenjualanData {
   updated_at: string;
   created_id: number;
   harga_asli: number;
+  catatan?: string | null;
   created_by: User;
 }
 

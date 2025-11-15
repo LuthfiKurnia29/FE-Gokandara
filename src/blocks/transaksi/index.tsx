@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { AddTransaksiModal } from '@/blocks/transaksi/add-transaksi-modal';
 import BookingForm from '@/blocks/transaksi/booking-form';
@@ -18,12 +18,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
 import { useDelete } from '@/hooks/use-delete';
 import { useCurrentUser, usePermissions } from '@/services/auth';
 import {
   useCreatePenjualan,
   useDeletePenjualan,
   usePenjualanById,
+  useUpdateCatatanTransaksi,
   useUpdatePenjualan,
   useUpdatePenjualanStatus
 } from '@/services/penjualan';
@@ -134,6 +136,37 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     'created_by',
     'detail_pembayaran'
   ]);
+  const updateCatatan = useUpdateCatatanTransaksi();
+  const [catatanValue, setCatatanValue] = useState<string>('');
+  const [initialCatatan, setInitialCatatan] = useState<string>('');
+
+  useEffect(() => {
+    if (detail) {
+      const currentCatatan = ((detail as any)?.catatan ?? '') as string;
+      setCatatanValue(currentCatatan || '');
+      setInitialCatatan(currentCatatan || '');
+    } else {
+      setCatatanValue('');
+      setInitialCatatan('');
+    }
+  }, [detail]);
+
+  const handleSaveCatatan = async () => {
+    if (!detailId) return;
+    const trimmedValue = catatanValue.trim();
+    const payloadCatatan = trimmedValue === '' ? null : trimmedValue;
+    try {
+      await updateCatatan.mutateAsync({ id: detailId, catatan: payloadCatatan });
+      const nextValue = payloadCatatan ?? '';
+      setCatatanValue(nextValue);
+      setInitialCatatan(nextValue);
+      toast.success('Catatan transaksi diperbarui');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal memperbarui catatan');
+    }
+  };
+
+  const isCatatanDirty = catatanValue !== initialCatatan;
 
   // Perhitungan rincian pembayaran untuk popup Detail (selaras dengan Create/Edit)
   const selectedSkemaNama = (detail as any)?.skema_pembayaran?.nama || (detail as any)?.skemaPembayaran?.nama || '';
@@ -615,6 +648,26 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className='space-y-2 md:col-span-2'>
+                  <div className='flex items-center justify-between'>
+                    <span className='font-medium'>Catatan Transaksi</span>
+                    <Button
+                      size='sm'
+                      className='bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600'
+                      onClick={handleSaveCatatan}
+                      disabled={!isCatatanDirty || updateCatatan.isPending || !detailId}>
+                      {updateCatatan.isPending ? 'Menyimpan...' : 'Simpan Catatan'}
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={catatanValue}
+                    onChange={(event) => setCatatanValue(event.target.value)}
+                    placeholder='Tambahkan catatan untuk transaksi ini'
+                    className='min-h-[120px]'
+                  />
+                  <p className='text-xs text-gray-500'>Kosongkan catatan lalu simpan untuk menghapus catatan.</p>
                 </div>
 
                 <div className='col-span-1 mt-4 grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-2'>

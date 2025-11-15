@@ -113,6 +113,14 @@ export const penjualanService = {
     return response.data.data;
   },
 
+  // Update catatan transaksi only
+  updateCatatan: async (id: number, catatan: string | null): Promise<PenjualanWithRelations> => {
+    const response = await axios.patch<PenjualanApiResponse>(`/update-catatan-transaksi/${id}`, {
+      catatan
+    });
+    return response.data.data;
+  },
+
   // Delete penjualan by ID
   delete: async (id: number): Promise<PenjualanWithRelations> => {
     const response = await axios.delete<PenjualanApiResponse>(`/delete-transaksi/${id}`);
@@ -353,6 +361,19 @@ export const useDeletePenjualan = () => {
       queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
       queryClient.invalidateQueries({ queryKey: ['/penjualan-metrics'] });
       queryClient.invalidateQueries({ queryKey: ['/transaksi-total-count'] });
+    }
+  });
+};
+
+export const useUpdateCatatanTransaksi = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, catatan }: { id: number; catatan: string | null }) =>
+      penjualanService.updateCatatan(id, catatan),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['/get-transaksi', id] });
+      queryClient.invalidateQueries({ queryKey: ['/list-transaksi'] });
     }
   });
 };

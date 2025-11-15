@@ -4,7 +4,6 @@ import {
   FollowupResponse,
   NewKonsumenResponse,
   RealisasiResponse,
-  RingkasanPenjualanItem,
   RingkasanPenjualanResponse,
   StatistikPemesananItem,
   StatistikPemesananResponse,
@@ -56,8 +55,8 @@ export const analisaService = {
   },
 
   // Get ringkasan penjualan data
-  getRingkasanPenjualan: async (params: AnalisaQueryParams = {}): Promise<RingkasanPenjualanItem[]> => {
-    const response = await axios.get<RingkasanPenjualanItem[]>('/get-ringkasan-penjualan', {
+  getRingkasanPenjualan: async (params: AnalisaQueryParams = {}): Promise<RingkasanPenjualanResponse> => {
+    const response = await axios.get<RingkasanPenjualanResponse>('/get-ringkasan-penjualan', {
       params
     });
     return response.data;

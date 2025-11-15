@@ -70,11 +70,18 @@ export interface RealisasiResponse {
 export interface RingkasanPenjualanItem {
   prospek: ProspekData;
   grand_total: number;
-  transaksis: PenjualanWithRelations[];
+  transaksis?: PenjualanWithRelations[];
 }
 
 export interface RingkasanPenjualanResponse {
-  data: RingkasanPenjualanItem[];
+  ringkasan: RingkasanPenjualanItem[];
+  detail_penjualan: RingkasanPenjualanDetailItem[];
+}
+
+export interface RingkasanPenjualanDetailItem {
+  projek: string;
+  tipe: string;
+  harga: number;
 }
 
 // Chart data interfaces for visualization
