@@ -210,15 +210,28 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     });
 
     return skemaPembayaran.details.map((detailSkema: any) => {
-      const amount = (finalPriceDetail * detailSkema.persentase) / 100;
       const detailPembayaranItem = detailPembayaranMap.get(detailSkema.id);
+      // prefer nama and persentase from detail_pembayaran when available
+      const persentaseFromDetail =
+        detailPembayaranItem &&
+        detailPembayaranItem.persentase !== undefined &&
+        detailPembayaranItem.persentase !== null &&
+        String(detailPembayaranItem.persentase).trim() !== ''
+          ? Number(detailPembayaranItem.persentase)
+          : Number(detailSkema.persentase || 0);
+      const label =
+        detailPembayaranItem && detailPembayaranItem.nama && String(detailPembayaranItem.nama).trim() !== ''
+          ? detailPembayaranItem.nama
+          : detailSkema.nama;
+      const amount = Math.round((finalPriceDetail * persentaseFromDetail) / 100);
       const tanggal = detailPembayaranItem?.tanggal || null;
 
       return {
         id: detailSkema.id,
-        label: detailSkema.nama,
-        amount: Math.round(amount),
-        tanggal
+        label,
+        amount,
+        tanggal,
+        persentase: persentaseFromDetail
       };
     });
   }, [detail, finalPriceDetail]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -79,8 +79,81 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
   const [selectedKonsumenId, setSelectedKonsumenId] = useState<string>('');
   const [paymentDates, setPaymentDates] = useState<Record<number, Date | undefined>>({});
 
+  // Controlled per-detail percents and textbox amounts with debounce
+  const [paymentPercents, setPaymentPercents] = useState<Record<number, number>>({});
+  const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedAmountsRef = useRef<Record<number, string> | null>(null);
+
   const { data: supervisorData, isLoading: isLoadingSpv } = useSupervisorMitraList();
   const { data: salesData, isLoading: isLoadingSales } = useUsersByParent(selectedSpvId ? Number(selectedSpvId) : null);
+
+  // Options for SPV and Sales derived from fetched data
+  const safeSpvOptions = useMemo(() => {
+    return (supervisorData?.data ?? [])
+      .filter((u: any) => u && u.id && (u.name || u.nama))
+      .map((u: any) => {
+        const displayName = u.name || u.nama;
+        const roleLabel = u.role_name || (u.role && (u.role.name || u.role.role_name));
+        const label = roleLabel ? `${displayName} (${roleLabel})` : displayName;
+        return { value: String(u.id), label };
+      });
+  }, [supervisorData]);
+
+  const selectedSpvRoleName = useMemo(() => {
+    const spv = (supervisorData?.data ?? []).find((u: any) => String(u.id) === String(selectedSpvId));
+    const roleLabel = spv?.role_name || (spv?.role && (spv.role.name || spv.role.role_name));
+    return roleLabel || '';
+  }, [supervisorData, selectedSpvId]);
+
+  const safeSalesOptions = useMemo(() => {
+    return (salesData?.data ?? [])
+      .filter((u: any) => u && u.id && (u.name || u.nama))
+      .map((u: any) => ({ value: String(u.id), label: u.name || u.nama }));
+  }, [salesData]);
+
+  // permissions / user context (used to compute effectiveCreatedId)
+  const { getUserData } = usePermissions();
+  const userData = getUserData();
+  const userRole = userData?.roles?.[0]?.role?.name || '';
+  const userRoleId = userData?.roles?.[0]?.role_id || 0;
+  const isAdmin = userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1;
+  const currentUserId = userData?.user?.id;
+
+  const effectiveCreatedId = useMemo(() => {
+    if (selectedSalesId) return parseInt(selectedSalesId);
+    if (selectedSpvId) return parseInt(selectedSpvId);
+    if (!selectedSpvId && !selectedSalesId) return currentUserId;
+    return undefined;
+  }, [selectedSalesId, selectedSpvId, currentUserId]);
+
+  // Konsumen list (filtered by creator when editing/creating)
+  const konsumenParams = useMemo(() => {
+    const p: any = { per_page: 1000 };
+    if (!transaksiId && effectiveCreatedId) p.created_id = effectiveCreatedId;
+    return p;
+  }, [effectiveCreatedId, transaksiId]);
+
+  const { data: konsumenRes, isLoading: isLoadingKonsumen } = useKonsumenList(konsumenParams);
+
+  const safeKonsumenOptions = useMemo(() => {
+    return (konsumenRes?.data ?? [])
+      .filter((k: any) => k && k.id && (k.name || k.nama))
+      .map((k: any) => ({ value: String(k.id), label: k.name || k.nama }));
+  }, [konsumenRes]);
+
+  // Load current transaksi detail early so effects below can reference it safely
+  const { data: detail } = usePenjualanById(transaksiId, [
+    'konsumen',
+    'properti',
+    'blok',
+    'tipe',
+    'unit',
+    'projek',
+    'skema_pembayaran',
+    'created_by',
+    'detail_pembayaran'
+  ]);
 
   const selectedProjek = useMemo(() => {
     if (!selectedProjekId) return null;
@@ -147,23 +220,30 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     return selectedSkemaNama.toLowerCase().includes('cash keras');
   }, [selectedSkemaNama]);
 
+  // Use functional updates and only react to skema flag changes to avoid render loops
   useEffect(() => {
-    if (isProgressSkema && (dpPercent < 40 || dpPercent > 50)) {
-      setDpPercent(40);
-    }
-  }, [isProgressSkema, dpPercent]);
+    if (!isProgressSkema) return;
+    setDpPercent((prev) => {
+      if (prev < 40 || prev > 50) return 40;
+      return prev;
+    });
+  }, [isProgressSkema]);
 
   useEffect(() => {
-    if (isInhouseSkema && (dpPercent < 30 || dpPercent > 50)) {
-      setDpPercent(30);
-    }
-  }, [isInhouseSkema, dpPercent]);
+    if (!isInhouseSkema) return;
+    setDpPercent((prev) => {
+      if (prev < 30 || prev > 50) return 30;
+      return prev;
+    });
+  }, [isInhouseSkema]);
 
   useEffect(() => {
-    if (isCashKeras && dpPercent !== 100) {
-      setDpPercent(100);
-    }
-  }, [isCashKeras, dpPercent]);
+    if (!isCashKeras) return;
+    setDpPercent((prev) => {
+      if (prev !== 100) return 100;
+      return prev;
+    });
+  }, [isCashKeras]);
 
   useEffect(() => {
     if (diskon === '') return;
@@ -178,71 +258,152 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     }
   }, [diskon, tipeDiskon, harga]);
 
-  // Sales list is already filtered by parent via useUsersByParent
+  // Initialize paymentPercents from existing detail.detail_pembayaran if present or from skema defaults
+  useEffect(() => {
+    if (!selectedSkemaId) {
+      setPaymentPercents((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      setPaymentAmounts((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      lastSyncedAmountsRef.current = null;
+      return;
+    }
 
-  const safeSpvOptions = useMemo(() => {
-    return (supervisorData?.data ?? [])
-      .filter((u: any) => u && u.id && (u.name || u.nama))
-      .map((u: any) => {
-        const displayName = u.name || u.nama;
-        const roleLabel = u.role_name || (u.role && (u.role.name || u.role.role_name));
-        const label = roleLabel ? `${displayName} (${roleLabel})` : displayName;
-        return { value: String(u.id), label };
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
+    if (!selectedSkema?.skema_pembayaran?.details) return;
+
+    const mapPct: Record<number, number> = {};
+    // Prefer existing saved percents from detail.detail_pembayaran
+    const existingDetails = (detail as any)?.detail_pembayaran ?? [];
+    const existingMap = new Map<number, number>();
+    existingDetails.forEach((d: any) => {
+      existingMap.set(d.detail_skema_pembayaran_id, Number(d.persentase) || 0);
+    });
+
+    selectedSkema.skema_pembayaran.details.forEach((d: any) => {
+      const pct = existingMap.has(d.id) ? existingMap.get(d.id) as number : (Number(d.persentase) || 0);
+      mapPct[d.id] = pct;
+    });
+
+    setPaymentPercents((prev) => {
+      const keysA = Object.keys(mapPct);
+      const keysB = Object.keys(prev);
+      if (keysA.length !== keysB.length) return mapPct;
+      for (const k of keysA) {
+        if (prev[Number(k)] !== mapPct[Number(k)]) return mapPct;
+      }
+      return prev;
+    });
+
+    // Initialize amounts map accordingly
+    const amtMap: Record<number, string> = {};
+    selectedSkema.skema_pembayaran.details.forEach((d: any) => {
+      const pct = mapPct[d.id] ?? 0;
+      const amt = Math.round((hargaSetelahDiskon * pct) / 100) || 0;
+      amtMap[d.id] = String(amt);
+    });
+    setPaymentAmounts((prev) => {
+      const prevKeys = Object.keys(prev);
+      const newKeys = Object.keys(amtMap);
+      if (prevKeys.length !== newKeys.length) return amtMap;
+      for (const k of newKeys) if ((prev[Number(k)] ?? '') !== (amtMap[Number(k)] ?? '')) return amtMap;
+      return prev;
+    });
+    lastSyncedAmountsRef.current = amtMap;
+  }, [selectedSkemaId, skemaPembayaranOptions, detail, hargaSetelahDiskon]);
+
+  // Compute total percent
+  const totalPercent = useMemo(() => {
+    if (!selectedSkemaId) return 0;
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
+    if (!selectedSkema?.skema_pembayaran?.details) return 0;
+    return selectedSkema.skema_pembayaran.details.reduce((acc: number, d: any) => {
+      const pct = paymentPercents[d.id] ?? Number(d.persentase) ?? 0;
+      return acc + pct;
+    }, 0);
+  }, [selectedSkemaId, skemaPembayaranOptions, paymentPercents]);
+
+  // Debounce applying amounts -> percents
+  useEffect(() => {
+    const last = lastSyncedAmountsRef.current;
+    if (last) {
+      const aKeys = Object.keys(last);
+      const bKeys = Object.keys(paymentAmounts);
+      if (aKeys.length === bKeys.length) {
+        let equal = true;
+        for (const k of aKeys) {
+          if ((last[Number(k)] ?? '') !== (paymentAmounts[Number(k)] ?? '')) {
+            equal = false;
+            break;
+          }
+        }
+        if (equal) return;
+      }
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPaymentPercents((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        Object.keys(paymentAmounts).forEach((k) => {
+          const id = Number(k);
+          const num = Number(paymentAmounts[id] || '0') || 0;
+          let newPct = 0;
+          if (hargaSetelahDiskon > 0) newPct = Math.round((num / hargaSetelahDiskon) * 100);
+          newPct = Math.max(0, Math.min(100, newPct));
+          if (next[id] !== newPct) {
+            next[id] = newPct;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
       });
-  }, [supervisorData]);
+    }, 600);
 
-  const selectedSpvRoleName = useMemo(() => {
-    const spv = (supervisorData?.data ?? []).find((u: any) => String(u.id) === String(selectedSpvId));
-    const roleLabel = spv?.role_name || (spv?.role && (spv.role.name || spv.role.role_name));
-    return roleLabel || '';
-  }, [supervisorData, selectedSpvId]);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [paymentAmounts, hargaSetelahDiskon]);
 
-  const safeSalesOptions = useMemo(() => {
-    return (salesData?.data ?? [])
-      .filter((u: any) => u && u.id && (u.name || u.nama))
-      .map((u: any) => ({ value: String(u.id), label: u.name || u.nama }));
-  }, [salesData]);
-
-  const { getUserData } = usePermissions();
-  const userData = getUserData();
-  const userRole = userData?.roles?.[0]?.role?.name || '';
-  const userRoleId = userData?.roles?.[0]?.role_id || 0;
-  const isAdmin = userRole === 'Administrator' || userRole === 'Admin' || userRoleId === 1;
-  const currentUserId = userData?.user?.id;
-
-  const effectiveCreatedId = useMemo(() => {
-    if (selectedSalesId) return parseInt(selectedSalesId);
-    if (selectedSpvId) return parseInt(selectedSpvId);
-    if (!selectedSpvId && !selectedSalesId) return currentUserId;
-    return undefined;
-  }, [selectedSalesId, selectedSpvId, currentUserId]);
-
-  const konsumenParams = useMemo(() => {
-    const p: any = { per_page: 1000 };
-    if (!transaksiId && effectiveCreatedId) p.created_id = effectiveCreatedId;
-    return p;
-  }, [effectiveCreatedId, transaksiId]);
-
-  const { data: konsumenRes, isLoading: isLoadingKonsumen } = useKonsumenList(konsumenParams);
-
-  const safeKonsumenOptions = useMemo(() => {
-    return (konsumenRes?.data ?? [])
-      .filter((k: any) => k && k.id && (k.name || k.nama))
-      .map((k: any) => ({ value: String(k.id), label: k.name || k.nama }));
-  }, [konsumenRes]);
-
-  // Load current transaksi detail
-  const { data: detail } = usePenjualanById(transaksiId, [
-    'konsumen',
-    'properti',
-    'blok',
-    'tipe',
-    'unit',
-    'projek',
-    'skema_pembayaran',
-    'created_by',
-    'detail_pembayaran'
-  ]);
+  // Redistribute function (auto-normalize)
+  const redistributePercents = () => {
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
+    if (!selectedSkema?.skema_pembayaran?.details) return;
+    const ids = selectedSkema.skema_pembayaran.details.map((d: any) => d.id);
+    const current = ids.map((id) => paymentPercents[id] ?? 0);
+    const sum = current.reduce((a, b) => a + b, 0);
+    let newPercentsArr: number[] = [];
+    if (sum === 0) {
+      const n = ids.length;
+      const base = Math.floor(100 / n);
+      newPercentsArr = Array(n).fill(base);
+      let rem = 100 - base * n;
+      for (let i = 0; i < rem; i++) newPercentsArr[i]++;
+    } else {
+      const floats = current.map((v) => (v / sum) * 100);
+      const floored = floats.map((f) => Math.floor(f));
+      const fracs = floats.map((f, idx) => ({ idx, frac: f - Math.floor(f) }));
+      fracs.sort((a, b) => b.frac - a.frac);
+      let rem = 100 - floored.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < rem; i++) floored[fracs[i].idx]++;
+      newPercentsArr = floored;
+    }
+    const next: Record<number, number> = {};
+    ids.forEach((id, i) => (next[id] = newPercentsArr[i]));
+    setPaymentPercents((prev) => {
+      const keys = Object.keys(next);
+      let changed = false;
+      for (const k of keys) if ((prev[Number(k)] ?? -1) !== next[Number(k)]) { changed = true; break; }
+      if (!changed) return prev;
+      return next;
+    });
+    const amtMap: Record<number, string> = {};
+    ids.forEach((id, i) => {
+      const pct = newPercentsArr[i];
+      amtMap[id] = String(Math.round((hargaSetelahDiskon * pct) / 100) || 0);
+    });
+    setPaymentAmounts(amtMap);
+    lastSyncedAmountsRef.current = amtMap;
+  };
 
   // Prefill fields when detail is available
   useEffect(() => {
@@ -289,25 +450,70 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
     }
   }, [detail]);
 
+  // Map existing detail_pembayaran by detail_skema_pembayaran_id for quick lookup
+  const existingDetailPembayaranMap = useMemo(() => {
+    const map: Record<number, any> = {};
+    const items = (detail as any)?.detail_pembayaran ?? [];
+    if (Array.isArray(items)) {
+      items.forEach((it: any) => {
+        if (it && it.detail_skema_pembayaran_id) {
+          map[it.detail_skema_pembayaran_id] = it;
+        }
+      });
+    }
+    return map;
+  }, [detail]);
+
   const paymentRows = useMemo(() => {
-    if (!selectedSkemaId) return [] as { id: number; label: string; amount: number; periode: string }[];
+    if (!selectedSkemaId) return [] as { id: number; label: string; amount: number; periode: string; persentase?: number }[];
 
     const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
-
     if (!selectedSkema?.skema_pembayaran?.details) return [];
 
-    return selectedSkema.skema_pembayaran.details.map((detail) => ({
-      id: detail.id,
-      label: detail.nama,
-      amount: (hargaSetelahDiskon * detail.persentase) / 100,
-      periode: ''
-    }));
-  }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon]);
+    return selectedSkema.skema_pembayaran.details.map((detail) => {
+      // prefer nama/persentase from existing detail_pembayaran if available
+      const existing = existingDetailPembayaranMap[detail.id];
+      const pct = paymentPercents[detail.id] ?? (existing && Number(existing.persentase) ? Number(existing.persentase) : (Number(detail.persentase) || 0));
+      const label = existing && existing.nama && String(existing.nama).trim() !== '' ? existing.nama : detail.nama;
+      return {
+        id: detail.id,
+        label,
+        persentase: pct,
+        amount: (hargaSetelahDiskon * pct) / 100,
+        periode: ''
+      };
+    });
+  }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon, paymentPercents]);
 
   // Reset payment dates when skema changes
   useEffect(() => {
     setPaymentDates({});
   }, [selectedSkemaId]);
+
+  // Sync paymentAmounts when paymentRows or percents change
+  useEffect(() => {
+    if (!selectedSkemaId) {
+      setPaymentAmounts((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      lastSyncedAmountsRef.current = null;
+      return;
+    }
+    const map: Record<number, string> = {};
+    paymentRows.forEach((r) => {
+      const amt = Math.round((hargaSetelahDiskon * (r.persentase ?? 0)) / 100);
+      map[r.id] = String(amt);
+    });
+    setPaymentAmounts((prev) => {
+      const prevKeys = Object.keys(prev).map((k) => Number(k)).sort((a, b) => a - b);
+      const newKeys = Object.keys(map).map((k) => Number(k)).sort((a, b) => a - b);
+      if (prevKeys.length !== newKeys.length) return map;
+      for (let i = 0; i < newKeys.length; i++) {
+        const k = newKeys[i];
+        if ((prev[k] ?? '') !== (map[k] ?? '')) return map;
+      }
+      return prev;
+    });
+    lastSyncedAmountsRef.current = map;
+  }, [paymentRows, hargaSetelahDiskon, selectedSkemaId]);
 
   const updatePenjualan = useUpdatePenjualan();
 
@@ -652,7 +858,7 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
 
               <Separator />
 
-              <div className='rounded-lg border'>
+              <div className='rounded-lg border md:col-span-2'>
                 <div className='text-muted-foreground grid grid-cols-1 gap-2 border-b px-4 py-3 text-sm md:grid-cols-3'>
                   <div className='font-medium'>Pembayaran</div>
                   <div className='font-medium md:font-normal'>Tanggal</div>
@@ -663,49 +869,104 @@ export const EditTransaksiModal = memo(function EditTransaksiModal({
                     Detail untuk Skema Pembayaran ini belum diisi. Silakan isi terlebih dahulu.
                   </div>
                 ) : (
-                  paymentRows.map((row, idx) => (
-                    <div key={idx} className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
-                      <div className='flex justify-between md:block'>
-                        <span className='text-muted-foreground text-xs md:hidden'>Pembayaran</span>
-                        <span>{row.label}</span>
+                  paymentRows.map((row, idx) => {
+                    const pct = (paymentPercents[row.id] ?? (row as any).persentase ?? 0) as number;
+                    const displayAmount = Math.round((hargaSetelahDiskon * pct) / 100);
+                    return (
+                      <div
+                        key={idx}
+                        className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
+                        <div className='flex justify-between md:block'>
+                          <span className='text-muted-foreground text-xs md:hidden'>Pembayaran</span>
+                          <span>{row.label}</span>
+                        </div>
+                        <div>
+                          <div className='text-muted-foreground mb-1 text-xs md:hidden'>Tanggal</div>
+                          <DatePicker
+                            value={paymentDates[row.id]}
+                            onChange={(date) =>
+                              setPaymentDates((prev) => ({
+                                ...prev,
+                                [row.id]: date
+                              }))
+                            }
+                            placeholder='Pilih tanggal'
+                            className='!h-9 !w-full'
+                          />
+                        </div>
+                        <div className='flex flex-col items-end gap-2 md:text-right'>
+                          <div className='flex items-center gap-3 w-full'>
+                            <input
+                              type='range'
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={pct}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setPaymentPercents((prev) => ({ ...prev, [row.id]: v }));
+                                setPaymentAmounts((prev) => ({ ...prev, [row.id]: String(Math.round((hargaSetelahDiskon * v) / 100)) }));
+                              }}
+                              className='h-1 flex-1 appearance-none rounded-full bg-gray-200 accent-orange-500'
+                            />
+
+                            <span className='whitespace-nowrap pl-3 text-sm text-muted-foreground'>{pct}%</span>
+                          </div>
+                          <div className='text-muted-foreground text-xs md:hidden'>Angsuran</div>
+
+                          <div className='mt-2 flex items-center gap-3'>
+                            <Input
+                              type='text'
+                              className='!h-9 w-40 text-right'
+                              value={paymentAmounts[row.id] ? formatRupiahPlain(Number(paymentAmounts[row.id])) : formatRupiahPlain(displayAmount)}
+                              onChange={(e) => {
+                                const numeric = parseNumeric(e.target.value);
+                                setPaymentAmounts((prev) => ({ ...prev, [row.id]: numeric }));
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className='text-muted-foreground mb-1 text-xs md:hidden'>Tanggal</div>
-                        <DatePicker
-                          value={paymentDates[row.id]}
-                          onChange={(date) => {
-                            setPaymentDates((prev) => ({
-                              ...prev,
-                              [row.id]: date
-                            }));
-                          }}
-                          placeholder='Pilih tanggal'
-                          className='!h-9 !w-full'
-                        />
-                      </div>
-                      <div className='flex justify-between md:text-right'>
-                        <span className='text-muted-foreground text-xs md:hidden'>Angsuran</span>
-                        <span className='font-medium'>Rp {row.amount.toLocaleString('id-ID')}</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
+            </div>
 
-              <div className='bg-muted/40 flex items-center justify-center border-t px-6 py-6'>
-                <div className='flex w-full max-w-sm items-center justify-center'>
-                  <Button
-                    className='h-11 rounded-lg bg-emerald-500 px-8 text-white hover:bg-emerald-600'
-                    onClick={handleSubmit}
-                    disabled={updatePenjualan.isPending}>
-                    Simpan
-                  </Button>
+            {/* Total percent validator and auto-normalize action */}
+            <div className='px-6'>
+              <div className='flex items-center justify-between gap-4 py-3'>
+                <div>
+                  <span className={totalPercent !== 100 ? 'font-medium text-rose-600' : 'font-medium text-emerald-600'}>
+                    Total: {totalPercent}%
+                  </span>
+                  {totalPercent !== 100 ? (
+                    <div className='text-rose-600 text-sm'>Total persentase harus 100% untuk konsistensi (opsional: normalisasi otomatis).</div>
+                  ) : null}
                 </div>
+                {totalPercent !== 100 ? (
+                  <div className='flex items-center gap-2'>
+                    <Button className='h-9 rounded-md bg-orange-400 px-3 text-white hover:bg-orange-500' onClick={redistributePercents}>
+                      Auto-normalize
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+
+             <div className='bg-muted/40 flex items-center justify-center border-t px-6 py-6'>
+               <div className='flex w-full max-w-sm items-center justify-center'>
+                 <Button
+                   className='h-11 rounded-lg bg-emerald-500 px-8 text-white hover:bg-emerald-600'
+                   onClick={handleSubmit}
+                   disabled={updatePenjualan.isPending}>
+                   Submit
+                 </Button>
+               </div>
+             </div>
+           </div>
+       )}
+     </DialogContent>
+   </Dialog>
+ );
 });

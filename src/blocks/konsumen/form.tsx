@@ -15,7 +15,7 @@ import { currency, uncurrency } from '@/lib/utils';
 import { useCurrentUser } from '@/services/auth';
 import { useKonsumenById, useProjekList, useProspekList, useReferensiList } from '@/services/konsumen';
 import { useSpvSalesUsers } from '@/services/user';
-import { CreateKonsumenData, KonsumenData } from '@/types/konsumen';
+import { CreateKonsumenData } from '@/types/konsumen';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { addDays, startOfDay } from 'date-fns';
@@ -61,12 +61,7 @@ const konsumenSchema = z
     prospek_id: z.string().min(1, 'Prospek harus dipilih'),
     gambar: z.array(z.any()).optional()
   })
-  .refine(
-    (data) => {
-      // Conditional validation: gambar wajib untuk Mitra
-      // This will be checked in component based on user role
-      return true;
-    },
+  .refine(() => true, // Conditional validation placeholder (gambar requirement handled in component)
     {
       message: 'Gambar wajib diupload untuk user dengan role Mitra',
       path: ['gambar']
@@ -127,6 +122,27 @@ export const KonsumenForm = memo(function KonsumenForm({
         userRole.role.name.toLowerCase() === 'telemarketing' || userRole.role.code.toLowerCase() === 'telemarketing'
     );
   }, [currentUser]);
+
+  // Check if current user is Supervisor
+  const isSupervisor = React.useMemo(() => {
+    if (!currentUser?.roles) return false;
+    return currentUser.roles.some(
+      (userRole) => userRole.role.name.toLowerCase() === 'supervisor' || (userRole.role.code || '').toLowerCase() === 'supervisor'
+    );
+  }, [currentUser]);
+
+  // Check if current user is Admin/Administrator
+  const isAdmin = React.useMemo(() => {
+    if (!currentUser?.roles) return false;
+    return currentUser.roles.some((userRole) => {
+      const rn = (userRole.role.name || '').toLowerCase();
+      const rc = (userRole.role.code || '').toLowerCase();
+      return rn === 'administrator' || rn === 'admin' || rc === 'administrator' || rc === 'admin';
+    });
+  }, [currentUser]);
+
+  // Pengampu field is mandatory only when current user is Telemarketing
+  const isPengampuMandatory = isTelemarketing;
 
   // Fetch master data from APIs with improved error handling
   const { data: referensiOptions = [], isLoading: isLoadingReferensi, error: errorReferensi } = useReferensiList();
@@ -264,11 +280,11 @@ export const KonsumenForm = memo(function KonsumenForm({
       });
     } else {
       // For new forms, ensure created_id is properly initialized
-      if (isTelemarketing) {
+      if (isTelemarketing || isSupervisor || isAdmin) {
         setValue('created_id', '');
       }
     }
-  }, [existingData, reset, isTelemarketing, setValue]);
+  }, [existingData, reset, isTelemarketing, isSupervisor, isAdmin, setValue]);
 
   // Handle file upload change
   const handleFileUploadChange = (file: FilePondFile[] | null) => {
@@ -294,7 +310,7 @@ export const KonsumenForm = memo(function KonsumenForm({
       }
     }
 
-    // Validate created_id for Telemarketing role
+    // Validate created_id: mandatory only for Telemarketing
     if (isTelemarketing && !data.created_id) {
       alert('Pengampu wajib dipilih untuk user dengan role Telemarketing');
       return;
@@ -330,7 +346,7 @@ export const KonsumenForm = memo(function KonsumenForm({
     if (errorReferensi) errors.push('Referensi');
     if (errorProspek) errors.push('Prospek');
     if (errorProyek) errors.push('Proyek');
-    if (isTelemarketing && errorSpvSales) errors.push('Pengampu');
+    if ((isTelemarketing || isSupervisor || isAdmin) && errorSpvSales) errors.push('Pengampu');
 
     if (errors.length === 0) return null;
 
@@ -431,10 +447,10 @@ export const KonsumenForm = memo(function KonsumenForm({
                 <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                   <div className='space-y-4'>
                     {/* Pengampu field - Only for Telemarketing role */}
-                    {isTelemarketing && (
+                    {(isTelemarketing || isSupervisor || isAdmin) && (
                       <div className='space-y-2'>
                         <Label htmlFor='pengampu' className='font-medium text-gray-900'>
-                          Pengampu *
+                          {`Pengampu${isPengampuMandatory ? ' *' : ''}`}
                         </Label>
                         <Select
                           options={safeSpvSalesOptions}
@@ -446,7 +462,7 @@ export const KonsumenForm = memo(function KonsumenForm({
                         />
                         {/* Hidden input to ensure form registration */}
                         <input type='hidden' {...register('created_id')} value={createdId || ''} />
-                        {errors.created_id && <p className='text-sm text-red-600'>{errors.created_id.message}</p>}
+                        {isPengampuMandatory && errors.created_id && <p className='text-sm text-red-600'>{errors.created_id.message}</p>}
                       </div>
                     )}
 
@@ -787,3 +803,4 @@ export const KonsumenForm = memo(function KonsumenForm({
     </div>
   );
 });
+

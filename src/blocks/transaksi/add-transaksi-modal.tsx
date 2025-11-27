@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -52,7 +52,6 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
 
   const FIELD_CLS =
     '!h-12 !min-h-12 !w-full !rounded-lg !border !px-3 !py-0 !text-sm focus-visible:!ring-2 focus-visible:!ring-offset-2';
-  const FIELD_SMALL_CLS = '!h-9 !min-h-9 !w-16 !rounded-md !px-2 !py-0 !text-center !text-sm';
 
   // Formatter sederhana untuk tampilan Rupiah tanpa desimal
   const formatRupiahPlain = (amount: number) =>
@@ -70,7 +69,16 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
   const [selectedSpvId, setSelectedSpvId] = useState<string>('');
   const [selectedSalesId, setSelectedSalesId] = useState<string>('');
   const [selectedKonsumenId, setSelectedKonsumenId] = useState<string>('');
+  const [jangkaWaktu, setJangkaWaktu] = useState<string>('');
+  const [catatan, setCatatan] = useState<string>('');
   const [paymentDates, setPaymentDates] = useState<Record<number, Date | undefined>>({});
+  // Per-detail percentage values controlled by sliders (keyed by detail id)
+  const [paymentPercents, setPaymentPercents] = useState<Record<number, number>>({});
+  // Hold raw numeric values (as plain digits) for the angsuran textbox per detail id
+  const [paymentAmounts, setPaymentAmounts] = useState<Record<number, string>>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track the last amounts map that we synced from paymentPercents to avoid re-triggering debounce
+  const lastSyncedAmountsRef = useRef<Record<number, string> | null>(null);
   const { data: supervisorData, isLoading: isLoadingSpv } = useSupervisorMitraList();
   const { data: salesData, isLoading: isLoadingSales } = useUsersByParent(selectedSpvId ? Number(selectedSpvId) : null);
   const selectedProjek = useMemo(() => {
@@ -86,9 +94,8 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
   const harga = useMemo(() => {
     const skema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
     const skemaHarga = Number(skema?.harga);
-    const base = Number.isFinite(skemaHarga) ? skemaHarga : Number((selectedTipe as any)?.harga ?? 0);
     // Do not include kelebihan tanah into base harga; show it separately in UI
-    return base;
+    return Number.isFinite(skemaHarga) ? skemaHarga : Number((selectedTipe as any)?.harga ?? 0);
   }, [selectedSkemaId, skemaPembayaranOptions, selectedTipe, kelebihanTanah, hargaPerMeter]);
   const kelebihanTanahAmount = useMemo(() => {
     return Number(kelebihanTanah || 0) * Number(hargaPerMeter || 0);
@@ -138,35 +145,45 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
     return selectedSkemaNama.toLowerCase().includes('cash keras');
   }, [selectedSkemaNama]);
 
+  // Update dpPercent only when skema flags change. Use functional updates so we don't need dpPercent
+  // in the dependency array which could cause extra renders/loops.
   useEffect(() => {
-    if (isProgressSkema && (dpPercent < 40 || dpPercent > 50)) {
-      setDpPercent(40);
-    }
-  }, [isProgressSkema, dpPercent]);
+    if (!isProgressSkema) return;
+    setDpPercent((prev) => {
+      if (prev < 40 || prev > 50) return 40;
+      return prev;
+    });
+  }, [isProgressSkema]);
 
   useEffect(() => {
-    if (isInhouseSkema && (dpPercent < 30 || dpPercent > 50)) {
-      setDpPercent(30);
-    }
-  }, [isInhouseSkema, dpPercent]);
+    if (!isInhouseSkema) return;
+    setDpPercent((prev) => {
+      if (prev < 30 || prev > 50) return 30;
+      return prev;
+    });
+  }, [isInhouseSkema]);
 
   useEffect(() => {
-    if (isCashKeras && dpPercent !== 100) {
-      setDpPercent(100);
-    }
-  }, [isCashKeras, dpPercent]);
+    if (!isCashKeras) return;
+    setDpPercent((prev) => {
+      if (prev !== 100) return 100;
+      return prev;
+    });
+  }, [isCashKeras]);
 
   useEffect(() => {
     if (diskon === '') return;
     const val = Number(diskon);
     if (Number.isNaN(val)) return;
+    let newVal: string | null = null;
     if (tipeDiskon === 'persen') {
-      if (val < 0) setDiskon('0');
-      else if (val > 100) setDiskon('100');
+      if (val < 0) newVal = '0';
+      else if (val > 100) newVal = '100';
     } else if (tipeDiskon === 'nominal') {
-      if (val < 0) setDiskon('0');
-      else if (val > harga) setDiskon(harga.toString());
+      if (val < 0) newVal = '0';
+      else if (val > harga) newVal = harga.toString();
     }
+    if (newVal !== null && newVal !== diskon) setDiskon(newVal);
   }, [diskon, tipeDiskon, harga]);
 
   const safeSpvOptions = useMemo(() => {
@@ -298,13 +315,201 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
 
     if (!selectedSkema?.skema_pembayaran?.details) return [];
 
-    return selectedSkema.skema_pembayaran.details.map((detail) => ({
-      id: detail.id,
-      label: detail.nama,
-      amount: (hargaSetelahDiskon * detail.persentase) / 100,
-      periode: ''
-    }));
-  }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon]);
+    return selectedSkema.skema_pembayaran.details.map((detail) => {
+      // prefer any user-controlled percent from state, fallback to schema percent
+      const pct = paymentPercents[detail.id] ?? (Number(detail.persentase) || 0);
+      return {
+        id: detail.id,
+        label: detail.nama,
+        persentase: pct,
+        amount: (hargaSetelahDiskon * pct) / 100,
+        periode: ''
+      };
+    });
+  }, [skemaPembayaranOptions, selectedSkemaId, hargaSetelahDiskon, paymentPercents]);
+
+  // Total percentage across all payment details (derived: prefer controlled percents)
+  const totalPercent = useMemo(() => {
+    if (!paymentRows || paymentRows.length === 0) return 0;
+    return paymentRows.reduce((acc, r) => {
+      const pct = paymentPercents[r.id] ?? (r as any).persentase ?? 0;
+      return acc + Number(pct || 0);
+    }, 0);
+  }, [paymentRows, paymentPercents]);
+
+  // Normalize/redistribute percentages so they sum to 100
+  const redistributePercents = () => {
+    if (!paymentRows || paymentRows.length === 0) return;
+
+    const ids = paymentRows.map((r) => r.id);
+    const current: number[] = ids.map((id) => paymentPercents[id] ?? 0);
+    const sum = current.reduce((s, v) => s + v, 0);
+
+    let newPercentsArr: number[] = [];
+
+    if (sum === 0) {
+      // distribute equally
+      const n = ids.length;
+      const base = Math.floor(100 / n);
+      newPercentsArr = Array(n).fill(base);
+      let rem = 100 - base * n;
+      for (let i = 0; i < rem; i++) newPercentsArr[i]++;
+    } else {
+      // scale proportionally and correct rounding via fractional parts
+      const floats = current.map((v) => (v / sum) * 100);
+      const floored = floats.map((f) => Math.floor(f));
+      let flooredSum = floored.reduce((a, b) => a + b, 0);
+      const fracs = floats.map((f, idx) => ({ idx, frac: f - Math.floor(f) }));
+      fracs.sort((a, b) => b.frac - a.frac);
+      let rem = 100 - flooredSum;
+      for (let i = 0; i < rem; i++) {
+        floored[fracs[i].idx] = floored[fracs[i].idx] + 1;
+      }
+      newPercentsArr = floored;
+    }
+
+    // Build map and apply
+    const next: Record<number, number> = {};
+    ids.forEach((id, i) => (next[id] = newPercentsArr[i]));
+
+    setPaymentPercents((prev) => {
+      // only set if changed
+      const keys = Object.keys(next);
+      let changed = false;
+      for (const k of keys) {
+        if ((prev[Number(k)] ?? -1) !== next[Number(k)]) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) return prev;
+      return next;
+    });
+
+    // Update amounts to reflect new percents and mark as last synced
+    const amountsMap: Record<number, string> = {};
+    ids.forEach((id, i) => {
+      const pct = newPercentsArr[i];
+      const amt = Math.round((hargaSetelahDiskon * pct) / 100) || 0;
+      amountsMap[id] = String(amt);
+    });
+    setPaymentAmounts(amountsMap);
+    lastSyncedAmountsRef.current = amountsMap;
+  };
+
+  // Initialize paymentPercents when skema changes
+  useEffect(() => {
+    // We'll use functional updater so this effect does not need to depend on paymentPercents
+    if (!selectedSkemaId) {
+      setPaymentPercents((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      return;
+    }
+
+    const selectedSkema = skemaPembayaranOptions.find((s) => s.skema_pembayaran_id === selectedSkemaId);
+    if (!selectedSkema?.skema_pembayaran?.details) {
+      setPaymentPercents((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      return;
+    }
+
+    const map: Record<number, number> = {};
+    selectedSkema.skema_pembayaran.details.forEach((d: any) => {
+      map[d.id] = typeof d.persentase === 'number' ? d.persentase : Number(d.persentase) || 0;
+    });
+
+    setPaymentPercents((prev) => {
+      const keysA = Object.keys(map);
+      const keysB = Object.keys(prev);
+      if (keysA.length !== keysB.length) return map;
+      for (const k of keysA) {
+        if (prev[Number(k)] !== map[Number(k)]) return map;
+      }
+      return prev; // unchanged
+    });
+  }, [selectedSkemaId, skemaPembayaranOptions]);
+
+  // Sync paymentAmounts whenever skema/harga change (reset when skema changes)
+  useEffect(() => {
+    if (!selectedSkemaId) {
+      setPaymentAmounts((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      lastSyncedAmountsRef.current = null;
+      return;
+    }
+
+    const map: Record<number, string> = {};
+    paymentRows.forEach((r) => {
+      const pct = paymentPercents[r.id] ?? (r as any).persentase ?? 0;
+      const amt = Math.round((hargaSetelahDiskon * pct) / 100);
+      map[r.id] = String(amt);
+    });
+    // Use functional updater so we compare against the freshest prev state
+    setPaymentAmounts((prev) => {
+      const prevKeys = Object.keys(prev).map((k) => Number(k)).sort((a, b) => a - b);
+      const newKeys = Object.keys(map).map((k) => Number(k)).sort((a, b) => a - b);
+      let shouldSet = false;
+      if (prevKeys.length !== newKeys.length) shouldSet = true;
+      else {
+        for (let i = 0; i < newKeys.length; i++) {
+          const k = newKeys[i];
+          if ((prev[k] ?? '') !== (map[k] ?? '')) {
+            shouldSet = true;
+            break;
+          }
+        }
+      }
+      if (shouldSet) {
+        lastSyncedAmountsRef.current = map;
+        return map;
+      }
+      return prev;
+    });
+  }, [selectedSkemaId, paymentRows, hargaSetelahDiskon]);
+
+  // Debounce: apply textbox amounts to paymentPercents after user stops typing
+  useEffect(() => {
+    // If the current paymentAmounts are exactly what we last synced from paymentPercents,
+    // skip running the debounce to avoid a feedback loop.
+    const last = lastSyncedAmountsRef.current;
+    if (last) {
+      const aKeys = Object.keys(last);
+      const bKeys = Object.keys(paymentAmounts);
+      if (aKeys.length === bKeys.length) {
+        let equal = true;
+        for (const k of aKeys) {
+          if ((last[Number(k)] ?? '') !== (paymentAmounts[Number(k)] ?? '')) {
+            equal = false;
+            break;
+          }
+        }
+        if (equal) return;
+      }
+    }
+     if (debounceRef.current) clearTimeout(debounceRef.current);
+     // wait 600ms after the last change
+     debounceRef.current = setTimeout(() => {
+       setPaymentPercents((prev) => {
+         const next = { ...prev };
+         let changed = false;
+         Object.keys(paymentAmounts).forEach((k) => {
+           const id = Number(k);
+           const num = Number(paymentAmounts[id] || '0') || 0;
+           let newPct = 0;
+           if (hargaSetelahDiskon > 0) {
+             newPct = Math.round((num / hargaSetelahDiskon) * 100);
+           }
+           newPct = Math.max(0, Math.min(100, newPct));
+           if (next[id] !== newPct) {
+             next[id] = newPct;
+             changed = true;
+           }
+         });
+         return changed ? next : prev;
+       });
+     }, 600);
+
+     return () => {
+       if (debounceRef.current) clearTimeout(debounceRef.current);
+     };
+   }, [paymentAmounts, hargaSetelahDiskon]);
 
   // Reset payment dates when skema changes
   useEffect(() => {
@@ -338,6 +543,8 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
       setSelectedTipeId(null);
       setSelectedSkemaId(null);
       setPaymentDates({});
+      setJangkaWaktu('');
+      setCatatan('');
     }
     onOpenChange(val);
   };
@@ -349,13 +556,18 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
     }
     const tipe_diskon_api = tipeDiskon === 'persen' ? 'percent' : 'fixed';
 
-    // Build detail_pembayaran array
+    // Build detail_pembayaran array using user-controlled percents (from sliders)
     const detail_pembayaran = paymentRows
-      .map((row) => ({
-        skema_pembayaran_id: selectedSkemaId,
-        detail_skema_pembayaran_id: row.id,
-        tanggal: paymentDates[row.id] ? paymentDates[row.id]?.toISOString().split('T')[0] : undefined
-      }))
+      .map((row) => {
+        const pct = paymentPercents[row.id] ?? (row as any).persentase ?? 0;
+        return {
+          skema_pembayaran_id: selectedSkemaId,
+          detail_skema_pembayaran_id: row.id,
+          tanggal: paymentDates[row.id] ? paymentDates[row.id]?.toISOString().split('T')[0] : undefined,
+          nama: row.label,
+          persentase: pct
+        };
+      })
       .filter((item) => item.tanggal !== undefined);
 
     const payload: any = {
@@ -371,6 +583,8 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
       ...(diskon !== '' ? { diskon: Number(diskon) } : {}),
       tipe_diskon: tipe_diskon_api,
       dp: dpValue,
+      ...(jangkaWaktu !== '' ? { jangka_waktu: Number(jangkaWaktu) } : {}),
+      ...(catatan !== '' ? { catatan } : {}),
       ...(detail_pembayaran.length > 0 ? { detail_pembayaran } : {})
     };
 
@@ -594,6 +808,30 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                 </div>
               </div>
 
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                <div>
+                  <Label className='mb-2 block'>Jangka Waktu (bulan)</Label>
+                  <Input
+                    type='number'
+                    placeholder='12'
+                    className={FIELD_CLS}
+                    min={1}
+                    value={jangkaWaktu}
+                    onChange={(e) => setJangkaWaktu(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className='mb-2 block'>Catatan</Label>
+                  <Input
+                    type='text'
+                    placeholder='Masukkan catatan'
+                    className={FIELD_CLS}
+                    value={catatan}
+                    onChange={(e) => setCatatan(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className='space-y-3'>
                 <div className='flex items-center justify-between'>
                   <span className='text-muted-foreground text-sm'>LB/LT</span>
@@ -690,35 +928,95 @@ export const AddTransaksiModal = memo(function AddTransaksiModal({ open, onOpenC
                       Detail untuk Skema Pembayaran ini belum diisi. Silakan isi terlebih dahulu.
                     </div>
                   ) : (
-                    paymentRows.map((row, idx) => (
-                      <div
-                        key={idx}
-                        className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
-                        <div className='flex justify-between md:block'>
-                          <span className='text-muted-foreground text-xs md:hidden'>Pembayaran</span>
-                          <span>{row.label}</span>
+                    paymentRows.map((row, idx) => {
+                      const pct = (paymentPercents[row.id] ?? (row as any).persentase ?? 0) as number;
+                      const displayAmount = Math.round((hargaSetelahDiskon * pct) / 100);
+                      return (
+                        <div
+                          key={idx}
+                          className='grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-3 md:items-center md:gap-2'>
+                          <div className='flex justify-between md:block'>
+                            <span className='text-muted-foreground text-xs md:hidden'>Pembayaran</span>
+                            <span>{row.label}</span>
+                          </div>
+                          <div>
+                            <div className='text-muted-foreground mb-1 text-xs md:hidden'>Tanggal</div>
+                            <DatePicker
+                              value={paymentDates[row.id]}
+                              onChange={(date) => {
+                                setPaymentDates((prev) => ({
+                                  ...prev,
+                                  [row.id]: date
+                                }));
+                              }}
+                              placeholder='Pilih tanggal'
+                              className='!h-9 !w-full'
+                            />
+                          </div>
+                          <div className='flex flex-col items-end gap-2 md:text-right'>
+                            <div className='flex items-center gap-3 w-full'>
+                              <input
+                                type='range'
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={pct}
+                                onChange={(e) => {
+                                  const v = Number(e.target.value);
+                                  setPaymentPercents((prev) => ({ ...prev, [row.id]: v }));
+                                  // reflect slider change immediately in textbox
+                                  setPaymentAmounts((prev) => ({ ...prev, [row.id]: String(Math.round((hargaSetelahDiskon * v) / 100)) }));
+                                }}
+                                className='h-1 flex-1 appearance-none rounded-full bg-gray-200 accent-orange-500'
+                              />
+
+                              <span className='whitespace-nowrap pl-3 text-sm text-muted-foreground'>{pct}%</span>
+                            </div>
+                            <div className='text-muted-foreground text-xs md:hidden'>Angsuran</div>
+
+                            {/* Editable angsuran input: when user edits amount we compute the corresponding percent */}
+                            <div className='mt-2 flex items-center gap-3'>
+                              <Input
+                                type='text'
+                                className='!h-9 w-40 text-right'
+                                // show formatted amount when available; otherwise fallback to computed displayAmount
+                                value={paymentAmounts[row.id] ? formatRupiahPlain(Number(paymentAmounts[row.id])) : formatRupiahPlain(displayAmount)}
+                                onChange={(e) => {
+                                  // store only digits in paymentAmounts immediately
+                                  const numeric = parseNumeric(e.target.value);
+                                  setPaymentAmounts((prev) => ({ ...prev, [row.id]: numeric }));
+                                  // do not update paymentPercents here; the debounced effect will apply after user stops typing
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className='text-muted-foreground mb-1 text-xs md:hidden'>Tanggal</div>
-                          <DatePicker
-                            value={paymentDates[row.id]}
-                            onChange={(date) => {
-                              setPaymentDates((prev) => ({
-                                ...prev,
-                                [row.id]: date
-                              }));
-                            }}
-                            placeholder='Pilih tanggal'
-                            className='!h-9 !w-full'
-                          />
-                        </div>
-                        <div className='flex justify-between md:text-right'>
-                          <span className='text-muted-foreground text-xs md:hidden'>Angsuran</span>
-                          <span className='font-medium'>Rp {row.amount.toLocaleString('id-ID')}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
+                </div>
+              </div>
+
+              {/* Total percent validator and auto-normalize action */}
+              <div className='px-6'>
+                <div className='flex items-center justify-between gap-4 py-3'>
+                  <div>
+                    <span className={`font-medium ${totalPercent !== 100 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      Total: {totalPercent}%
+                    </span>
+                    {totalPercent !== 100 ? (
+                      <div className='text-rose-600 text-sm'>Total persentase harus 100% untuk konsistensi (opsional: normalisasi otomatis).</div>
+                    ) : null}
+                  </div>
+                  {totalPercent !== 100 ? (
+                    <div className='flex items-center gap-2'>
+                      <Button
+                        className='h-9 rounded-md bg-orange-400 px-3 text-white hover:bg-orange-500'
+                        onClick={redistributePercents}>
+                        Auto-normalize
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
