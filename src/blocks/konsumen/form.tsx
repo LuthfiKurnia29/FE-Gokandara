@@ -376,6 +376,16 @@ export const KonsumenForm = memo(function KonsumenForm({
             <h1 className='mb-6 text-2xl font-bold text-gray-900'>
               {selectedId ? 'Edit Data Konsumen' : 'Tambah Data Konsumen'}
             </h1>
+            {selectedId &&
+              isAdmin &&
+              (existingData?.createdBy?.name || (existingData as any)?.created_by?.name) && (
+                <div className='mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2'>
+                  <p className='text-sm text-gray-700'>
+                    <span className='font-medium text-gray-900'>Ditambahkan oleh:</span>{' '}
+                    {existingData?.createdBy?.name || (existingData as any)?.created_by?.name}
+                  </p>
+                </div>
+              )}
             {existingData &&
               ((existingData as any).status_delete === 1 ||
                 (existingData as any).status_delete === '1' ||

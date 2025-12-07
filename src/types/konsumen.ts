@@ -32,7 +32,7 @@ export interface KonsumenData {
   refrensi?: ReferensiData;
   prospek?: ProspekData;
   created_by?: UserData;
-  latest_transaksi?: PenjualanData;
+  createdBy?: UserData;
 }
 
 export interface KonsumenResponse {
