@@ -3,11 +3,17 @@
 import { useCalendar } from '@/calendar/contexts/calendar-context';
 import type { IEvent } from '@/calendar/interfaces';
 
+
+
 import { EditEventDialog } from '../dialogs/edit-event-dialog';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { format, parseISO } from 'date-fns';
-import { Clock, Text, User } from 'lucide-react';
+import { Clock, Text, User, UserCircle } from 'lucide-react';
+
+
+
+
 
 const agendaEventCardVariants = cva(
   'flex select-none items-center justify-between gap-3 rounded-md border p-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
@@ -93,6 +99,13 @@ export function AgendaEventCard({ event, eventCurrentDay, eventTotalDays }: IPro
             <User className='size-3 shrink-0' />
             <p className='text-foreground text-xs'>{event.konsumen?.name}</p>
           </div>
+
+          {event.sales && (
+            <div className='flex items-center gap-1'>
+              <UserCircle className='size-3 shrink-0' />
+              <p className='text-foreground text-xs'>Dibuat oleh: {event.sales.name}</p>
+            </div>
+          )}
 
           <div className='flex items-center gap-1'>
             <Clock className='size-3 shrink-0' />

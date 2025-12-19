@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jsPDF from 'jspdf';
+import fs from 'fs';
+import path from 'path';
 
 interface TransaksiData {
   id: number;
@@ -152,9 +154,20 @@ function createPDF(transaksi: TransaksiData): jsPDF {
   // Set font to support Unicode characters
   doc.setFont('helvetica');
 
-  // Header - RHUMA branding
-  doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
-  doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
+  // Header - RHUMA logo
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo_kandara.png');
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+
+    // Add logo image (adjust width and height as needed)
+    doc.addImage(logoBase64, 'PNG', margin, y - 3, 30, 15);
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    // Fallback to text if image fails
+    doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
+    doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
+  }
 
   // Contact info on the right
   doc.setFontSize(7);
@@ -361,8 +374,19 @@ function createPDF(transaksi: TransaksiData): jsPDF {
   y = margin;
 
   // Header on page 2
-  doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
-  doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo_kandara.png');
+    const logoBuffer = fs.readFileSync(logoPath);
+    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+
+    // Add logo image (adjust width and height as needed)
+    doc.addImage(logoBase64, 'PNG', margin, y - 3, 30, 15);
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    // Fallback to text if image fails
+    doc.setFontSize(16).setFont('helvetica', 'bold').text('RHUMA', margin, y);
+    doc.setFontSize(8).setFont('helvetica', 'normal').text('by Kardara', margin, y + 7);
+  }
   y += 20;
 
   // Section IV: Terms

@@ -17,6 +17,8 @@ export interface UserData {
   created_at: string;
   updated_at: string;
   enc_pw?: string;
+  image?: string | null;
+  image_url?: string;
 }
 
 // Enhanced interface with optional relations

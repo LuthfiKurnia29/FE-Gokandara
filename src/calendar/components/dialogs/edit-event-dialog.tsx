@@ -139,6 +139,20 @@ export function EditEventDialog({ children, event, simpleEdit = false }: IProps)
             id='event-form'
             onSubmit={form.handleSubmit(onSubmit)}
             className='grid max-h-[400px] gap-4 overflow-y-auto py-4'>
+            {/* Display Sales Name */}
+            {event.sales && (
+              <div className='flex items-center gap-2 rounded-lg border bg-muted/50 p-3'>
+                <Avatar className='size-8'>
+                  <AvatarImage src={event.sales.image_url || undefined} alt={event.sales.name} />
+                  <AvatarFallback className='text-xs'>{event.sales.name?.[0] || 'S'}</AvatarFallback>
+                </Avatar>
+                <div className='flex flex-col'>
+                  <span className='text-xs text-muted-foreground'>Dibuat oleh</span>
+                  <span className='text-sm font-medium'>{event.sales.name}</span>
+                </div>
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name='konsumen_id'
