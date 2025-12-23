@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 import initializeBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   // ✅ Migrated from experimental.turbo to turbopack (stable since Next.js 15.3)
   turbopack: {
     rules: {

@@ -10,7 +10,7 @@ type TAvatarGroupProps = HTMLAttributes<HTMLDivElement> & { max?: number; spacin
 
 const AvatarGroup = forwardRef<TAvatarGroupRef, TAvatarGroupProps>(
   ({ className, children, max = 1, spacing = 10, ...props }, ref) => {
-    const avatarItems = Children.toArray(children) as ReactElement[];
+    const avatarItems = Children.toArray(children) as ReactElement<any>[];
 
     const renderContent = useMemo(() => {
       return (

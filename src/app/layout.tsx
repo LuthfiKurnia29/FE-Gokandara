@@ -5,6 +5,8 @@ import localFont from 'next/font/local';
 
 import { ThemeProvider } from 'next-themes';
 
+// Import localStorage polyfill for SSR
+import '@/lib/localStorage-polyfill';
 import '@/app/globals.css';
 import { DashboardLayout } from '@/components/layouts/dashboard-layout';
 import { LoginScreen } from '@/components/login-screen';

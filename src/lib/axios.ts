@@ -27,12 +27,15 @@ axios.interceptors.response.use(
   (error) => {
     // Handle specific error cases
     if (error.response?.status === 401) {
-      // Handle unauthorized access (token expired or invalid)
-      localStorage.removeItem('auth-token');
+      // Only handle auth errors in browser environment
+      if (typeof window !== 'undefined') {
+        // Handle unauthorized access (token expired or invalid)
+        localStorage.removeItem('auth-token');
 
-      // Dispatch custom event to notify AuthProvider about token expiration
-      const authErrorEvent = new CustomEvent('auth:unauthorized');
-      window.dispatchEvent(authErrorEvent);
+        // Dispatch custom event to notify AuthProvider about token expiration
+        const authErrorEvent = new CustomEvent('auth:unauthorized');
+        window.dispatchEvent(authErrorEvent);
+      }
     }
     return Promise.reject(error);
   }
