@@ -3,12 +3,13 @@
 import { memo } from 'react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAnalisaNewKonsumen } from '@/services/analisa';
 import { KonsumenData } from '@/types/konsumen';
 
-import { MoreVertical, Plus } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { MoreVertical } from 'lucide-react';
 
 interface CustomerListComponentProps {
   filterParams?: {
@@ -97,6 +98,15 @@ export const CustomerListComponent = memo(({ filterParams = {} }: CustomerListCo
             <div className='min-w-0 flex-1'>
               <h3 className='mb-1 text-base font-semibold text-gray-900'>{customer.name}</h3>
               <p className='text-sm text-gray-500'>{customer.description || customer.address}</p>
+              <div className='mt-1 flex items-center gap-2 text-xs text-gray-400'>
+                <span>
+                  {customer.created_at
+                    ? format(new Date(customer.created_at), 'dd MMM yyyy HH:mm', { locale: id })
+                    : '-'}
+                </span>
+                <span>•</span>
+                <span>{customer.created_by?.name || 'System'}</span>
+              </div>
             </div>
           </div>
         ))}

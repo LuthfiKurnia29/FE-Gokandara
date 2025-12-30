@@ -45,6 +45,15 @@ export interface StatistikPemesananResponse {
   data: StatistikPemesananItem[];
 }
 
+// Statistik Konsumen Response
+export interface StatistikKonsumenItem {
+  periode: string;
+  total_konsumen: number;
+  konsumens: KonsumenData[];
+}
+
+export type StatistikKonsumenResponse = StatistikKonsumenItem[];
+
 // Realisasi Response
 export interface RealisasiData {
   hari_ini: number;

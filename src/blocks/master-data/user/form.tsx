@@ -158,8 +158,8 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
         email: user.email,
         role_id: user.roles[0].role_id,
         parent_id: Number(user.parent_id) || null,
-        password: user.enc_pw || '',
-        password_confirmation: user.enc_pw || ''
+        password: '',
+        password_confirmation: ''
       });
     } else {
       reset({

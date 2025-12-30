@@ -6,9 +6,8 @@ import {
   RealisasiResponse,
   RingkasanPenjualanResponse,
   StatistikPemesananItem,
-  StatistikPemesananResponse,
+  StatistikKonsumenItem,
   StatistikPenjualanItem,
-  StatistikPenjualanResponse,
   UseAnalisaParams
 } from '@/types/analisa';
 import { useQuery } from '@tanstack/react-query';
@@ -41,6 +40,14 @@ export const analisaService = {
   // Get statistik pemesanan data
   getStatistikPemesanan: async (params: AnalisaQueryParams = {}): Promise<StatistikPemesananItem[]> => {
     const response = await axios.get<StatistikPemesananItem[]>('/get-statistik-pemesanan', {
+      params
+    });
+    return response.data;
+  },
+
+  // Get statistik konsumen data
+  getStatistikKonsumen: async (params: AnalisaQueryParams = {}): Promise<StatistikKonsumenItem[]> => {
+    const response = await axios.get<StatistikKonsumenItem[]>('/get-statistik-konsumen', {
       params
     });
     return response.data;
@@ -106,6 +113,18 @@ export const useAnalisaStatistikPemesanan = (params: UseAnalisaParams = {}) => {
   return useQuery({
     queryKey: ['analisa', 'statistik-pemesanan', params],
     queryFn: () => analisaService.getStatistikPemesanan(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    cacheTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 10 * 60 * 1000 // Refresh every 10 minutes
+  });
+};
+
+// Hook for statistik konsumen data
+export const useAnalisaStatistikKonsumen = (params: UseAnalisaParams = {}) => {
+  return useQuery({
+    queryKey: ['analisa', 'statistik-konsumen', params],
+    queryFn: () => analisaService.getStatistikKonsumen(params),
     staleTime: 10 * 60 * 1000, // 10 minutes
     cacheTime: 30 * 60 * 1000, // 30 minutes
     refetchOnWindowFocus: true,

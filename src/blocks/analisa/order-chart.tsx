@@ -4,14 +4,14 @@ import { useMemo, useState } from 'react';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useAnalisaStatistikPemesanan } from '@/services/analisa';
+import { useAnalisaStatistikKonsumen } from '@/services/analisa';
 
 import { MoreVertical } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const chartConfig = {
-  pemesanan: {
-    label: 'Pemesanan',
+  konsumen: {
+    label: 'Konsumen',
     color: '#22c55e'
   }
 } satisfies ChartConfig;
@@ -31,12 +31,12 @@ interface OrderChartComponentProps {
 export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('bulanan');
 
-  // Get statistik pemesanan data based on selected period with filter
+  // Get statistik konsumen data based on selected period with filter
   const {
     data: statistikData,
     isLoading,
     error
-  } = useAnalisaStatistikPemesanan({
+  } = useAnalisaStatistikKonsumen({
     filter: selectedPeriod,
     ...filterParams
   });
@@ -47,7 +47,7 @@ export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentPr
 
     return statistikData.map((item) => ({
       period: item.periode,
-      pemesanan: item.total_pemesanan
+      konsumen: item.total_konsumen
     }));
   }, [statistikData]);
 
@@ -55,8 +55,8 @@ export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentPr
   const yAxisDomain = useMemo(() => {
     if (chartData.length === 0) return [0, 100];
 
-    const maxValue = Math.max(...chartData.map((item) => item.pemesanan));
-    const roundedMax = Math.ceil(maxValue / 100) * 100;
+    const maxValue = Math.max(...chartData.map((item) => item.konsumen));
+    const roundedMax = Math.ceil(maxValue / 10) * 10;
     return [0, roundedMax];
   }, [chartData]);
 
@@ -70,7 +70,7 @@ export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentPr
     <Card className='w-full rounded-2xl border border-gray-100 bg-white shadow-sm'>
       <CardHeader className='pb-3'>
         <div className='flex items-center justify-between'>
-          <h3 className='text-lg font-bold text-gray-900'>Statistik Pemesanan</h3>
+          <h3 className='text-lg font-bold text-gray-900'>Statistik Konsumen</h3>
           <div className='flex items-center gap-4'>
             {/* Time Period Tabs */}
             <div className='flex items-center gap-6'>
@@ -102,46 +102,49 @@ export const OrderChartComponent = ({ filterParams = {} }: OrderChartComponentPr
           <div className='flex h-[250px] w-full items-center justify-center'>
             <div className='text-red-500'>Error loading data</div>
           </div>
-        ) : chartData.length === 0 ? (
-          <div className='flex h-[250px] w-full items-center justify-center'>
-            <div className='text-gray-500'>No data available</div>
-          </div>
         ) : (
           <ChartContainer config={chartConfig} className='h-[250px] w-full'>
             <AreaChart
               accessibilityLayer
               data={chartData}
               margin={{
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: 20
+                left: 0,
+                right: 0,
+                top: 10,
+                bottom: 0
               }}>
-              <CartesianGrid strokeDasharray='3 3' stroke='#e5e7eb' horizontal={true} vertical={false} />
+              <CartesianGrid vertical={false} strokeDasharray='3 3' stroke='#f0f0f0' />
               <XAxis
                 dataKey='period'
                 tickLine={false}
                 axisLine={false}
-                tickMargin={12}
-                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tickMargin={10}
+                stroke='#9ca3af'
+                fontSize={12}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickMargin={12}
-                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tickMargin={10}
                 domain={yAxisDomain}
-                tickFormatter={(value) => `${value}`}
+                stroke='#9ca3af'
+                fontSize={12}
               />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator='dot' hideLabel />} />
               <Area
-                dataKey='pemesanan'
-                type='monotone'
-                fill='#22c55e'
-                fillOpacity={0.3}
-                stroke='#22c55e'
+                dataKey='konsumen'
+                type='natural'
+                fill='url(#fillKonsumen)'
+                fillOpacity={0.4}
+                stroke='var(--color-konsumen)'
                 strokeWidth={3}
               />
+              <defs>
+                <linearGradient id='fillKonsumen' x1='0' y1='0' x2='0' y2='1'>
+                  <stop offset='5%' stopColor='var(--color-konsumen)' stopOpacity={0.8} />
+                  <stop offset='95%' stopColor='var(--color-konsumen)' stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
             </AreaChart>
           </ChartContainer>
         )}
