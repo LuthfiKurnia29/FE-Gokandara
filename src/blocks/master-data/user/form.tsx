@@ -132,6 +132,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
     defaultValues: {
       name: '',
       email: '',
+      nip: '',
       role_id: 0,
       parent_id: null,
       password: '',
@@ -156,15 +157,17 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
       reset({
         name: user.name,
         email: user.email,
-        role_id: user.roles[0].role_id,
+        nip: user.nip || '',
+        role_id: user.roles[0]?.role_id || 0,
         parent_id: Number(user.parent_id) || null,
-        password: '',
-        password_confirmation: ''
+        password: user.enc_pw || '',
+        password_confirmation: user.enc_pw || ''
       });
     } else {
       reset({
         name: '',
         email: '',
+        nip: '',
         role_id: 0,
         parent_id: null,
         password: '',
@@ -257,7 +260,7 @@ export const UserForm = memo(function UserForm({ selectedId, onSubmit, onCancel,
 
       <div className='space-y-2'>
         <Label htmlFor='nip'>NIP *</Label>
-        <Input id='nip' type='nip' {...register('nip')} placeholder='Masukkan nip' disabled={isLoading} />
+        <Input id='nip' type='text' {...register('nip')} placeholder='Masukkan nip' disabled={isLoading} />
         {errors.nip && <p className='text-sm text-red-600'>{errors.nip.message}</p>}
       </div>
 
