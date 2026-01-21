@@ -8,6 +8,7 @@ export interface ProjekData {
   kamar_tidur?: number;
   kamar_mandi?: number;
   wifi?: boolean;
+  logo?: string;
   logo_url?: string;
   tipe: Array<{
     id: number;
