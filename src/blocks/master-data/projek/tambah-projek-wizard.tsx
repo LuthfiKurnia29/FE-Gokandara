@@ -44,6 +44,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
   // Step 2: Tipe
   const [types, setTypes] = useState(
     Array.from({ length: 2 }).map(() => ({
+      id: undefined as number | undefined,
       name: '',
       luasTanah: '',
       luasBangunan: '',
@@ -61,7 +62,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
   const [kamarTidur, setKamarTidur] = useState<string>('');
   const [kamarMandi, setKamarMandi] = useState<string>('');
   const [wifi, setWifi] = useState<boolean>(false);
-  const [facilities, setFacilities] = useState(Array.from({ length: 2 }).map(() => ({ name: '', luas: '' })));
+  const [facilities, setFacilities] = useState(Array.from({ length: 2 }).map(() => ({ id: undefined as number | undefined, name: '', luas: '' })));
 
   useEffect(() => {
     if (!initialData) return;
@@ -73,6 +74,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
     if (Array.isArray(initialData.types) && initialData.types.length > 0) {
       setTypes(
         initialData.types.map((t: any) => ({
+          id: t.id ?? undefined,
           name: t.name ?? '',
           luasTanah: t.luasTanah ? String(t.luasTanah) : '',
           luasBangunan: t.luasBangunan ? String(t.luasBangunan) : '',
@@ -93,7 +95,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
     }
     if (Array.isArray(initialData.facilities) && initialData.facilities.length > 0) {
       setFacilities(
-        initialData.facilities.map((f: any) => ({ name: f.name ?? '', luas: f.luas ? String(f.luas) : '' }))
+        initialData.facilities.map((f: any) => ({ id: f.id ?? undefined, name: f.name ?? '', luas: f.luas ? String(f.luas) : '' }))
       );
     }
     if (typeof initialData.kamarTidur === 'string' || typeof initialData.kamarTidur === 'number') {
@@ -241,7 +243,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
                 onClick={() =>
                   setTypes((prev) => [
                     ...prev,
-                    { name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '', unitTerjual: '' }
+                    { id: undefined, name: '', luasTanah: '', luasBangunan: '', jumlahUnit: '', unitTerjual: '' }
                   ])
                 }>
                 {' '}
@@ -484,7 +486,7 @@ export default function TambahProjekWizard({ onCancel, onSubmit, isLoading, init
               <h3 className='text-lg font-semibold'>Fasilitas Lainnya</h3>
               <button
                 className='text-gray-500 hover:text-gray-700'
-                onClick={() => setFacilities((prev) => [...prev, { name: '', luas: '' }])}>
+                onClick={() => setFacilities((prev) => [...prev, { id: undefined, name: '', luas: '' }])}>
                 + Tambah Fasilitas
               </button>
             </div>

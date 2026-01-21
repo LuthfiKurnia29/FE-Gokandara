@@ -57,10 +57,14 @@ export const createProjek = async (payload: CreateProjekData) => {
 
   if (payload.tipe && payload.tipe.length > 0) {
     payload.tipe.forEach((t, i) => {
+      if (t.id !== undefined) formData.append(`tipe[${i}][id]`, String(t.id));
       if (t.name !== undefined) formData.append(`tipe[${i}][name]`, t.name);
       formData.append(`tipe[${i}][luas_tanah]`, String(t.luas_tanah ?? 0));
       formData.append(`tipe[${i}][luas_bangunan]`, String(t.luas_bangunan ?? 0));
       formData.append(`tipe[${i}][jumlah_unit]`, String(t.jumlah_unit ?? 0));
+      if (t.harga !== undefined && t.harga !== null) {
+        formData.append(`tipe[${i}][harga]`, String(t.harga));
+      }
       if (t.jenis_pembayaran && t.jenis_pembayaran.length > 0) {
         t.jenis_pembayaran.forEach((jp, j) => {
           formData.append(`tipe[${i}][jenis_pembayaran][${j}][id]`, String(jp.id));
@@ -108,10 +112,17 @@ export const updateProjek = async (id: number, payload: CreateProjekData) => {
 
   if (payload.tipe && payload.tipe.length > 0) {
     payload.tipe.forEach((t, i) => {
+      // ID tipe untuk data existing (update)
+      if (t.id !== undefined && t.id !== null) {
+        formData.append(`tipe[${i}][id]`, String(t.id));
+      }
       if (t.name !== undefined) formData.append(`tipe[${i}][name]`, t.name);
       formData.append(`tipe[${i}][luas_tanah]`, String(t.luas_tanah ?? 0));
       formData.append(`tipe[${i}][luas_bangunan]`, String(t.luas_bangunan ?? 0));
       formData.append(`tipe[${i}][jumlah_unit]`, String(t.jumlah_unit ?? 0));
+      if (t.harga !== undefined && t.harga !== null) {
+        formData.append(`tipe[${i}][harga]`, String(t.harga));
+      }
       if (t.jenis_pembayaran && t.jenis_pembayaran.length > 0) {
         t.jenis_pembayaran.forEach((jp, j) => {
           formData.append(`tipe[${i}][jenis_pembayaran][${j}][id]`, String(jp.id));
@@ -123,6 +134,10 @@ export const updateProjek = async (id: number, payload: CreateProjekData) => {
 
   if (payload.fasilitas && payload.fasilitas.length > 0) {
     payload.fasilitas.forEach((f, i) => {
+      // ID fasilitas untuk data existing (update)
+      if (f.id !== undefined && f.id !== null) {
+        formData.append(`fasilitas[${i}][id]`, String(f.id));
+      }
       if (f.name !== undefined) formData.append(`fasilitas[${i}][name]`, f.name);
       formData.append(`fasilitas[${i}][luas]`, String(f.luas ?? 0));
     });

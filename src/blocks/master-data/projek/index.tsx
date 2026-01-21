@@ -74,13 +74,18 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
           projectName: detail?.name ?? data.name ?? '',
           address: detail?.alamat ?? '',
           jumlahKavling: detail?.jumlah_kavling != null ? String(detail.jumlah_kavling) : '',
+          kamarTidur: detail?.kamar_tidur ?? '',
+          kamarMandi: detail?.kamar_mandi ?? '',
+          wifi: detail?.wifi ?? false,
           gambarUrls,
           types: tipeArr.map((t: any) => ({
+            id: t?.id ?? undefined,
             name: t?.name ?? '',
             luasTanah: t?.luas_tanah != null ? String(t.luas_tanah) : '',
             luasBangunan: t?.luas_bangunan != null ? String(t.luas_bangunan) : '',
             jumlahUnit: t?.jumlah_unit != null ? String(t.jumlah_unit) : '',
-            unitTerjual: t?.unit_terjual != null ? String(t.unit_terjual) : ''
+            unitTerjual: t?.unit_terjual != null ? String(t.unit_terjual) : '',
+            harga: t?.harga != null ? String(t.harga) : ''
           })),
           prices: tipeArr.map((t: any) => ({
             tipe: t?.name ?? '',
@@ -92,6 +97,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
               : []
           })),
           facilities: facilitiesArr.map((f: any) => ({
+            id: f?.id ?? undefined,
             name: f?.name ?? '',
             luas: f?.luas != null ? String(f.luas) : ''
           }))
@@ -125,7 +131,7 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
     try {
       const tipePayload = (data.types ?? []).map((t, idx) => {
         const p = (data.prices ?? [])[idx] ?? { items: [] };
-        return {
+        const tipeData: any = {
           name: t.name ?? '',
           luas_tanah: Number(t.luasTanah) || 0,
           luas_bangunan: Number(t.luasBangunan) || 0,
@@ -135,12 +141,28 @@ const ActionCell = memo(function ActionCell({ row }: { row: any }) {
             harga: Number(it.harga) || 0
           }))
         };
+        // Tambahkan id jika ini data existing
+        if (t.id !== undefined && t.id !== null) {
+          tipeData.id = t.id;
+        }
+        // Tambahkan harga jika ada
+        if (t.harga !== undefined && t.harga !== null && t.harga !== '') {
+          tipeData.harga = Number(t.harga) || 0;
+        }
+        return tipeData;
       });
 
-      const fasilitasPayload = (data.facilities ?? []).map((f) => ({
-        name: f.name ?? '',
-        luas: Number(f.luas) || 0
-      }));
+      const fasilitasPayload = (data.facilities ?? []).map((f) => {
+        const fasilitasData: any = {
+          name: f.name ?? '',
+          luas: Number(f.luas) || 0
+        };
+        // Tambahkan id jika ini data existing
+        if (f.id !== undefined && f.id !== null) {
+          fasilitasData.id = f.id;
+        }
+        return fasilitasData;
+      });
 
       await updateProjek(selectedData.id, {
         name: data.projectName,
