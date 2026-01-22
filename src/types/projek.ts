@@ -3,11 +3,13 @@ import { TipeData } from './tipe';
 export interface ProjekData {
   id: number;
   name: string;
-  alamat: string;
-  jumlah_kavling: number;
+  alamat?: string;
+  address?: string; // Alternative field name from API
+  jumlah_kavling?: number;
+  kavling_total?: string; // Alternative field name from API
   kamar_tidur?: number;
   kamar_mandi?: number;
-  wifi?: boolean;
+  wifi?: boolean | number;
   logo?: string;
   logo_url?: string;
   tipe: Array<{

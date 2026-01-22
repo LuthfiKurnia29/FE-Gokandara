@@ -922,7 +922,7 @@ const PenjualanPage = memo(function PenjualanPage() {
       header: 'Lokasi',
       cell: ({ row }) => {
         const projek = row.original.projek;
-        return <span className='text-sm'>{projek?.alamat || '-'}</span>;
+        return <span className='text-sm'>{projek?.address || '-'}</span>;
       },
       meta: { style: { minWidth: '200px' } }
     }),
